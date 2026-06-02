@@ -258,12 +258,75 @@
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
+  /* TABS */
+  .tab-nav {
+    background: var(--bg2); border-bottom: 1px solid var(--border);
+    display: flex; padding: 0 24px; gap: 0;
+  }
+  .tab-btn {
+    padding: 12px 20px; border: none; background: none; cursor: pointer;
+    font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 500;
+    color: var(--gray); border-bottom: 2px solid transparent; margin-bottom: -1px;
+    transition: all 0.15s;
+  }
+  .tab-btn:hover { color: var(--white); }
+  .tab-btn.active { color: var(--red); border-bottom-color: var(--red); }
+
+  /* PROPIEDADES PANEL */
+  .props-panel { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+  .props-panel.visible { display: flex; }
+  .props-toolbar {
+    padding: 16px 20px; border-bottom: 1px solid var(--border);
+    display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+    background: var(--bg2);
+  }
+  .props-toolbar .search-box { flex: 1; min-width: 200px; }
+  .props-grid {
+    flex: 1; overflow-y: auto; padding: 20px;
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px;
+    align-content: start;
+  }
+  .prop-card {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 16px; cursor: pointer; transition: border-color 0.15s;
+  }
+  .prop-card:hover { border-color: var(--gray2); }
+  .prop-card.linked { border-color: var(--red); background: var(--red-dim); }
+  .prop-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+  .prop-card-dir { font-weight: 600; font-size: 13px; flex: 1; }
+  .prop-price { font-weight: 700; font-size: 14px; color: var(--red); flex-shrink: 0; }
+  .prop-meta { color: var(--gray); font-size: 12px; margin-bottom: 10px; }
+  .prop-tags { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 10px; }
+  .prop-tag {
+    padding: 2px 7px; border-radius: 3px; font-size: 10px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  .tag-venta { background: rgba(200,16,46,0.1); color: var(--red); }
+  .tag-alquiler { background: rgba(126,34,206,0.1); color: #7c3aed; }
+  .tag-casa { background: rgba(59,130,246,0.1); color: #1d4ed8; }
+  .tag-terreno { background: rgba(22,163,74,0.1); color: var(--green); }
+  .tag-depto { background: rgba(234,179,8,0.12); color: var(--yellow); }
+  .tag-local { background: rgba(100,116,139,0.12); color: #475569; }
+  .prop-actions { display: flex; gap: 6px; }
+  .props-loading { grid-column: 1/-1; text-align: center; padding: 60px; color: var(--gray); }
+  .props-count { color: var(--gray); font-size: 12px; white-space: nowrap; }
+
+  /* LINKED PROP IN CONTACT */
+  .linked-prop-box {
+    background: var(--red-dim); border: 1px solid rgba(200,16,46,0.2);
+    border-radius: 6px; padding: 12px 14px; display: flex; align-items: center; gap: 10px;
+  }
+  .linked-prop-box .lp-info { flex: 1; }
+  .linked-prop-box .lp-dir { font-weight: 600; font-size: 13px; }
+  .linked-prop-box .lp-meta { font-size: 11px; color: var(--gray); }
+
   /* RESPONSIVE HINT */
   @media (max-width: 768px) {
     .sidebar { width: 100%; }
     .detail { display: none; }
     .detail.mobile-show { display: block; }
     .sidebar.mobile-hide { display: none; }
+    .props-grid { grid-template-columns: 1fr; }
   }
 </style>
 </head>
@@ -286,6 +349,11 @@
     <button class="btn btn-primary btn-sm" onclick="openNewContact()">+ Contacto</button>
   </div>
 </header>
+
+<div class="tab-nav">
+  <button class="tab-btn active" id="tab-contactos" onclick="showTab('contactos')">👥 Contactos</button>
+  <button class="tab-btn" id="tab-propiedades" onclick="showTab('propiedades')">🏠 Propiedades</button>
+</div>
 
 <div class="main">
   <!-- SIDEBAR -->
@@ -325,6 +393,44 @@
       <p>Seleccioná un contacto</p>
     </div>
     <div class="detail-content" id="detailContent" style="display:none"></div>
+  </div>
+</div>
+
+<!-- PANEL PROPIEDADES -->
+<div class="props-panel" id="propsPanel">
+  <div class="props-toolbar">
+    <div class="search-box" style="max-width:280px">
+      <span class="search-icon">⌕</span>
+      <input type="text" id="propSearch" placeholder="Buscar propiedad..." oninput="renderProps()">
+    </div>
+    <button class="filter-chip active" data-pf="all" onclick="setPropFilter(this)">Todas</button>
+    <button class="filter-chip" data-pf="Venta" onclick="setPropFilter(this)">Venta</button>
+    <button class="filter-chip" data-pf="Alquiler" onclick="setPropFilter(this)">Alquiler</button>
+    <button class="filter-chip" data-pf="Casa" onclick="setPropFilter(this)">Casas</button>
+    <button class="filter-chip" data-pf="Terreno" onclick="setPropFilter(this)">Terrenos</button>
+    <button class="filter-chip" data-pf="Departamento" onclick="setPropFilter(this)">Deptos</button>
+    <span class="props-count" id="propsCount"></span>
+    <button class="btn btn-ghost btn-sm" onclick="fetchProperties()">↺ Actualizar</button>
+  </div>
+  <div class="props-grid" id="propsGrid">
+    <div class="props-loading">Cargando propiedades...</div>
+  </div>
+</div>
+
+<!-- MODAL VINCULAR PROPIEDAD -->
+<div class="modal-overlay" id="linkPropModal">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-header">
+      <h2>Vincular Propiedad</h2>
+      <button class="modal-close" onclick="document.getElementById('linkPropModal').classList.remove('open')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="search-box" style="margin-bottom:12px">
+        <span class="search-icon">⌕</span>
+        <input type="text" id="linkPropSearch" placeholder="Buscar por dirección, precio, tipo..." oninput="renderLinkProps()">
+      </div>
+      <div id="linkPropList" style="max-height:380px;overflow-y:auto;display:flex;flex-direction:column;gap:8px"></div>
+    </div>
   </div>
 </div>
 
@@ -376,7 +482,11 @@
 const BASE=[{nombre:"Dengue",interesEn:"Compra",desc:"Casa chica, lote 600m2 o terreno, ideal barrio o portón",presupuesto:"$300.000",urgencia:"ALTA",ultimo:"2026-03-03"},{nombre:"Agus Medrano",interesEn:"Compra",desc:"Lote para invertir o construir",urgencia:"BAJA",ultimo:"2026-03-02"},{nombre:"Flavio Corso",interesEn:"Compra",desc:"Desarrollo en Vaca Muerta para invertir",ultimo:"2026-03-04"},{nombre:"Fer Pereyra",interesEn:"Venta",desc:"Vender la casa en la que está viviendo",ultimo:"2026-03-04"},{nombre:"Silvia (Casa)",interesEn:"Venta",desc:"Tiene una casa que por ahí la activa en un tiempo",ultimo:"2026-03-06"},{nombre:"Damian (Lote Village Joven)",interesEn:"Venta",desc:"Village Joven lote 106",ultimo:"2026-03-07"},{nombre:"Ramiro Mendez Casariego",interesEn:"Venta",desc:"Lote a la venta que no nos dio",ultimo:"2026-03-06"},{nombre:"Fer Ceballos",interesEn:"Venta",desc:"Casa en Pardo y las vías. Si vende quiere comprar terreno",ultimo:"2026-03-06"},{nombre:"Marcela Sorondo",interesEn:"Venta",desc:"Lote 77 Pueblo Nuevo",urgencia:"ALTA",ultimo:"2026-03-12"},{nombre:"Federico Ammirata",interesEn:"Venta",desc:"Casa BV chico. Publicó $575k, vale hasta $460k",ultimo:"2026-03-12"},{nombre:"Edu Gobbi",interesEn:"Compra",desc:"Interesado en comprar",ultimo:"2026-03-12"},{nombre:"Fran Alioto",interesEn:"Venta",desc:"Village Plaza lote 131",ultimo:"2026-03-12"},{nombre:"Patricia (casa village)",interesEn:"Venta",desc:"Vende su casa del Village. Tenemos que ir a sacar fotos",urgencia:"ALTA",ultimo:"2026-03-12"},{nombre:"Christian (Lote)",interesEn:"Compra",desc:"Consultó por lote en Pueblo Vista",ultimo:"2026-03-12"},{nombre:"Monica Kohut",interesEn:"Compra",desc:"Interesada en proyecto Aora, le interesa el 3 ambientes",ultimo:"2026-03-05"},{nombre:"Juan Negro Rearte",interesEn:"Venta",desc:"Village Joven lote 340",ultimo:"2026-03-12"},{nombre:"Maria Florencia (lotes)",interesEn:"Compra",desc:"Preguntó por terrenos vía TIV",ultimo:"2026-03-16"},{nombre:"Sofia Moreno Uriburu",interesEn:"Venta",desc:"Village Plaza lote 190",ultimo:"2026-03-16"},{nombre:"Juan Cañellas",interesEn:"Compra",desc:"Comprar 2 ambientes del proyecto Aora",ultimo:"2026-03-25"},{nombre:"Ana Maria Martinez",interesEn:"Compra",desc:"Interesada en lote Aconquija 516",ultimo:"2026-03-25"},{nombre:"Jesus Plencovich",interesEn:"Compra",desc:"Interesado en casa Montevideo 2650",ultimo:"2026-03-25"},{nombre:"Maia Carlevaro",interesEn:"Compra",desc:"Interesada en proyecto Aora",ultimo:"2026-03-25"},{nombre:"Florencia Fms Uniformes",interesEn:"Compra",desc:"Interesada en proyecto Aora y locales",ultimo:"2026-03-25"},{nombre:"Agustina Ruiz",interesEn:"Compra",desc:"Interesada en deptos Misiones 1200",ultimo:"2026-03-25"},{nombre:"Fernando Barcelo",interesEn:"Compra",desc:"Interesado en casa Montevideo 2650",ultimo:"2026-03-25"},{nombre:"Fabiola",interesEn:"Alquiler",desc:"Interesada en alquilar casa Virgen Niña",ultimo:"2026-04-07"},{nombre:"Sabrina Alfaro",interesEn:"Alquiler",desc:"Interesada en alquilar casa Virgen Niña",ultimo:"2026-04-07"},{nombre:"Pedro Araujo",interesEn:"Venta",desc:"Dueño del lote 122 Pueblo Nuevo",ultimo:"2026-04-07"},{nombre:"Alejandra",interesEn:"Compra",desc:"Interesada en Aora, presupuesto alto",ultimo:"2026-04-07"},{nombre:"Abril Robino",interesEn:"Compra",desc:"Busca depto 3 ambientes de pozo $85k-$95k",ultimo:"2026-04-07"},{nombre:"Pablo",interesEn:"Compra",desc:"Interesado en locales y 2 ambientes de Aora",ultimo:"2026-04-07"},{nombre:"Facu Monopoli",interesEn:"Compra",desc:"Le interesaba el terreno al lado de su casa en La Candelaria",ultimo:"2026-04-07"},{nombre:"Cande Montaña",interesEn:"Alquiler",desc:"Busca alquilar casita cerca de lo de Cordero",ultimo:"2026-04-07"},{nombre:"Benja Gini",interesEn:"Alquiler",desc:"Busca alquilar casita",ultimo:"2026-04-07"},{nombre:"Beatriz",interesEn:"Venta",desc:"Venta de su casa",ultimo:"2026-04-07"},{nombre:"Marisa Mangolboro",interesEn:"Alquiler",desc:"Alquila su casa cerca de lo de Cordero",ultimo:"2026-04-07"},{nombre:"Julio Sosa",interesEn:"Compra",desc:"Casas entre Senador Morón y Pardo cerca del corredor",ultimo:"2026-04-07"},{nombre:"Sandra",interesEn:"Venta",desc:"Tenía una casa a la venta como dueña directa",ultimo:"2026-04-07"},{nombre:"Marisa Cristina",interesEn:"Venta",desc:"Le interesó que vayamos a tasar su casa",ultimo:"2026-04-07"},{nombre:"Alejandro Augusto",interesEn:"Venta",desc:"Casa del padre a la venta sin exclusividad",ultimo:"2026-04-07"},{nombre:"Clau",interesEn:"Compra",desc:"Interesada en proyecto Aora",ultimo:"2026-04-07"},{nombre:"Mariana Piergiacomi",interesEn:"Compra",desc:"Pidió listado de Village Joven",ultimo:"2026-04-07"},{nombre:"Jose De Vedia",interesEn:"Venta",desc:"Haciendo la sucesión, en unos meses quiere vender",ultimo:"2026-04-07"},{nombre:"Maria Julia De Vedia",interesEn:"Venta",desc:"Estaban viendo de vender la casa",ultimo:"2026-04-20"},{nombre:"Julio",interesEn:"Venta",desc:"Preguntó por la casa que tenía forma rara",ultimo:"2026-04-20"},{nombre:"Hernan local pizzeria",interesEn:"Alquiler",desc:"Busca local para pizzería desde 60m2 con gas",ultimo:"2026-04-20"},{nombre:"Silvia Casa Los Platanos",interesEn:"Alquiler",desc:"Nos dio su casa en Los Plátanos para alquilar",ultimo:"2026-04-20"},{nombre:"Vicky Tabia",interesEn:"Alquiler",desc:"Quería alquilar la casa de César",ultimo:"2026-04-20"},{nombre:"Jorge (Aora)",interesEn:"Compra",desc:"Le interesaba el proyecto Aora",ultimo:"2026-04-20"},{nombre:"Agos alquiler local",interesEn:"Alquiler",desc:"Busca local para estudio de arquitectura con taller y oficina",ultimo:"2026-04-20"},{nombre:"Ani Arancedo",interesEn:"Compra",desc:"Busca lote en Pueblo Nuevo para uso comercial",ultimo:"2026-04-20"},{nombre:"Mai Limongi",interesEn:"Venta",desc:"El papá tiene lote 249 Village Joven y nos lo dio",ultimo:"2026-05-19"},{nombre:"Cristian Jonas Aguilar",interesEn:"Alquiler",desc:"Quería alquilar la casa de César de Virgen Niña",ultimo:"2026-05-19"},{nombre:"Vero casa BV chico",interesEn:"Venta",desc:"Casa en BV Chico, pide $700k es alto",ultimo:"2026-05-19"},{nombre:"Ben",interesEn:"Compra",desc:"Preguntó por el proyecto Aora",ultimo:"2026-05-19"},{nombre:"Mica Aora",interesEn:"Compra",desc:"Preguntó por el proyecto Aora",ultimo:"2026-05-19"},{nombre:"Damian (chino)",interesEn:"Compra",desc:"Quería poner un supermercado chino en el nuevo proyecto",ultimo:"2026-05-19"},{nombre:"Belen Franco",interesEn:"Alquiler",desc:"Le interesaba alquilar la casa de César de Virgen Niña",ultimo:"2026-05-19"},{nombre:"Maca (Aora 4 ambientes)",interesEn:"Compra",desc:"Buscan Aora, evalúan unificar 2 deptos. Quieren ir al showroom",urgencia:"MEDIA",ultimo:"2026-05-19"},{nombre:"Florencia Aora",interesEn:"Compra",desc:"Consultó por el proyecto Aora",ultimo:"2026-05-19"},{nombre:"Lucas lote Village Joven",interesEn:"Venta",desc:"Nos dio lote 191 Village Joven a la venta",ultimo:"2026-05-19"},{nombre:"Anotella Pueblo Nuevo",interesEn:"Compra",desc:"Le interesan lotes de Pueblo Nuevo",ultimo:"2026-05-19"},{nombre:"Natali Aora",interesEn:"Compra",desc:"Interesada en 3 ambientes + terraza de Aora",urgencia:"MEDIA",ultimo:"2026-05-19"},{nombre:"Ricardo Pog",interesEn:"Compra",desc:"Lotes para construir y vender, +3000m2 para barrio con portón",urgencia:"MEDIA",notable:true,ultimo:"2026-05-19"},{nombre:"Ale Ruiz",interesEn:"Compra",desc:"Interesada en proyecto Aora",ultimo:"2026-05-19"},{nombre:"Agus (Aora)",interesEn:"Compra",desc:"Interesada en proyecto Aora",ultimo:"2026-05-19"},{nombre:"Mariela Dacchille",interesEn:"Compra",desc:"Le interesó la casa de La Candelaria, está mirando",ultimo:"2026-05-19"},{nombre:"Pao (pueblo nuevo)",interesEn:"Compra",desc:"Quería comprar lotes internos",ultimo:"2026-05-19"},{nombre:"Nahuel (Aora)",interesEn:"Compra",desc:"Interesado en proyecto Aora",ultimo:"2026-05-19"},{nombre:"Maby",interesEn:"Alquiler",desc:"Quería alquilar casa de Av. Francia, no respondió más",ultimo:"2026-06-02"},{nombre:"Luciana Lalane",interesEn:"Compra",desc:"Quería comprar lotes internos",ultimo:"2026-06-02"},{nombre:"Julian (golf)",interesEn:"",desc:"Preguntó por casa en el golf",ultimo:"2026-06-02"},{nombre:"Ana (Local Gaspar Campos)",interesEn:"",desc:"Tiene un local en alquiler en Gaspar Campos",ultimo:"2026-06-02"},{nombre:"Tomas (pueblo nuevo)",interesEn:"",desc:"Le interesaban los lotes de Pueblo Nuevo",ultimo:"2026-06-02"},{nombre:"Maru Tevere",interesEn:"Alquiler",desc:"Fue a ver la casa de Francia pero no le gustó",ultimo:"2026-06-02"},{nombre:"Silvana",interesEn:"Compra",desc:"Busca casa 1 planta nueva o restaurada poco jardín en BV",ultimo:"2026-06-02"},{nombre:"Ariel (Chino)",interesEn:"Compra",desc:"Le interesa Aora por estar cerca del golf, matrimonio",ultimo:"2026-06-02"},{nombre:"Ale (golf)",interesEn:"Compra",desc:"Le interesan casas del golf",ultimo:"2026-06-02"},{nombre:"Ana (Aora)",interesEn:"Compra",desc:"Le interesan deptos de Aora",ultimo:"2026-06-02"},{nombre:"Roxana (lote Aconquija)",interesEn:"Compra",desc:"Vamos a ir a ver el lote",ultimo:"2026-06-02"},{nombre:"Facundo Salas",interesEn:"Alquiler",desc:"Busca local para hamburguesas en San Miguel",ultimo:"2026-06-02"},{nombre:"Rochi Sanhueza",interesEn:"Alquiler",desc:"Busca alquilar en Aora o casita con portón y parrilla",ultimo:"2026-06-02"},{nombre:"Nora",interesEn:"Compra",desc:"Le interesaba el depto de Misiones que teníamos a la venta",ultimo:"2026-06-02"},{nombre:"Alicia (casa la candelaria)",interesEn:"",desc:"Le interesó la casa de La Candelaria, no respondió más",ultimo:"2026-06-02"},{nombre:"Yordi (Aora)",interesEn:"Compra",desc:"Interesado en proyecto Aora",ultimo:"2026-06-02"},{nombre:"Coco Ramallo",interesEn:"",desc:"Le interesa el proyecto Hurlingham Park",ultimo:"2026-06-02"},{nombre:"Mariano Guillot",interesEn:"",desc:"Le interesa Hurlingham Park, pedir contacto a Coco",ultimo:"2026-06-02"},{nombre:"Diego Jaacks",interesEn:"",desc:"Le interesa Hurlingham Park, pedir contacto a Coco",ultimo:"2026-06-02"},{nombre:"Mariano Zurini",interesEn:"",desc:"Le interesa Hurlingham Park, pedir contacto a Coco",ultimo:"2026-06-02"},{nombre:"Maria Clara Gonzalez",interesEn:"",desc:"Le interesó el dormis del Village, expensas caras",ultimo:"2026-06-02"},{nombre:"Leo Arnelli",interesEn:"",desc:"Le interesó la casa de Catriel",ultimo:"2026-06-02"},{nombre:"Nere (Aora)",interesEn:"Compra",desc:"Interesada en proyecto Aora",ultimo:"2026-06-02"},{nombre:"Daniela (Aora)",interesEn:"Compra",desc:"Interesada en proyecto Aora",ultimo:"2026-06-02"}];
 
 const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbzb7MYnH34TTOfs6Uy9ZBg3KM32p4_1m2e6ggHV1ZtVhNwGRjpkhNeTlg-5Yxw9D9AWOA/exec';
+const PROPS_SHEET_ID = '1AToFLLqYU9xOhYVC5W1ImGcuItycYz-g';
 const TODAY = new Date().toISOString().split('T')[0];
+
+let properties = [];
+let propFilter = 'all';
 
 let contacts = [];
 let selectedId = null;
@@ -591,6 +701,25 @@ function renderDetail() {
       </div>
     </div>
 
+    <!-- PROPIEDAD VINCULADA -->
+    <div class="section">
+      <div class="section-title">Propiedad Vinculada</div>
+      ${c.linkedProp ? `
+      <div class="linked-prop-box">
+        <div class="lp-info">
+          <div class="lp-dir">🏠 ${esc(c.linkedProp.direccion)} · ${esc(c.linkedProp.ubicacion)}</div>
+          <div class="lp-meta">${esc(c.linkedProp.tipo)} · ${esc(c.linkedProp.operacion)} · ${esc(c.linkedProp.precio)}${c.linkedProp.superficie ? ` · ${esc(c.linkedProp.superficie)} m²` : ''}${c.linkedProp.ambientes ? ` · ${esc(c.linkedProp.ambientes)} amb.` : ''}</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="shareProperty(${JSON.stringify(c.linkedProp).replace(/"/g,'&quot;')})">📤 WA</button>
+        <button class="btn btn-ghost btn-sm" onclick="openLinkPropFromContact('${c.id}')">✏️</button>
+        <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="unlinkProp('${c.id}')">✕</button>
+      </div>` : `
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="color:var(--gray);font-size:13px">Sin propiedad vinculada</span>
+        <button class="btn btn-ghost btn-sm" onclick="openLinkPropFromContact('${c.id}')">+ Vincular propiedad</button>
+      </div>`}
+    </div>
+
     <!-- IA WHATSAPP -->
     <div class="section ai-section">
       <div class="section-title">Generar Mensaje con IA</div>
@@ -728,10 +857,14 @@ function generateAI(id, type) {
     ? '\nNotas previas: ' + [...c.notes].slice(-3).map(n => `[${n.date}] ${n.text}`).join(' | ')
     : '';
 
+  const propInfo = c.linkedProp
+    ? `\nPropiedad a presentar: ${c.linkedProp.tipo} en ${c.linkedProp.operacion} — ${c.linkedProp.direccion}, ${c.linkedProp.ubicacion} — ${c.linkedProp.precio}${c.linkedProp.superficie ? ` — ${c.linkedProp.superficie} m²` : ''}${c.linkedProp.ambientes ? ` — ${c.linkedProp.ambientes} ambientes` : ''}`
+    : '';
+
   const prompt = `Soy Joaquín González Benegas, asesor inmobiliario de Tizado Bella Vista. Escribime un mensaje de WhatsApp para ${c.nombre}, que está interesado en ${c.interesEn || 'una operación inmobiliaria'}.
 
 Descripción: ${c.desc || 'Sin descripción'}${c.presupuesto ? `\nPresupuesto: ${c.presupuesto}` : ''}${c.urgencia ? `\nUrgencia: ${c.urgencia}` : ''}
-Último contacto: ${c.ultimo ? formatDate(c.ultimo) : 'No registrado'}${notas}${context ? `\nContexto extra: ${context}` : ''}
+Último contacto: ${c.ultimo ? formatDate(c.ultimo) : 'No registrado'}${propInfo}${notas}${context ? `\nContexto extra: ${context}` : ''}
 
 Tono: ${typeLabels[type]}.
 
@@ -817,6 +950,195 @@ function toast(msg, type = 'success') {
   el.className = `show ${type}`;
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => { el.className = ''; }, 2800);
+}
+
+// ─── TABS ────────────────────────────────────────────────────────────────────
+function showTab(tab) {
+  const isProps = tab === 'propiedades';
+  document.getElementById('tab-contactos').classList.toggle('active', !isProps);
+  document.getElementById('tab-propiedades').classList.toggle('active', isProps);
+  document.querySelector('.main').style.display = isProps ? 'none' : 'flex';
+  document.getElementById('propsPanel').classList.toggle('visible', isProps);
+  if (isProps && properties.length === 0) fetchProperties();
+}
+
+// ─── PROPIEDADES ─────────────────────────────────────────────────────────────
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+  return lines.slice(1).map(line => {
+    // handle quoted fields with commas inside
+    const cols = [];
+    let cur = '', inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') { inQ = !inQ; }
+      else if (ch === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
+      else { cur += ch; }
+    }
+    cols.push(cur.trim());
+    const obj = {};
+    headers.forEach((h, i) => obj[h] = (cols[i] || '').replace(/^"|"$/g, '').trim());
+    return obj;
+  }).filter(r => r['Codigo'] && r['Codigo'] !== 'Codigo');
+}
+
+async function fetchProperties() {
+  document.getElementById('propsGrid').innerHTML = '<div class="props-loading">Cargando propiedades...</div>';
+  try {
+    const url = `https://docs.google.com/spreadsheets/d/${PROPS_SHEET_ID}/export?format=csv`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('No se pudo acceder al Sheet');
+    const text = await res.text();
+    properties = parseCSV(text);
+    renderProps();
+    toast(`${properties.length} propiedades cargadas ✓`, 'success');
+  } catch (e) {
+    document.getElementById('propsGrid').innerHTML = `<div class="props-loading" style="color:var(--red)">Error al cargar: ${e.message}</div>`;
+  }
+}
+
+function setPropFilter(el) {
+  document.querySelectorAll('[data-pf]').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  propFilter = el.dataset.pf;
+  renderProps();
+}
+
+function propTagClass(tipo) {
+  const t = (tipo || '').toLowerCase();
+  if (t.includes('casa')) return 'tag-casa';
+  if (t.includes('terreno') || t.includes('lote')) return 'tag-terreno';
+  if (t.includes('depto') || t.includes('departamento')) return 'tag-depto';
+  if (t.includes('local')) return 'tag-local';
+  return 'tag-casa';
+}
+
+function renderProps(forModal = false) {
+  const q = (forModal
+    ? document.getElementById('linkPropSearch')
+    : document.getElementById('propSearch'))?.value.toLowerCase() || '';
+
+  let list = properties.filter(p => {
+    const matchQ = !q ||
+      (p['Dirección']||'').toLowerCase().includes(q) ||
+      (p['Ubicación']||'').toLowerCase().includes(q) ||
+      (p['Precio']||'').toLowerCase().includes(q) ||
+      (p['Tipo Propiedad']||'').toLowerCase().includes(q) ||
+      (p['Codigo']||'').toLowerCase().includes(q);
+    let matchF = true;
+    if (propFilter !== 'all' && !forModal) {
+      if (propFilter === 'Venta') matchF = (p['Operación']||'').includes('Venta');
+      else if (propFilter === 'Alquiler') matchF = (p['Operación']||'').includes('Alquiler');
+      else matchF = (p['Tipo Propiedad']||'').includes(propFilter);
+    }
+    return matchQ && matchF;
+  });
+
+  if (forModal) {
+    const container = document.getElementById('linkPropList');
+    if (!container) return;
+    container.innerHTML = list.slice(0, 50).map(p => `
+      <div class="prop-card" onclick="linkPropToContact('${p['Codigo']}')">
+        <div class="prop-card-top">
+          <span class="prop-card-dir">${esc(p['Dirección']||'')} · ${esc(p['Ubicación']||'')}</span>
+          <span class="prop-price">${esc(p['Precio']||'')}</span>
+        </div>
+        <div class="prop-meta">${esc(p['Tipo Propiedad']||'')} · ${esc(p['Operación']||'')} · ${esc(p['Superficie']||'')} m²${p['Ambientes']?` · ${p['Ambientes']} amb.`:''}</div>
+      </div>`).join('');
+    return;
+  }
+
+  document.getElementById('propsCount').textContent = list.length + ' propiedades';
+  const grid = document.getElementById('propsGrid');
+  if (!list.length) { grid.innerHTML = '<div class="props-loading">Sin resultados</div>'; return; }
+
+  grid.innerHTML = list.map(p => {
+    const opTag = (p['Operación']||'').includes('Alquiler') ? 'tag-alquiler' : 'tag-venta';
+    const tipoTag = propTagClass(p['Tipo Propiedad']);
+    const details = [
+      p['Ambientes'] ? p['Ambientes'] + ' amb.' : '',
+      p['Dormitorios'] ? p['Dormitorios'] + ' dorm.' : '',
+      p['Baños'] ? p['Baños'] + ' baños' : '',
+      p['Cocheras'] ? p['Cocheras'] + ' coch.' : '',
+      p['Superficie'] ? p['Superficie'] + ' m²' : ''
+    ].filter(Boolean).join(' · ');
+    return `
+    <div class="prop-card">
+      <div class="prop-card-top">
+        <span class="prop-card-dir">${esc(p['Dirección']||'')} · ${esc(p['Ubicación']||'')}</span>
+        <span class="prop-price">${esc(p['Precio']||'')}</span>
+      </div>
+      <div class="prop-meta">${esc(p['Codigo']||'')} · ${details || '—'}</div>
+      <div class="prop-tags">
+        <span class="prop-tag ${opTag}">${esc(p['Operación']||'')}</span>
+        <span class="prop-tag ${tipoTag}">${esc(p['Tipo Propiedad']||'')}</span>
+        ${p['Estado Inmueble'] ? `<span class="prop-tag" style="background:var(--bg3);color:var(--gray)">${esc(p['Estado Inmueble'])}</span>` : ''}
+      </div>
+      <div class="prop-actions">
+        <button class="btn btn-ghost btn-sm" onclick="shareProperty(${JSON.stringify(p).replace(/"/g,'&quot;')})">📤 Compartir WA</button>
+        <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="openLinkModal(${JSON.stringify(p['Codigo']).replace(/"/g,'&quot;')})">🔗 Vincular</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function shareProperty(p) {
+  const msg = `🏠 *${p['Tipo Propiedad']} en ${p['Operación']}*\n📍 ${p['Dirección']}, ${p['Ubicación']}\n💰 ${p['Precio']}${p['Superficie'] ? `\n📐 ${p['Superficie']} m²` : ''}${p['Ambientes'] ? ` · ${p['Ambientes']} ambientes` : ''}\n\n_Tizado Bella Vista_`;
+  window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+}
+
+// ─── VINCULAR PROP ────────────────────────────────────────────────────────────
+let linkingContactId = null;
+
+function openLinkModal(propCodigo) {
+  // Called from props panel — need to pick a contact
+  // Open a simplified version: show contact selector
+  toast('Usá "Vincular prop." desde el detalle de un contacto', 'success');
+}
+
+function openLinkPropFromContact(contactId) {
+  linkingContactId = contactId;
+  document.getElementById('linkPropModal').classList.add('open');
+  document.getElementById('linkPropSearch').value = '';
+  if (properties.length === 0) {
+    fetchProperties().then(() => renderProps(true));
+  } else {
+    renderProps(true);
+  }
+}
+
+function linkPropToContact(codigo) {
+  if (!linkingContactId) return;
+  const c = getContact(linkingContactId);
+  const p = properties.find(p => p['Codigo'] === codigo);
+  if (!c || !p) return;
+  c.linkedProp = {
+    codigo: p['Codigo'],
+    direccion: p['Dirección'],
+    ubicacion: p['Ubicación'],
+    tipo: p['Tipo Propiedad'],
+    operacion: p['Operación'],
+    precio: p['Precio'],
+    superficie: p['Superficie'],
+    ambientes: p['Ambientes'],
+    dormitorios: p['Dormitorios'],
+    banos: p['Baños']
+  };
+  save();
+  document.getElementById('linkPropModal').classList.remove('open');
+  renderDetail();
+  renderList();
+  toast('Propiedad vinculada ✓', 'success');
+}
+
+function unlinkProp(contactId) {
+  const c = getContact(contactId);
+  if (!c) return;
+  delete c.linkedProp;
+  save();
+  renderDetail();
+  toast('Propiedad desvinculada', 'success');
 }
 
 // ─── START ───────────────────────────────────────────────────────────────────
