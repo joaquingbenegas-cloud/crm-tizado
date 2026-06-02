@@ -1092,19 +1092,97 @@ function slugify(str) {
     .trim().replace(/\s+/g, '-');
 }
 
+// ─── ZONAPROP URLs (todas las propiedades publicadas) ────────────────────────
+const ZP_URLS = [
+  'https://www.zonaprop.com.ar/propiedades/clasificado/veclcain-casa-en-venta-en-bella-vista-san-miguel-g.-b.-a.-57421881.html',
+  'https://www.zonaprop.com.ar/propiedades/clasificado/vecltrin-terreno-lote-en-venta-en-bella-vista-san-miguel-g.-52606979.html',
+  'https://www.zonaprop.com.ar/propiedades/clasificado/vecltrin-excelente-terreno-lote-en-venta-pueblo-nuevo-en-bella-52609731.html',
+  'https://www.zonaprop.com.ar/propiedades/clasificado/vecltrin-terreno-lote-en-venta-en-bella-vista-san-miguel-g.-52609606.html',
+  'https://www.zonaprop.com.ar/propiedades/clasificado/vecltrin-terreno-lote-en-venta-pueblo-nuevo-en-bella-vista-52610012.html',
+  'https://www.zonaprop.com.ar/propiedades/clasificado/vecltrin-terreno-lote-en-venta-pueblo-nuevo-en-bella-vista-54313955.html',
+  'https://www.zonaprop.com.ar/propiedades/clasificado/vecltrin-terreno-lote-en-venta-pueblo-nuevo-en-bella-vista-52609667.html',
+  'https://www.zonaprop.com.ar/propiedades/clasificado/vecltrin-terreno-lote-venta-pueblo-nuevo-en-bella-vista-san-52609991.html',
+  'https://www.zonaprop.com.ar/propiedades/clasificado/vecltrin-terreno-lote-en-venta-barrio-village-joven-bella-51582358.html',
+  'https://www.zonaprop.com.ar/propiedades/clasificado/vecltrin-terreno-lote-en-venta-en-bella-vista-san-miguel-g.-56582001.html',
+  'https://www.zonaprop.com.ar/propiedades/clasificado/vecltrin-terreno-lote-en-venta-barrio-village-joven-bella-48782939.html',
+  'https://www.zonaprop.com.ar/propiedades/clasificado/vecltrin-terreno-lote-en-venta-barrio-village-joven-lote-48-51563492.html',
+  'https://www.zonaprop.com.ar/propiedades/clasificado/vecltrin-terreno-lote-en-venta-barrio-village-joven-bella-51582367.html',
+  'https://www.zonaprop.com.ar/propiedades/clasificado/vecltrin-terreno-lote-en-venta-barrio-village-joven-bella-48933080.html',
+  'https://www.zonaprop.com.ar/propiedades/clasificado/vecltrin-terreno-lote-en-venta-barrio-village-plaza-bella-54479687.html',
+  'https://www.zonaprop.com.ar/propiedades/clasificado/vecltrin-terreno-lote-en-venta-barrio-village-plaza-bella-54479522.html',
+  'https://www.zonaprop.com.ar/propiedades/clasificado/vecltrin-terreno-lote-en-venta-barrio-village-joven-bella-54479763.html',
+  'https://www.zonaprop.com.ar/propiedades/clasificado/vecltrin-terreno-lote-en-venta-barrio-village-plaza-bella-54479688.html',
+  'https://www.zonaprop.com.ar/propiedades/clasificado/vecltrin-terreno-lote-en-venta-barrio-village-plaza-bella-54479627.html',
+  'https://www.zonaprop.com.ar/propiedades/clasificado/vecltrin-terreno-lote-en-venta-barrio-village-plaza-bella-54479794.html',
+  'https://www.zonaprop.com.ar/propiedades/clasificado/vecltrin-terreno-lote-en-venta-en-village-joven-pueblo-vista-58520547.html',
+  'https://www.zonaprop.com.ar/propiedades/clasificado/vecltrin-terreno-lote-en-venta-barrio-village-plaza-bella-51564561.html',
+  'https://www.zonaprop.com.ar/propiedades/clasificado/vecltrin-terreno-lote-en-venta-barrio-village-plaza-bella-51563947.html',
+  'https://www.zonaprop.com.ar/propiedades/clasificado/veclapin-departamento-en-venta-en-bella-vista-san-miguel-g.-57596637.html',
+  'https://www.zonaprop.com.ar/propiedades/clasificado/veclapin-departamento-en-venta-en-bella-vista-san-miguel-g.-56615342.html',
+  'https://www.zonaprop.com.ar/propiedades/clasificado/veclcain-casa-en-venta-en-bella-vista-san-miguel-g.-b.-a.-59012773.html',
+  'https://www.zonaprop.com.ar/propiedades/clasificado/vecltrin-terreno-lote-en-venta-barrio-la-candelaria-bella-55871720.html',
+  'https://www.zonaprop.com.ar/propiedades/clasificado/veclcain-casa-en-venta-ubicado-en-bella-vista-zona-norte-53165093.html',
+  'https://www.zonaprop.com.ar/propiedades/clasificado/veclcain-casa-en-venta-en-muniz-san-miguel-g.-b.-a.-zona-59212647.html',
+  'https://www.zonaprop.com.ar/propiedades/clasificado/veclcain-casa-en-venta-en-village-joven-pueblo-vista-bella-59095490.html',
+  'https://www.zonaprop.com.ar/propiedades/clasificado/veclcain-casa-en-venta-ubicado-en-bella-vista-zona-norte-56283714.html',
+  'https://www.zonaprop.com.ar/propiedades/clasificado/veclcain-casa-en-venta-barrio-village-plaza-bella-vista-san-56773222.html',
+  'https://www.zonaprop.com.ar/propiedades/clasificado/veclcain-casa-en-venta-barrio-village-plaza-bella-vista-san-56773562.html',
+  'https://www.zonaprop.com.ar/propiedades/clasificado/veclcain-casa-en-venta-barrio-la-candelaria-bella-vista-san-54364181.html',
+  'https://www.zonaprop.com.ar/propiedades/clasificado/veclcain-casa-en-venta-en-bella-vista-san-miguel-g.-b.-a.-56446552.html',
+  'https://www.zonaprop.com.ar/propiedades/clasificado/veclcain-casa-en-venta-en-buenos-aires-village-bella-vista-58602640.html',
+  'https://www.zonaprop.com.ar/propiedades/clasificado/veclcain-casa-en-venta-en-bella-vista-san-miguel-g.-b.-a.-58028512.html',
+  'https://www.zonaprop.com.ar/propiedades/clasificado/veclcain-casa-en-venta-en-bella-vista-san-miguel-g.-b.-a.-54785247.html',
+  'https://www.zonaprop.com.ar/propiedades/clasificado/veclcain-casa-en-venta-en-buenos-aires-golf-bella-vista-san-58967171.html',
+  'https://www.zonaprop.com.ar/propiedades/clasificado/veclcain-casa-en-venta-barrio-buenos-aires-golf-bella-vista-58327617.html',
+  'https://www.zonaprop.com.ar/propiedades/clasificado/veclcain-casa-en-venta-en-buenos-aires-golf-bella-vista-san-59062978.html',
+  'https://www.zonaprop.com.ar/propiedades/clasificado/veclcain-casa-en-venta-en-buenos-aires-golf-bella-vista-san-58943305.html',
+  'https://www.zonaprop.com.ar/propiedades/clasificado/veclcain-casa-en-venta-en-buenos-aires-golf-bella-vista-san-59236978.html',
+  'https://www.zonaprop.com.ar/propiedades/clasificado/veclcain-casa-en-venta-en-bella-vista-san-miguel-g.-b.-a.-54911632.html'
+];
+
+function findZonaPropUrl(p) {
+  // Si el Sheet ya tiene URL exacta, usarla
+  if (p['URL ZonaProp'] && p['URL ZonaProp'].startsWith('http')) return p['URL ZonaProp'];
+
+  const tipo = (p['Tipo Propiedad'] || '').toLowerCase();
+  const dir = slugify(p['Dirección'] || '');
+  const ubic = slugify(p['Ubicación'] || '');
+  const calle = slugify(p['Calle Referencia'] || '');
+
+  // Prefijo por tipo
+  const prefix = tipo.includes('casa') ? 'veclcain'
+    : (tipo.includes('terreno') || tipo.includes('lote')) ? 'vecltrin'
+    : tipo.includes('depto') || tipo.includes('departamento') ? 'veclapin'
+    : tipo.includes('local') ? 'vecllocin'
+    : null;
+
+  // Keywords de ubicación y dirección para scoring
+  const keywords = [...new Set([
+    ...ubic.split('-').filter(w => w.length > 3),
+    ...dir.split('-').filter(w => w.length > 3),
+    ...calle.split('-').filter(w => w.length > 3)
+  ])];
+
+  // Filtrar por tipo y puntuar por keywords
+  const candidates = ZP_URLS.filter(u => !prefix || u.includes(prefix));
+  if (!candidates.length) return null;
+
+  const scored = candidates.map(u => {
+    const slug = u.split('/clasificado/')[1] || '';
+    const score = keywords.reduce((s, kw) => s + (slug.includes(kw) ? 1 : 0), 0);
+    return { u, score };
+  }).sort((a, b) => b.score - a.score);
+
+  return scored[0].score > 0 ? scored[0].u : candidates[0];
+}
+
 function verEnZonaProp(p) {
-  // Si tiene URL exacta en el Sheet, la usa directamente
-  if (p['URL ZonaProp'] && p['URL ZonaProp'].startsWith('http')) {
-    window.open(p['URL ZonaProp'], '_blank');
-    return;
+  const url = findZonaPropUrl(p);
+  if (url) {
+    window.open(url, '_blank');
+  } else {
+    window.open('https://www.zonaprop.com.ar/inmobiliarias/tizado_17635184-inmuebles-orden-precio-ascendente.html', '_blank');
   }
-  // Fallback: búsqueda por tipo y ubicación
-  const op = (p['Operación'] || '').toLowerCase().includes('alquiler') ? 'alquiler' : 'venta';
-  const tipo = (p['Tipo Propiedad'] || '').toLowerCase().includes('terreno') || (p['Tipo Propiedad'] || '').toLowerCase().includes('lote')
-    ? 'terrenos' : (p['Tipo Propiedad'] || '').toLowerCase().includes('depto') || (p['Tipo Propiedad'] || '').toLowerCase().includes('departamento')
-    ? 'departamentos' : (p['Tipo Propiedad'] || '').toLowerCase().includes('local') ? 'locales-comerciales' : 'casas';
-  const ubicacion = slugify(p['Ubicación'] || p['Calle Referencia'] || '');
-  window.open(`https://www.zonaprop.com.ar/${tipo}-${op}-en-${ubicacion}.html`, '_blank');
 }
 
 function shareProperty(p) {
