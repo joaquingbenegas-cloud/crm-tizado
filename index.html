@@ -411,6 +411,7 @@
     <button class="filter-chip" data-pf="Departamento" onclick="setPropFilter(this)">Deptos</button>
     <span class="props-count" id="propsCount"></span>
     <button class="btn btn-ghost btn-sm" onclick="fetchProperties()">↺ Actualizar</button>
+    <a href="https://www.zonaprop.com.ar/inmobiliarias/tizado_17635184-inmuebles-orden-precio-ascendente.html" target="_blank" class="btn btn-ghost btn-sm">🌐 Ver todas en ZonaProp</a>
   </div>
   <div class="props-grid" id="propsGrid">
     <div class="props-loading">Cargando propiedades...</div>
@@ -1076,11 +1077,29 @@ function renderProps(forModal = false) {
         ${p['Estado Inmueble'] ? `<span class="prop-tag" style="background:var(--bg3);color:var(--gray)">${esc(p['Estado Inmueble'])}</span>` : ''}
       </div>
       <div class="prop-actions">
+        <button class="btn btn-ghost btn-sm" onclick="verEnZonaProp(${JSON.stringify(p).replace(/"/g,'&quot;')})">🔍 Ver fotos</button>
         <button class="btn btn-ghost btn-sm" onclick="shareProperty(${JSON.stringify(p).replace(/"/g,'&quot;')})">📤 Compartir WA</button>
         <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="openLinkModal(${JSON.stringify(p['Codigo']).replace(/"/g,'&quot;')})">🔗 Vincular</button>
       </div>
     </div>`;
   }).join('');
+}
+
+function slugify(str) {
+  return (str || '').toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim().replace(/\s+/g, '-');
+}
+
+function verEnZonaProp(p) {
+  const op = (p['Operación'] || '').toLowerCase().includes('alquiler') ? 'alquiler' : 'venta';
+  const tipo = (p['Tipo Propiedad'] || '').toLowerCase().includes('terreno') || (p['Tipo Propiedad'] || '').toLowerCase().includes('lote')
+    ? 'terrenos' : (p['Tipo Propiedad'] || '').toLowerCase().includes('depto') || (p['Tipo Propiedad'] || '').toLowerCase().includes('departamento')
+    ? 'departamentos' : (p['Tipo Propiedad'] || '').toLowerCase().includes('local') ? 'locales-comerciales' : 'casas';
+  const ubicacion = slugify(p['Ubicación'] || p['Calle Referencia'] || '');
+  const url = `https://www.zonaprop.com.ar/${tipo}-${op}-en-${ubicacion}.html`;
+  window.open(url, '_blank');
 }
 
 function shareProperty(p) {
