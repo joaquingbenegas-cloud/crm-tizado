@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRM · Tizado Bella Vista</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --bg2: #111111;
+    --bg3: #1a1a1a;
+    --border: #222222;
+    --gray: #8a8a8a;
+    --gray2: #555555;
+    --white: #ffffff;
+    --red: #C8102E;
+    --red-dim: rgba(200,16,46,0.15);
+    --green: #22c55e;
+    --yellow: #eab308;
+    --radius: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--white); font-family: 'Inter', sans-serif; font-size: 14px; min-height: 100vh; }
+
+  /* HEADER */
+  header {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 60px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .logo { display: flex; align-items: center; gap: 12px; }
+  .logo-dot { width: 10px; height: 10px; background: var(--red); border-radius: 50%; }
+  .logo h1 { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 600; letter-spacing: 0.02em; }
+  .logo span { color: var(--gray); font-size: 12px; font-weight: 300; }
+  .header-actions { display: flex; gap: 8px; align-items: center; }
+
+  /* BUTTONS */
+  .btn {
+    padding: 8px 16px; border-radius: var(--radius); border: none; cursor: pointer;
+    font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 500;
+    transition: all 0.15s; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn-primary { background: var(--red); color: var(--white); }
+  .btn-primary:hover { background: #a50d25; }
+  .btn-ghost { background: transparent; color: var(--gray); border: 1px solid var(--border); }
+  .btn-ghost:hover { border-color: var(--gray2); color: var(--white); }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+  .btn-green { background: rgba(34,197,94,0.15); color: var(--green); border: 1px solid rgba(34,197,94,0.3); }
+  .btn-green:hover { background: rgba(34,197,94,0.25); }
+  .btn-wa { background: rgba(37,211,102,0.12); color: #25d366; border: 1px solid rgba(37,211,102,0.25); }
+  .btn-wa:hover { background: rgba(37,211,102,0.22); }
+
+  /* LAYOUT */
+  .main { display: flex; height: calc(100vh - 60px); }
+  .sidebar { width: 320px; min-width: 320px; border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
+  .detail { flex: 1; overflow-y: auto; }
+
+  /* SEARCH & FILTERS */
+  .search-area { padding: 16px; border-bottom: 1px solid var(--border); }
+  .search-box {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 8px 12px;
+  }
+  .search-box input {
+    flex: 1; background: none; border: none; color: var(--white); font-family: 'Inter', sans-serif; font-size: 13px; outline: none;
+  }
+  .search-box input::placeholder { color: var(--gray2); }
+  .search-icon { color: var(--gray2); font-size: 14px; }
+
+  .filters { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+  .filter-chip {
+    padding: 4px 10px; border-radius: 20px; border: 1px solid var(--border);
+    background: transparent; color: var(--gray); font-size: 11px; cursor: pointer;
+    font-family: 'Inter', sans-serif; transition: all 0.15s;
+  }
+  .filter-chip:hover { border-color: var(--gray2); color: var(--white); }
+  .filter-chip.active { background: var(--red-dim); border-color: var(--red); color: var(--white); }
+
+  .sort-row { display: flex; gap: 6px; margin-top: 8px; align-items: center; }
+  .sort-row label { color: var(--gray); font-size: 11px; }
+  .sort-select {
+    background: var(--bg3); border: 1px solid var(--border); color: var(--gray); border-radius: 4px;
+    padding: 3px 6px; font-size: 11px; font-family: 'Inter', sans-serif; cursor: pointer;
+  }
+  .sort-select:focus { outline: none; }
+  .count-badge { margin-left: auto; color: var(--gray); font-size: 11px; }
+
+  /* CONTACT LIST */
+  .contact-list { flex: 1; overflow-y: auto; }
+  .contact-list::-webkit-scrollbar { width: 4px; }
+  .contact-list::-webkit-scrollbar-track { background: transparent; }
+  .contact-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .contact-item {
+    padding: 12px 16px; border-bottom: 1px solid var(--border);
+    cursor: pointer; transition: background 0.1s; position: relative;
+  }
+  .contact-item:hover { background: var(--bg3); }
+  .contact-item.active { background: var(--bg3); border-left: 2px solid var(--red); }
+  .contact-item.notable::after {
+    content: '★'; position: absolute; right: 12px; top: 12px;
+    color: var(--yellow); font-size: 11px;
+  }
+
+  .ci-top { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .ci-name { font-weight: 500; font-size: 13px; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ci-badge {
+    padding: 2px 7px; border-radius: 3px; font-size: 10px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.05em; flex-shrink: 0;
+  }
+  .badge-compra { background: rgba(59,130,246,0.15); color: #60a5fa; }
+  .badge-venta { background: rgba(200,16,46,0.15); color: #f87171; }
+  .badge-alquiler { background: rgba(168,85,247,0.15); color: #c084fc; }
+  .badge-empty { background: var(--bg3); color: var(--gray); }
+
+  .ci-desc { color: var(--gray); font-size: 11px; line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ci-bottom { display: flex; align-items: center; gap: 8px; margin-top: 5px; }
+  .ci-date { color: var(--gray2); font-size: 10px; }
+  .urgency-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .urgency-alta { background: var(--red); }
+  .urgency-media { background: var(--yellow); }
+  .urgency-baja { background: var(--gray2); }
+  .contacted-today { color: var(--green); font-size: 10px; }
+  .next-action-preview { color: #60a5fa; font-size: 10px; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* DETAIL PANEL */
+  .detail-empty {
+    height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+    color: var(--gray2);
+  }
+  .detail-empty-icon { font-size: 48px; opacity: 0.3; }
+  .detail-empty p { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--gray2); }
+
+  .detail-content { padding: 32px; max-width: 780px; }
+  .detail-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 28px; }
+  .detail-name { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 600; margin-bottom: 6px; }
+  .detail-meta { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .detail-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  /* SECTIONS */
+  .section { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
+  .section-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--gray); margin-bottom: 14px; }
+
+  .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field label { font-size: 11px; color: var(--gray); text-transform: uppercase; letter-spacing: 0.06em; }
+  .field input, .field select, .field textarea {
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--white); padding: 8px 10px; font-family: 'Inter', sans-serif; font-size: 13px;
+    outline: none; transition: border-color 0.15s;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--gray2); }
+  .field textarea { resize: vertical; min-height: 70px; }
+  .field select option { background: var(--bg2); }
+
+  /* URGENCY SELECTOR */
+  .urgency-selector { display: flex; gap: 8px; }
+  .urgency-opt {
+    padding: 6px 12px; border-radius: 20px; border: 1px solid var(--border);
+    background: transparent; color: var(--gray); font-size: 12px; cursor: pointer;
+    font-family: 'Inter', sans-serif; transition: all 0.15s;
+  }
+  .urgency-opt.sel-alta { background: var(--red-dim); border-color: var(--red); color: var(--white); }
+  .urgency-opt.sel-media { background: rgba(234,179,8,0.15); border-color: var(--yellow); color: var(--white); }
+  .urgency-opt.sel-baja { background: rgba(138,138,138,0.1); border-color: var(--gray2); color: var(--white); }
+
+  /* NOTES */
+  .note-input-area { display: flex; gap: 8px; margin-bottom: 14px; }
+  .note-input-area textarea {
+    flex: 1; background: var(--bg3); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--white); padding: 8px 10px; font-family: 'Inter', sans-serif; font-size: 13px;
+    outline: none; resize: none; min-height: 60px;
+  }
+  .note-input-area textarea:focus { border-color: var(--gray2); }
+  .notes-list { display: flex; flex-direction: column; gap: 8px; }
+  .note-item {
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px;
+  }
+  .note-date { font-size: 10px; color: var(--gray2); margin-bottom: 4px; }
+  .note-text { font-size: 13px; color: var(--white); line-height: 1.5; white-space: pre-wrap; }
+  .notes-empty { color: var(--gray2); font-size: 13px; text-align: center; padding: 20px; }
+
+  /* NEXT ACTION */
+  .next-action-row { display: flex; gap: 8px; align-items: flex-end; }
+  .next-action-row .field { flex: 1; }
+  .next-action-display {
+    background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.25);
+    border-radius: 6px; padding: 10px 14px; display: flex; align-items: center; gap: 10px;
+    margin-top: 10px;
+  }
+  .next-action-display span { flex: 1; font-size: 13px; }
+  .next-action-display .nad { color: #60a5fa; font-size: 11px; }
+
+  /* AI SECTION */
+  .ai-section { }
+  .ai-context-area {
+    width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--white); padding: 10px; font-family: 'Inter', sans-serif; font-size: 13px;
+    outline: none; resize: none; min-height: 60px; margin-bottom: 10px;
+  }
+  .ai-context-area:focus { border-color: var(--gray2); }
+  .ai-output {
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 6px;
+    padding: 14px; font-size: 13px; line-height: 1.7; white-space: pre-wrap;
+    min-height: 80px; color: var(--white); display: none;
+  }
+  .ai-output.visible { display: block; }
+  .ai-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .ai-key-row { display: flex; gap: 8px; margin-bottom: 10px; }
+  .ai-key-row input {
+    flex: 1; background: var(--bg3); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--white); padding: 8px 10px; font-family: 'Inter', sans-serif; font-size: 13px; outline: none;
+  }
+  .ai-key-row input:focus { border-color: var(--gray2); }
+  .ai-generating { color: var(--gray); font-size: 12px; display: flex; align-items: center; gap: 6px; }
+  .spinner { width: 14px; height: 14px; border: 2px solid var(--border); border-top-color: var(--red); border-radius: 50%; animation: spin 0.6s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200;
+    display: flex; align-items: center; justify-content: center; padding: 20px;
+    display: none;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 12px;
+    width: 100%; max-width: 500px; max-height: 80vh; overflow-y: auto;
+  }
+  .modal-header {
+    padding: 20px 24px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .modal-header h2 { font-family: 'Playfair Display', serif; font-size: 18px; }
+  .modal-close { background: none; border: none; color: var(--gray); cursor: pointer; font-size: 20px; line-height: 1; }
+  .modal-body { padding: 24px; display: flex; flex-direction: column; gap: 14px; }
+  .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; }
+
+  /* TOAST */
+  #toast {
+    position: fixed; bottom: 24px; right: 24px; z-index: 300;
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 8px;
+    padding: 12px 18px; font-size: 13px; display: flex; align-items: center; gap: 8px;
+    transform: translateY(20px); opacity: 0; transition: all 0.2s; pointer-events: none;
+  }
+  #toast.show { transform: translateY(0); opacity: 1; }
+  #toast.success { border-color: rgba(34,197,94,0.4); }
+  #toast.error { border-color: rgba(200,16,46,0.4); }
+
+  /* SYNC STATUS */
+  .sync-status { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--gray); }
+  .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gray2); }
+  .sync-dot.synced { background: var(--green); }
+  .sync-dot.syncing { background: var(--yellow); animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  /* SCROLLBAR GLOBAL */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* RESPONSIVE HINT */
+  @media (max-width: 768px) {
+    .sidebar { width: 100%; }
+    .detail { display: none; }
+    .detail.mobile-show { display: block; }
+    .sidebar.mobile-hide { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-dot"></div>
+    <div>
+      <h1>Tizado <span style="color:var(--red)">·</span> Bella Vista</h1>
+      <span>CRM Inmobiliario</span>
+    </div>
+  </div>
+  <div class="header-actions">
+    <div class="sync-status">
+      <div class="sync-dot" id="syncDot"></div>
+      <span id="syncLabel">Sin sincronizar</span>
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="syncToSheets()">↑ Sheets</button>
+    <button class="btn btn-primary btn-sm" onclick="openNewContact()">+ Contacto</button>
+  </div>
+</header>
+
+<div class="main">
+  <!-- SIDEBAR -->
+  <div class="sidebar" id="sidebar">
+    <div class="search-area">
+      <div class="search-box">
+        <span class="search-icon">⌕</span>
+        <input type="text" id="searchInput" placeholder="Buscar contacto..." oninput="renderList()">
+      </div>
+      <div class="filters" id="filterChips">
+        <button class="filter-chip active" data-filter="all" onclick="setFilter(this)">Todos</button>
+        <button class="filter-chip" data-filter="Compra" onclick="setFilter(this)">Compra</button>
+        <button class="filter-chip" data-filter="Venta" onclick="setFilter(this)">Venta</button>
+        <button class="filter-chip" data-filter="Alquiler" onclick="setFilter(this)">Alquiler</button>
+        <button class="filter-chip" data-filter="ALTA" onclick="setFilter(this)">🔴 Alta</button>
+        <button class="filter-chip" data-filter="today" onclick="setFilter(this)">Hoy</button>
+        <button class="filter-chip" data-filter="notable" onclick="setFilter(this)">★ Destacados</button>
+      </div>
+      <div class="sort-row">
+        <label>Ordenar:</label>
+        <select class="sort-select" id="sortSelect" onchange="renderList()">
+          <option value="ultimo-desc">Más reciente</option>
+          <option value="ultimo-asc">Más antiguo</option>
+          <option value="nombre-asc">A → Z</option>
+          <option value="urgencia">Urgencia</option>
+        </select>
+        <span class="count-badge" id="countBadge"></span>
+      </div>
+    </div>
+    <div class="contact-list" id="contactList"></div>
+  </div>
+
+  <!-- DETAIL -->
+  <div class="detail" id="detailPanel">
+    <div class="detail-empty" id="detailEmpty">
+      <div class="detail-empty-icon">🏠</div>
+      <p>Seleccioná un contacto</p>
+    </div>
+    <div class="detail-content" id="detailContent" style="display:none"></div>
+  </div>
+</div>
+
+<!-- MODAL NUEVO CONTACTO -->
+<div class="modal-overlay" id="newContactModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Nuevo Contacto</h2>
+      <button class="modal-close" onclick="closeNewContact()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Nombre *</label>
+        <input type="text" id="nc_nombre" placeholder="Nombre del contacto">
+      </div>
+      <div class="field">
+        <label>Teléfono</label>
+        <input type="text" id="nc_tel" placeholder="549111234567">
+      </div>
+      <div class="field">
+        <label>Interés en</label>
+        <select id="nc_interes">
+          <option value="">Sin categoría</option>
+          <option value="Compra">Compra</option>
+          <option value="Venta">Venta</option>
+          <option value="Alquiler">Alquiler</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Descripción</label>
+        <textarea id="nc_desc" placeholder="Qué busca, propiedades de interés..."></textarea>
+      </div>
+      <div class="field">
+        <label>Presupuesto</label>
+        <input type="text" id="nc_presupuesto" placeholder="$300.000">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeNewContact()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveNewContact()">Crear contacto</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ─── DATA ───────────────────────────────────────────────────────────────────
+const BASE=[{nombre:"Dengue",interesEn:"Compra",desc:"Casa chica, lote 600m2 o terreno, ideal barrio o portón",presupuesto:"$300.000",urgencia:"ALTA",ultimo:"2026-03-03"},{nombre:"Agus Medrano",interesEn:"Compra",desc:"Lote para invertir o construir",urgencia:"BAJA",ultimo:"2026-03-02"},{nombre:"Flavio Corso",interesEn:"Compra",desc:"Desarrollo en Vaca Muerta para invertir",ultimo:"2026-03-04"},{nombre:"Fer Pereyra",interesEn:"Venta",desc:"Vender la casa en la que está viviendo",ultimo:"2026-03-04"},{nombre:"Silvia (Casa)",interesEn:"Venta",desc:"Tiene una casa que por ahí la activa en un tiempo",ultimo:"2026-03-06"},{nombre:"Damian (Lote Village Joven)",interesEn:"Venta",desc:"Village Joven lote 106",ultimo:"2026-03-07"},{nombre:"Ramiro Mendez Casariego",interesEn:"Venta",desc:"Lote a la venta que no nos dio",ultimo:"2026-03-06"},{nombre:"Fer Ceballos",interesEn:"Venta",desc:"Casa en Pardo y las vías. Si vende quiere comprar terreno",ultimo:"2026-03-06"},{nombre:"Marcela Sorondo",interesEn:"Venta",desc:"Lote 77 Pueblo Nuevo",urgencia:"ALTA",ultimo:"2026-03-12"},{nombre:"Federico Ammirata",interesEn:"Venta",desc:"Casa BV chico. Publicó $575k, vale hasta $460k",ultimo:"2026-03-12"},{nombre:"Edu Gobbi",interesEn:"Compra",desc:"Interesado en comprar",ultimo:"2026-03-12"},{nombre:"Fran Alioto",interesEn:"Venta",desc:"Village Plaza lote 131",ultimo:"2026-03-12"},{nombre:"Patricia (casa village)",interesEn:"Venta",desc:"Vende su casa del Village. Tenemos que ir a sacar fotos",urgencia:"ALTA",ultimo:"2026-03-12"},{nombre:"Christian (Lote)",interesEn:"Compra",desc:"Consultó por lote en Pueblo Vista",ultimo:"2026-03-12"},{nombre:"Monica Kohut",interesEn:"Compra",desc:"Interesada en proyecto Aora, le interesa el 3 ambientes",ultimo:"2026-03-05"},{nombre:"Juan Negro Rearte",interesEn:"Venta",desc:"Village Joven lote 340",ultimo:"2026-03-12"},{nombre:"Maria Florencia (lotes)",interesEn:"Compra",desc:"Preguntó por terrenos vía TIV",ultimo:"2026-03-16"},{nombre:"Sofia Moreno Uriburu",interesEn:"Venta",desc:"Village Plaza lote 190",ultimo:"2026-03-16"},{nombre:"Juan Cañellas",interesEn:"Compra",desc:"Comprar 2 ambientes del proyecto Aora",ultimo:"2026-03-25"},{nombre:"Ana Maria Martinez",interesEn:"Compra",desc:"Interesada en lote Aconquija 516",ultimo:"2026-03-25"},{nombre:"Jesus Plencovich",interesEn:"Compra",desc:"Interesado en casa Montevideo 2650",ultimo:"2026-03-25"},{nombre:"Maia Carlevaro",interesEn:"Compra",desc:"Interesada en proyecto Aora",ultimo:"2026-03-25"},{nombre:"Florencia Fms Uniformes",interesEn:"Compra",desc:"Interesada en proyecto Aora y locales",ultimo:"2026-03-25"},{nombre:"Agustina Ruiz",interesEn:"Compra",desc:"Interesada en deptos Misiones 1200",ultimo:"2026-03-25"},{nombre:"Fernando Barcelo",interesEn:"Compra",desc:"Interesado en casa Montevideo 2650",ultimo:"2026-03-25"},{nombre:"Fabiola",interesEn:"Alquiler",desc:"Interesada en alquilar casa Virgen Niña",ultimo:"2026-04-07"},{nombre:"Sabrina Alfaro",interesEn:"Alquiler",desc:"Interesada en alquilar casa Virgen Niña",ultimo:"2026-04-07"},{nombre:"Pedro Araujo",interesEn:"Venta",desc:"Dueño del lote 122 Pueblo Nuevo",ultimo:"2026-04-07"},{nombre:"Alejandra",interesEn:"Compra",desc:"Interesada en Aora, presupuesto alto",ultimo:"2026-04-07"},{nombre:"Abril Robino",interesEn:"Compra",desc:"Busca depto 3 ambientes de pozo $85k-$95k",ultimo:"2026-04-07"},{nombre:"Pablo",interesEn:"Compra",desc:"Interesado en locales y 2 ambientes de Aora",ultimo:"2026-04-07"},{nombre:"Facu Monopoli",interesEn:"Compra",desc:"Le interesaba el terreno al lado de su casa en La Candelaria",ultimo:"2026-04-07"},{nombre:"Cande Montaña",interesEn:"Alquiler",desc:"Busca alquilar casita cerca de lo de Cordero",ultimo:"2026-04-07"},{nombre:"Benja Gini",interesEn:"Alquiler",desc:"Busca alquilar casita",ultimo:"2026-04-07"},{nombre:"Beatriz",interesEn:"Venta",desc:"Venta de su casa",ultimo:"2026-04-07"},{nombre:"Marisa Mangolboro",interesEn:"Alquiler",desc:"Alquila su casa cerca de lo de Cordero",ultimo:"2026-04-07"},{nombre:"Julio Sosa",interesEn:"Compra",desc:"Casas entre Senador Morón y Pardo cerca del corredor",ultimo:"2026-04-07"},{nombre:"Sandra",interesEn:"Venta",desc:"Tenía una casa a la venta como dueña directa",ultimo:"2026-04-07"},{nombre:"Marisa Cristina",interesEn:"Venta",desc:"Le interesó que vayamos a tasar su casa",ultimo:"2026-04-07"},{nombre:"Alejandro Augusto",interesEn:"Venta",desc:"Casa del padre a la venta sin exclusividad",ultimo:"2026-04-07"},{nombre:"Clau",interesEn:"Compra",desc:"Interesada en proyecto Aora",ultimo:"2026-04-07"},{nombre:"Mariana Piergiacomi",interesEn:"Compra",desc:"Pidió listado de Village Joven",ultimo:"2026-04-07"},{nombre:"Jose De Vedia",interesEn:"Venta",desc:"Haciendo la sucesión, en unos meses quiere vender",ultimo:"2026-04-07"},{nombre:"Maria Julia De Vedia",interesEn:"Venta",desc:"Estaban viendo de vender la casa",ultimo:"2026-04-20"},{nombre:"Julio",interesEn:"Venta",desc:"Preguntó por la casa que tenía forma rara",ultimo:"2026-04-20"},{nombre:"Hernan local pizzeria",interesEn:"Alquiler",desc:"Busca local para pizzería desde 60m2 con gas",ultimo:"2026-04-20"},{nombre:"Silvia Casa Los Platanos",interesEn:"Alquiler",desc:"Nos dio su casa en Los Plátanos para alquilar",ultimo:"2026-04-20"},{nombre:"Vicky Tabia",interesEn:"Alquiler",desc:"Quería alquilar la casa de César",ultimo:"2026-04-20"},{nombre:"Jorge (Aora)",interesEn:"Compra",desc:"Le interesaba el proyecto Aora",ultimo:"2026-04-20"},{nombre:"Agos alquiler local",interesEn:"Alquiler",desc:"Busca local para estudio de arquitectura con taller y oficina",ultimo:"2026-04-20"},{nombre:"Ani Arancedo",interesEn:"Compra",desc:"Busca lote en Pueblo Nuevo para uso comercial",ultimo:"2026-04-20"},{nombre:"Mai Limongi",interesEn:"Venta",desc:"El papá tiene lote 249 Village Joven y nos lo dio",ultimo:"2026-05-19"},{nombre:"Cristian Jonas Aguilar",interesEn:"Alquiler",desc:"Quería alquilar la casa de César de Virgen Niña",ultimo:"2026-05-19"},{nombre:"Vero casa BV chico",interesEn:"Venta",desc:"Casa en BV Chico, pide $700k es alto",ultimo:"2026-05-19"},{nombre:"Ben",interesEn:"Compra",desc:"Preguntó por el proyecto Aora",ultimo:"2026-05-19"},{nombre:"Mica Aora",interesEn:"Compra",desc:"Preguntó por el proyecto Aora",ultimo:"2026-05-19"},{nombre:"Damian (chino)",interesEn:"Compra",desc:"Quería poner un supermercado chino en el nuevo proyecto",ultimo:"2026-05-19"},{nombre:"Belen Franco",interesEn:"Alquiler",desc:"Le interesaba alquilar la casa de César de Virgen Niña",ultimo:"2026-05-19"},{nombre:"Maca (Aora 4 ambientes)",interesEn:"Compra",desc:"Buscan Aora, evalúan unificar 2 deptos. Quieren ir al showroom",urgencia:"MEDIA",ultimo:"2026-05-19"},{nombre:"Florencia Aora",interesEn:"Compra",desc:"Consultó por el proyecto Aora",ultimo:"2026-05-19"},{nombre:"Lucas lote Village Joven",interesEn:"Venta",desc:"Nos dio lote 191 Village Joven a la venta",ultimo:"2026-05-19"},{nombre:"Anotella Pueblo Nuevo",interesEn:"Compra",desc:"Le interesan lotes de Pueblo Nuevo",ultimo:"2026-05-19"},{nombre:"Natali Aora",interesEn:"Compra",desc:"Interesada en 3 ambientes + terraza de Aora",urgencia:"MEDIA",ultimo:"2026-05-19"},{nombre:"Ricardo Pog",interesEn:"Compra",desc:"Lotes para construir y vender, +3000m2 para barrio con portón",urgencia:"MEDIA",notable:true,ultimo:"2026-05-19"},{nombre:"Ale Ruiz",interesEn:"Compra",desc:"Interesada en proyecto Aora",ultimo:"2026-05-19"},{nombre:"Agus (Aora)",interesEn:"Compra",desc:"Interesada en proyecto Aora",ultimo:"2026-05-19"},{nombre:"Mariela Dacchille",interesEn:"Compra",desc:"Le interesó la casa de La Candelaria, está mirando",ultimo:"2026-05-19"},{nombre:"Pao (pueblo nuevo)",interesEn:"Compra",desc:"Quería comprar lotes internos",ultimo:"2026-05-19"},{nombre:"Nahuel (Aora)",interesEn:"Compra",desc:"Interesado en proyecto Aora",ultimo:"2026-05-19"},{nombre:"Maby",interesEn:"Alquiler",desc:"Quería alquilar casa de Av. Francia, no respondió más",ultimo:"2026-06-02"},{nombre:"Luciana Lalane",interesEn:"Compra",desc:"Quería comprar lotes internos",ultimo:"2026-06-02"},{nombre:"Julian (golf)",interesEn:"",desc:"Preguntó por casa en el golf",ultimo:"2026-06-02"},{nombre:"Ana (Local Gaspar Campos)",interesEn:"",desc:"Tiene un local en alquiler en Gaspar Campos",ultimo:"2026-06-02"},{nombre:"Tomas (pueblo nuevo)",interesEn:"",desc:"Le interesaban los lotes de Pueblo Nuevo",ultimo:"2026-06-02"},{nombre:"Maru Tevere",interesEn:"Alquiler",desc:"Fue a ver la casa de Francia pero no le gustó",ultimo:"2026-06-02"},{nombre:"Silvana",interesEn:"Compra",desc:"Busca casa 1 planta nueva o restaurada poco jardín en BV",ultimo:"2026-06-02"},{nombre:"Ariel (Chino)",interesEn:"Compra",desc:"Le interesa Aora por estar cerca del golf, matrimonio",ultimo:"2026-06-02"},{nombre:"Ale (golf)",interesEn:"Compra",desc:"Le interesan casas del golf",ultimo:"2026-06-02"},{nombre:"Ana (Aora)",interesEn:"Compra",desc:"Le interesan deptos de Aora",ultimo:"2026-06-02"},{nombre:"Roxana (lote Aconquija)",interesEn:"Compra",desc:"Vamos a ir a ver el lote",ultimo:"2026-06-02"},{nombre:"Facundo Salas",interesEn:"Alquiler",desc:"Busca local para hamburguesas en San Miguel",ultimo:"2026-06-02"},{nombre:"Rochi Sanhueza",interesEn:"Alquiler",desc:"Busca alquilar en Aora o casita con portón y parrilla",ultimo:"2026-06-02"},{nombre:"Nora",interesEn:"Compra",desc:"Le interesaba el depto de Misiones que teníamos a la venta",ultimo:"2026-06-02"},{nombre:"Alicia (casa la candelaria)",interesEn:"",desc:"Le interesó la casa de La Candelaria, no respondió más",ultimo:"2026-06-02"},{nombre:"Yordi (Aora)",interesEn:"Compra",desc:"Interesado en proyecto Aora",ultimo:"2026-06-02"},{nombre:"Coco Ramallo",interesEn:"",desc:"Le interesa el proyecto Hurlingham Park",ultimo:"2026-06-02"},{nombre:"Mariano Guillot",interesEn:"",desc:"Le interesa Hurlingham Park, pedir contacto a Coco",ultimo:"2026-06-02"},{nombre:"Diego Jaacks",interesEn:"",desc:"Le interesa Hurlingham Park, pedir contacto a Coco",ultimo:"2026-06-02"},{nombre:"Mariano Zurini",interesEn:"",desc:"Le interesa Hurlingham Park, pedir contacto a Coco",ultimo:"2026-06-02"},{nombre:"Maria Clara Gonzalez",interesEn:"",desc:"Le interesó el dormis del Village, expensas caras",ultimo:"2026-06-02"},{nombre:"Leo Arnelli",interesEn:"",desc:"Le interesó la casa de Catriel",ultimo:"2026-06-02"},{nombre:"Nere (Aora)",interesEn:"Compra",desc:"Interesada en proyecto Aora",ultimo:"2026-06-02"},{nombre:"Daniela (Aora)",interesEn:"Compra",desc:"Interesada en proyecto Aora",ultimo:"2026-06-02"}];
+
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbzb7MYnH34TTOfs6Uy9ZBg3KM32p4_1m2e6ggHV1ZtVhNwGRjpkhNeTlg-5Yxw9D9AWOA/exec';
+const TODAY = new Date().toISOString().split('T')[0];
+
+let contacts = [];
+let selectedId = null;
+let activeFilter = 'all';
+let aiMessage = '';
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+function init() {
+  const saved = localStorage.getItem('crm_contacts');
+  if (saved) {
+    contacts = JSON.parse(saved);
+    // Merge any new BASE contacts not in saved
+    BASE.forEach(b => {
+      if (!contacts.find(c => c.nombre === b.nombre)) {
+        contacts.push(Object.assign({ id: uid(), notes: [], contactedDates: [] }, b));
+      }
+    });
+  } else {
+    contacts = BASE.map(b => Object.assign({ id: uid(), notes: [], contactedDates: [] }, b));
+  }
+  save();
+  renderList();
+}
+
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+function save() { localStorage.setItem('crm_contacts', JSON.stringify(contacts)); }
+function getContact(id) { return contacts.find(c => c.id === id); }
+
+// ─── LIST ────────────────────────────────────────────────────────────────────
+function setFilter(el) {
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  activeFilter = el.dataset.filter;
+  renderList();
+}
+
+function renderList() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const sort = document.getElementById('sortSelect').value;
+
+  let list = contacts.filter(c => {
+    const matchQ = !q || c.nombre.toLowerCase().includes(q) || (c.desc||'').toLowerCase().includes(q);
+    let matchF = true;
+    if (activeFilter === 'Compra') matchF = c.interesEn === 'Compra';
+    else if (activeFilter === 'Venta') matchF = c.interesEn === 'Venta';
+    else if (activeFilter === 'Alquiler') matchF = c.interesEn === 'Alquiler';
+    else if (activeFilter === 'ALTA') matchF = c.urgencia === 'ALTA';
+    else if (activeFilter === 'today') matchF = c.contactedDates && c.contactedDates.includes(TODAY);
+    else if (activeFilter === 'notable') matchF = !!c.notable;
+    return matchQ && matchF;
+  });
+
+  const urgOrder = { ALTA: 0, MEDIA: 1, BAJA: 2, undefined: 3 };
+  if (sort === 'ultimo-desc') list.sort((a,b) => (b.ultimo||'').localeCompare(a.ultimo||''));
+  else if (sort === 'ultimo-asc') list.sort((a,b) => (a.ultimo||'').localeCompare(b.ultimo||''));
+  else if (sort === 'nombre-asc') list.sort((a,b) => a.nombre.localeCompare(b.nombre));
+  else if (sort === 'urgencia') list.sort((a,b) => (urgOrder[a.urgencia]??3) - (urgOrder[b.urgencia]??3));
+
+  document.getElementById('countBadge').textContent = list.length + ' contactos';
+
+  const el = document.getElementById('contactList');
+  el.innerHTML = list.map(c => {
+    const isToday = c.contactedDates && c.contactedDates.includes(TODAY);
+    const badgeClass = c.interesEn === 'Compra' ? 'badge-compra' : c.interesEn === 'Venta' ? 'badge-venta' : c.interesEn === 'Alquiler' ? 'badge-alquiler' : 'badge-empty';
+    const urgClass = c.urgencia === 'ALTA' ? 'urgency-alta' : c.urgencia === 'MEDIA' ? 'urgency-media' : c.urgencia === 'BAJA' ? 'urgency-baja' : '';
+    const fmtDate = c.ultimo ? formatDate(c.ultimo) : '';
+    return `<div class="contact-item${c.id===selectedId?' active':''}${c.notable?' notable':''}" onclick="selectContact('${c.id}')">
+      <div class="ci-top">
+        <span class="ci-name">${esc(c.nombre)}</span>
+        <span class="ci-badge ${badgeClass}">${c.interesEn||'—'}</span>
+      </div>
+      <div class="ci-desc">${esc(c.desc||'')}</div>
+      <div class="ci-bottom">
+        ${urgClass ? `<div class="urgency-dot ${urgClass}"></div>` : ''}
+        <span class="ci-date">${fmtDate}</span>
+        ${isToday ? '<span class="contacted-today">✓ Contactado hoy</span>' : ''}
+        ${c.nextAction ? `<span class="next-action-preview">→ ${esc(c.nextAction)}</span>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function formatDate(d) {
+  if (!d) return '';
+  const [y,m,day] = d.split('-');
+  return `${day}/${m}/${y}`;
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ─── DETAIL ──────────────────────────────────────────────────────────────────
+function selectContact(id) {
+  selectedId = id;
+  renderList();
+  renderDetail();
+}
+
+function renderDetail() {
+  const c = getContact(selectedId);
+  if (!c) return;
+  document.getElementById('detailEmpty').style.display = 'none';
+  const el = document.getElementById('detailContent');
+  el.style.display = 'block';
+
+  const isToday = c.contactedDates && c.contactedDates.includes(TODAY);
+  const badgeClass = c.interesEn === 'Compra' ? 'badge-compra' : c.interesEn === 'Venta' ? 'badge-venta' : c.interesEn === 'Alquiler' ? 'badge-alquiler' : 'badge-empty';
+
+  el.innerHTML = `
+    <div class="detail-header">
+      <div>
+        <div class="detail-name">${esc(c.nombre)}</div>
+        <div class="detail-meta">
+          <span class="ci-badge ${badgeClass}">${c.interesEn||'Sin categoría'}</span>
+          ${c.urgencia ? `<span style="font-size:12px;color:${c.urgencia==='ALTA'?'var(--red)':c.urgencia==='MEDIA'?'var(--yellow)':'var(--gray2)'}">● ${c.urgencia}</span>` : ''}
+          ${c.notable ? '<span style="color:var(--yellow);font-size:13px">★ Destacado</span>' : ''}
+          ${isToday ? '<span style="color:var(--green);font-size:12px">✓ Contactado hoy</span>' : ''}
+        </div>
+      </div>
+      <div class="detail-actions">
+        ${c.tel ? `<button class="btn btn-wa btn-sm" onclick="openWhatsApp('${c.id}')">💬 WhatsApp</button>` : ''}
+        <button class="btn btn-green btn-sm" onclick="markContactedToday('${c.id}')">${isToday ? '✓ Contactado' : '+ Marcar hoy'}</button>
+        <button class="btn btn-ghost btn-sm" onclick="toggleNotable('${c.id}')">${c.notable ? '★' : '☆'} Destacar</button>
+        <button class="btn btn-ghost btn-sm" style="color:var(--red);border-color:rgba(200,16,46,0.3)" onclick="deleteContact('${c.id}')">Eliminar</button>
+      </div>
+    </div>
+
+    <!-- INFO BÁSICA -->
+    <div class="section">
+      <div class="section-title">Información</div>
+      <div class="field-grid">
+        <div class="field">
+          <label>Nombre</label>
+          <input type="text" value="${esc(c.nombre)}" onchange="updateField('${c.id}','nombre',this.value)">
+        </div>
+        <div class="field">
+          <label>Teléfono (sin + ni espacios)</label>
+          <input type="text" value="${esc(c.tel||'')}" placeholder="549111234567" onchange="updateField('${c.id}','tel',this.value)">
+        </div>
+        <div class="field">
+          <label>Interés en</label>
+          <select onchange="updateField('${c.id}','interesEn',this.value)">
+            <option value="" ${!c.interesEn?'selected':''}>Sin categoría</option>
+            <option value="Compra" ${c.interesEn==='Compra'?'selected':''}>Compra</option>
+            <option value="Venta" ${c.interesEn==='Venta'?'selected':''}>Venta</option>
+            <option value="Alquiler" ${c.interesEn==='Alquiler'?'selected':''}>Alquiler</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Presupuesto</label>
+          <input type="text" value="${esc(c.presupuesto||'')}" placeholder="$300.000" onchange="updateField('${c.id}','presupuesto',this.value)">
+        </div>
+        <div class="field" style="grid-column:1/-1">
+          <label>Descripción</label>
+          <textarea onchange="updateField('${c.id}','desc',this.value)">${esc(c.desc||'')}</textarea>
+        </div>
+        <div class="field">
+          <label>Último contacto</label>
+          <input type="date" value="${c.ultimo||''}" onchange="updateField('${c.id}','ultimo',this.value)">
+        </div>
+      </div>
+    </div>
+
+    <!-- URGENCIA -->
+    <div class="section">
+      <div class="section-title">Urgencia</div>
+      <div class="urgency-selector">
+        <button class="urgency-opt ${c.urgencia==='ALTA'?'sel-alta':''}" onclick="setUrgency('${c.id}','ALTA')">🔴 Alta</button>
+        <button class="urgency-opt ${c.urgencia==='MEDIA'?'sel-media':''}" onclick="setUrgency('${c.id}','MEDIA')">🟡 Media</button>
+        <button class="urgency-opt ${c.urgencia==='BAJA'?'sel-baja':''}" onclick="setUrgency('${c.id}','BAJA')">⚫ Baja</button>
+        ${c.urgencia ? `<button class="urgency-opt" onclick="setUrgency('${c.id}','')">✕ Quitar</button>` : ''}
+      </div>
+    </div>
+
+    <!-- PRÓXIMA ACCIÓN -->
+    <div class="section">
+      <div class="section-title">Próxima Acción</div>
+      <div class="next-action-row">
+        <div class="field">
+          <label>Acción</label>
+          <input type="text" id="naText" value="${esc(c.nextAction||'')}" placeholder="Ej: Llamar para confirmar visita">
+        </div>
+        <div class="field" style="max-width:160px">
+          <label>Fecha</label>
+          <input type="date" id="naDate" value="${c.nextActionDate||''}">
+        </div>
+        <button class="btn btn-ghost btn-sm" style="margin-bottom:0;align-self:flex-end" onclick="saveNextAction('${c.id}')">Guardar</button>
+      </div>
+      ${c.nextAction ? `
+      <div class="next-action-display">
+        <span>→ ${esc(c.nextAction)}</span>
+        ${c.nextActionDate ? `<span class="nad">📅 ${formatDate(c.nextActionDate)}</span>` : ''}
+      </div>` : ''}
+    </div>
+
+    <!-- NOTAS -->
+    <div class="section">
+      <div class="section-title">Historial de Notas</div>
+      <div class="note-input-area">
+        <textarea id="newNoteText" placeholder="Escribí una nota sobre este contacto..."></textarea>
+        <button class="btn btn-ghost btn-sm" style="align-self:flex-end" onclick="addNote('${c.id}')">+ Agregar</button>
+      </div>
+      <div class="notes-list" id="notesList">
+        ${(c.notes||[]).length === 0
+          ? '<div class="notes-empty">Sin notas aún</div>'
+          : [...(c.notes||[])].reverse().map(n => `
+            <div class="note-item">
+              <div class="note-date">${n.date} · ${n.time}</div>
+              <div class="note-text">${esc(n.text)}</div>
+            </div>`).join('')}
+      </div>
+    </div>
+
+    <!-- IA WHATSAPP -->
+    <div class="section ai-section">
+      <div class="section-title">Generar Mensaje con IA</div>
+      <div class="ai-key-row">
+        <input type="password" id="aiKeyInput" placeholder="API Key de Anthropic (se guarda local)" value="${localStorage.getItem('anthropic_key')||''}" onchange="localStorage.setItem('anthropic_key',this.value)">
+      </div>
+      <textarea class="ai-context-area" id="aiContext" placeholder="Contexto adicional para la IA: qué propiedades tenés disponibles, novedades, etc."></textarea>
+      <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-sm" onclick="generateAI('${c.id}','seguimiento')">💬 Seguimiento</button>
+        <button class="btn btn-ghost btn-sm" onclick="generateAI('${c.id}','novedad')">🏠 Novedad prop.</button>
+        <button class="btn btn-ghost btn-sm" onclick="generateAI('${c.id}','reactivar')">🔄 Reactivar</button>
+        <button class="btn btn-ghost btn-sm" onclick="generateAI('${c.id}','visita')">📅 Confirmar visita</button>
+      </div>
+      <div id="aiStatus"></div>
+      <div class="ai-output" id="aiOutput"></div>
+      <div class="ai-actions" id="aiActions" style="display:none">
+        <button class="btn btn-wa btn-sm" onclick="sendViaWhatsApp('${c.id}')">💬 Enviar por WhatsApp</button>
+        <button class="btn btn-ghost btn-sm" onclick="copyAiMessage()">📋 Copiar</button>
+      </div>
+    </div>
+  `;
+}
+
+function updateField(id, field, value) {
+  const c = getContact(id);
+  if (!c) return;
+  c[field] = value;
+  if (field === 'nombre' || field === 'interesEn' || field === 'urgencia' || field === 'ultimo') {
+    renderList();
+  }
+  save();
+  toast('Guardado', 'success');
+}
+
+function setUrgency(id, val) {
+  const c = getContact(id);
+  if (!c) return;
+  c.urgencia = val;
+  save();
+  renderList();
+  renderDetail();
+}
+
+function markContactedToday(id) {
+  const c = getContact(id);
+  if (!c) return;
+  if (!c.contactedDates) c.contactedDates = [];
+  if (!c.contactedDates.includes(TODAY)) {
+    c.contactedDates.push(TODAY);
+    c.ultimo = TODAY;
+  }
+  save();
+  renderList();
+  renderDetail();
+  toast('Marcado como contactado hoy ✓', 'success');
+}
+
+function toggleNotable(id) {
+  const c = getContact(id);
+  if (!c) return;
+  c.notable = !c.notable;
+  save();
+  renderList();
+  renderDetail();
+}
+
+function saveNextAction(id) {
+  const c = getContact(id);
+  if (!c) return;
+  c.nextAction = document.getElementById('naText').value.trim();
+  c.nextActionDate = document.getElementById('naDate').value;
+  save();
+  renderList();
+  renderDetail();
+  toast('Próxima acción guardada', 'success');
+}
+
+function addNote(id) {
+  const c = getContact(id);
+  if (!c) return;
+  const text = document.getElementById('newNoteText').value.trim();
+  if (!text) return;
+  if (!c.notes) c.notes = [];
+  const now = new Date();
+  c.notes.push({
+    id: uid(),
+    text,
+    date: now.toLocaleDateString('es-AR'),
+    time: now.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
+  });
+  save();
+  renderDetail();
+  toast('Nota agregada', 'success');
+}
+
+function deleteContact(id) {
+  if (!confirm('¿Eliminar este contacto?')) return;
+  contacts = contacts.filter(c => c.id !== id);
+  selectedId = null;
+  save();
+  renderList();
+  document.getElementById('detailEmpty').style.display = 'flex';
+  document.getElementById('detailContent').style.display = 'none';
+}
+
+// ─── WHATSAPP ────────────────────────────────────────────────────────────────
+function openWhatsApp(id) {
+  const c = getContact(id);
+  if (!c || !c.tel) { toast('Agregá el teléfono primero', 'error'); return; }
+  const tel = c.tel.replace(/\D/g,'');
+  window.open(`https://wa.me/${tel}`, '_blank');
+}
+
+function sendViaWhatsApp(id) {
+  const c = getContact(id);
+  if (!c) return;
+  const msg = aiMessage || document.getElementById('aiOutput').textContent;
+  if (!msg) { toast('Generá un mensaje primero', 'error'); return; }
+  if (!c.tel) { toast('Agregá el teléfono del contacto', 'error'); return; }
+  const tel = c.tel.replace(/\D/g,'');
+  window.open(`https://wa.me/${tel}?text=${encodeURIComponent(msg)}`, '_blank');
+}
+
+function copyAiMessage() {
+  const msg = aiMessage || document.getElementById('aiOutput').textContent;
+  navigator.clipboard.writeText(msg).then(() => toast('Copiado al portapapeles', 'success'));
+}
+
+// ─── AI ──────────────────────────────────────────────────────────────────────
+async function generateAI(id, type) {
+  const c = getContact(id);
+  if (!c) return;
+  const key = localStorage.getItem('anthropic_key') || document.getElementById('aiKeyInput').value.trim();
+  if (!key) { toast('Necesitás una API Key de Anthropic', 'error'); return; }
+  localStorage.setItem('anthropic_key', key);
+
+  const context = document.getElementById('aiContext').value.trim();
+
+  const typeLabels = {
+    seguimiento: 'un mensaje de seguimiento cálido',
+    novedad: 'un mensaje presentando una novedad de propiedad relevante',
+    reactivar: 'un mensaje para reactivar el contacto que no responde',
+    visita: 'un mensaje para confirmar o proponer una visita'
+  };
+
+  const prompt = `Sos un asesor inmobiliario de Tizado Bella Vista (Buenos Aires, zona norte). Escribí ${typeLabels[type]} por WhatsApp para el siguiente contacto.
+
+Contacto: ${c.nombre}
+Interés: ${c.interesEn || 'No especificado'}
+Descripción: ${c.desc || ''}
+${c.presupuesto ? `Presupuesto: ${c.presupuesto}` : ''}
+${c.urgencia ? `Urgencia: ${c.urgencia}` : ''}
+Último contacto: ${c.ultimo ? formatDate(c.ultimo) : 'No registrado'}
+${context ? `Contexto adicional: ${context}` : ''}
+
+Reglas:
+- Tono cercano, profesional pero no rígido, en español rioplatense
+- Mensaje corto (máximo 4 oraciones)
+- No uses asteriscos ni markdown
+- No menciones que sos IA
+- Firmá como "Equipo Tizado Bella Vista"
+- Solo el texto del mensaje, sin explicaciones ni comillas`;
+
+  const statusEl = document.getElementById('aiStatus');
+  const outputEl = document.getElementById('aiOutput');
+  const actionsEl = document.getElementById('aiActions');
+
+  statusEl.innerHTML = '<div class="ai-generating"><div class="spinner"></div>Generando mensaje...</div>';
+  outputEl.classList.remove('visible');
+  actionsEl.style.display = 'none';
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+        'anthropic-dangerous-direct-browser-calls': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 300,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+    aiMessage = data.content[0].text.trim();
+    statusEl.innerHTML = '';
+    outputEl.textContent = aiMessage;
+    outputEl.classList.add('visible');
+    actionsEl.style.display = 'flex';
+  } catch (e) {
+    statusEl.innerHTML = '';
+    toast('Error al generar: ' + e.message, 'error');
+  }
+}
+
+// ─── NEW CONTACT MODAL ───────────────────────────────────────────────────────
+function openNewContact() {
+  document.getElementById('newContactModal').classList.add('open');
+}
+function closeNewContact() {
+  document.getElementById('newContactModal').classList.remove('open');
+  ['nc_nombre','nc_tel','nc_desc','nc_presupuesto'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('nc_interes').value = '';
+}
+function saveNewContact() {
+  const nombre = document.getElementById('nc_nombre').value.trim();
+  if (!nombre) { toast('El nombre es obligatorio', 'error'); return; }
+  const c = {
+    id: uid(),
+    nombre,
+    tel: document.getElementById('nc_tel').value.trim(),
+    interesEn: document.getElementById('nc_interes').value,
+    desc: document.getElementById('nc_desc').value.trim(),
+    presupuesto: document.getElementById('nc_presupuesto').value.trim(),
+    ultimo: TODAY,
+    notes: [],
+    contactedDates: []
+  };
+  contacts.unshift(c);
+  save();
+  renderList();
+  closeNewContact();
+  selectContact(c.id);
+  toast('Contacto creado', 'success');
+}
+
+// ─── GOOGLE SHEETS ───────────────────────────────────────────────────────────
+async function syncToSheets() {
+  const dot = document.getElementById('syncDot');
+  const label = document.getElementById('syncLabel');
+  dot.className = 'sync-dot syncing';
+  label.textContent = 'Sincronizando...';
+  try {
+    const payload = contacts.map(c => ({
+      id: c.id,
+      nombre: c.nombre,
+      tel: c.tel || '',
+      interesEn: c.interesEn || '',
+      desc: c.desc || '',
+      presupuesto: c.presupuesto || '',
+      urgencia: c.urgencia || '',
+      ultimo: c.ultimo || '',
+      nextAction: c.nextAction || '',
+      nextActionDate: c.nextActionDate || '',
+      notable: c.notable ? 'Sí' : '',
+      notas: (c.notes||[]).map(n => `[${n.date} ${n.time}] ${n.text}`).join(' | ')
+    }));
+    await fetch(SHEETS_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contacts: payload })
+    });
+    dot.className = 'sync-dot synced';
+    label.textContent = 'Sincronizado ' + new Date().toLocaleTimeString('es-AR', {hour:'2-digit',minute:'2-digit'});
+    toast('Datos enviados a Google Sheets ✓', 'success');
+  } catch (e) {
+    dot.className = 'sync-dot';
+    label.textContent = 'Error de sincronización';
+    toast('Error al sincronizar: ' + e.message, 'error');
+  }
+}
+
+// ─── TOAST ───────────────────────────────────────────────────────────────────
+let toastTimer;
+function toast(msg, type = 'success') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = `show ${type}`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.className = ''; }, 2800);
+}
+
+// ─── START ───────────────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
