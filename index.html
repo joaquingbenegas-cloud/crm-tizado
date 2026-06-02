@@ -214,15 +214,6 @@
   }
   .ai-output.visible { display: block; }
   .ai-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
-  .ai-key-row { display: flex; gap: 8px; margin-bottom: 10px; }
-  .ai-key-row input {
-    flex: 1; background: var(--bg3); border: 1px solid var(--border); border-radius: 6px;
-    color: var(--white); padding: 8px 10px; font-family: 'Inter', sans-serif; font-size: 13px; outline: none;
-  }
-  .ai-key-row input:focus { border-color: var(--gray2); }
-  .ai-generating { color: var(--gray); font-size: 12px; display: flex; align-items: center; gap: 6px; }
-  .spinner { width: 14px; height: 14px; border: 2px solid var(--border); border-top-color: var(--red); border-radius: 50%; animation: spin 0.6s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
 
   /* MODAL */
   .modal-overlay {
@@ -603,21 +594,12 @@ function renderDetail() {
     <!-- IA WHATSAPP -->
     <div class="section ai-section">
       <div class="section-title">Generar Mensaje con IA</div>
-      <div class="ai-key-row">
-        <input type="password" id="aiKeyInput" placeholder="API Key de Anthropic (se guarda local)" value="${localStorage.getItem('anthropic_key')||''}" onchange="localStorage.setItem('anthropic_key',this.value)">
-      </div>
-      <textarea class="ai-context-area" id="aiContext" placeholder="Contexto adicional para la IA: qué propiedades tenés disponibles, novedades, etc."></textarea>
+      <textarea class="ai-context-area" id="aiContext" placeholder="Contexto adicional: propiedades disponibles, novedades, info extra..."></textarea>
       <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
-        <button class="btn btn-ghost btn-sm" onclick="generateAI('${c.id}','seguimiento')">💬 Seguimiento</button>
+        <button class="btn btn-ghost btn-sm" onclick="generateAI('${c.id}','check-in')">💬 Check-in</button>
         <button class="btn btn-ghost btn-sm" onclick="generateAI('${c.id}','novedad')">🏠 Novedad prop.</button>
         <button class="btn btn-ghost btn-sm" onclick="generateAI('${c.id}','reactivar')">🔄 Reactivar</button>
-        <button class="btn btn-ghost btn-sm" onclick="generateAI('${c.id}','visita')">📅 Confirmar visita</button>
-      </div>
-      <div id="aiStatus"></div>
-      <div class="ai-output" id="aiOutput"></div>
-      <div class="ai-actions" id="aiActions" style="display:none">
-        <button class="btn btn-wa btn-sm" onclick="sendViaWhatsApp('${c.id}')">💬 Enviar por WhatsApp</button>
-        <button class="btn btn-ghost btn-sm" onclick="copyAiMessage()">📋 Copiar</button>
+        <button class="btn btn-ghost btn-sm" onclick="generateAI('${c.id}','captar')">🤝 Captar</button>
       </div>
     </div>
   `;
@@ -729,74 +711,34 @@ function copyAiMessage() {
 }
 
 // ─── AI ──────────────────────────────────────────────────────────────────────
-async function generateAI(id, type) {
+function generateAI(id, type) {
   const c = getContact(id);
   if (!c) return;
-  const key = localStorage.getItem('anthropic_key') || document.getElementById('aiKeyInput').value.trim();
-  if (!key) { toast('Necesitás una API Key de Anthropic', 'error'); return; }
-  localStorage.setItem('anthropic_key', key);
 
   const context = document.getElementById('aiContext').value.trim();
 
   const typeLabels = {
-    seguimiento: 'un mensaje de seguimiento cálido',
-    novedad: 'un mensaje presentando una novedad de propiedad relevante',
-    reactivar: 'un mensaje para reactivar el contacto que no responde',
-    visita: 'un mensaje para confirmar o proponer una visita'
+    'check-in': 'check-in / seguimiento cálido',
+    'novedad': 'presentar una novedad de propiedad relevante',
+    'reactivar': 'reactivar el contacto que no responde hace tiempo',
+    'captar': 'captar al contacto para trabajar con Tizado en exclusiva'
   };
 
-  const prompt = `Sos un asesor inmobiliario de Tizado Bella Vista (Buenos Aires, zona norte). Escribí ${typeLabels[type]} por WhatsApp para el siguiente contacto.
+  const notas = (c.notes || []).length > 0
+    ? '\nNotas previas: ' + [...c.notes].slice(-3).map(n => `[${n.date}] ${n.text}`).join(' | ')
+    : '';
 
-Contacto: ${c.nombre}
-Interés: ${c.interesEn || 'No especificado'}
-Descripción: ${c.desc || ''}
-${c.presupuesto ? `Presupuesto: ${c.presupuesto}` : ''}
-${c.urgencia ? `Urgencia: ${c.urgencia}` : ''}
-Último contacto: ${c.ultimo ? formatDate(c.ultimo) : 'No registrado'}
-${context ? `Contexto adicional: ${context}` : ''}
+  const prompt = `Soy Joaquín González Benegas, asesor inmobiliario de Tizado Bella Vista. Escribime un mensaje de WhatsApp para ${c.nombre}, que está interesado en ${c.interesEn || 'una operación inmobiliaria'}.
 
-Reglas:
-- Tono cercano, profesional pero no rígido, en español rioplatense
-- Mensaje corto (máximo 4 oraciones)
-- No uses asteriscos ni markdown
-- No menciones que sos IA
-- Firmá como "Equipo Tizado Bella Vista"
-- Solo el texto del mensaje, sin explicaciones ni comillas`;
+Descripción: ${c.desc || 'Sin descripción'}${c.presupuesto ? `\nPresupuesto: ${c.presupuesto}` : ''}${c.urgencia ? `\nUrgencia: ${c.urgencia}` : ''}
+Último contacto: ${c.ultimo ? formatDate(c.ultimo) : 'No registrado'}${notas}${context ? `\nContexto extra: ${context}` : ''}
 
-  const statusEl = document.getElementById('aiStatus');
-  const outputEl = document.getElementById('aiOutput');
-  const actionsEl = document.getElementById('aiActions');
+Tono: ${typeLabels[type]}.
 
-  statusEl.innerHTML = '<div class="ai-generating"><div class="spinner"></div>Generando mensaje...</div>';
-  outputEl.classList.remove('visible');
-  actionsEl.style.display = 'none';
+El mensaje tiene que ser en español rioplatense, máximo 4 líneas, directo y cálido, sin sonar a agencia. Sin asteriscos ni markdown. Firmá como "Joaquín - Tizado Bella Vista". Solo el texto del mensaje, sin explicaciones.`;
 
-  try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': key,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-        'anthropic-dangerous-direct-browser-calls': 'true'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 300,
-        messages: [{ role: 'user', content: prompt }]
-      })
-    });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error.message);
-    aiMessage = data.content[0].text.trim();
-    statusEl.innerHTML = '';
-    outputEl.textContent = aiMessage;
-    outputEl.classList.add('visible');
-    actionsEl.style.display = 'flex';
-  } catch (e) {
-    statusEl.innerHTML = '';
-    toast('Error al generar: ' + e.message, 'error');
-  }
+  window.open('https://claude.ai/new?q=' + encodeURIComponent(prompt), '_blank');
+  toast('Abriendo Claude con el prompt ✓', 'success');
 }
 
 // ─── NEW CONTACT MODAL ───────────────────────────────────────────────────────
