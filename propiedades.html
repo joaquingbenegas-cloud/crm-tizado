@@ -97,6 +97,28 @@
   .tag-terreno { background: rgba(22,163,74,0.1); color: var(--green); }
   .tag-depto { background: rgba(234,179,8,0.12); color: var(--yellow); }
   .tag-local { background: rgba(100,116,139,0.12); color: #475569; }
+  .prop-thumb {
+    height: 180px; background: var(--bg3); border-radius: var(--radius) var(--radius) 0 0;
+    overflow: hidden; position: relative; cursor: pointer;
+  }
+  .prop-thumb img { width: 100%; height: 100%; object-fit: cover; transition: opacity 0.3s; }
+  .prop-thumb .thumb-placeholder {
+    width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+    font-size: 32px; color: var(--gray2);
+  }
+  .prop-thumb .thumb-loading {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    background: var(--bg3); font-size: 11px; color: var(--gray2);
+  }
+  .prop-op-badge {
+    position: absolute; top: 10px; left: 10px;
+    padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.04em; z-index: 1;
+  }
+  .badge-venta { background: var(--red); color: #fff; }
+  .badge-alquiler { background: #7c3aed; color: #fff; }
+  .prop-card { padding: 0; overflow: hidden; }
+  .prop-card-body { padding: 14px 16px; }
   .prop-actions { display: flex; gap: 6px; flex-wrap: wrap; }
 
   .share-bar {
@@ -253,6 +275,53 @@ function parseCSV(text) {
   }).filter(r=>r['Codigo']&&r['Codigo']!=='Codigo');
 }
 
+// ─── FOTOS ───────────────────────────────────────────────────────────────────
+async function fetchPhoto(zpUrl, photoKey) {
+  try {
+    const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(zpUrl)}`;
+    const res = await fetch(proxy, { signal: AbortSignal.timeout(8000) });
+    const data = await res.json();
+    const match = data.contents && data.contents.match(/og:image[^>]*content="([^"]+)"/);
+    if (match && match[1]) {
+      localStorage.setItem(photoKey, match[1]);
+      return match[1];
+    }
+  } catch(e) {}
+  return null;
+}
+
+async function loadMissingPhotos() {
+  const cards = document.querySelectorAll('.prop-card[data-zpurl]');
+  const observer = new IntersectionObserver(async (entries) => {
+    for (const entry of entries) {
+      if (!entry.isIntersecting) continue;
+      const card = entry.target;
+      const zpUrl = card.dataset.zpurl;
+      const photoKey = card.dataset.photokey;
+      if (!zpUrl || !photoKey) continue;
+      const thumb = card.querySelector('.prop-thumb');
+      if (!thumb || thumb.querySelector('img')) continue; // ya tiene foto
+      observer.unobserve(card);
+      const photoUrl = await fetchPhoto(zpUrl, photoKey);
+      if (photoUrl) {
+        const img = document.createElement('img');
+        img.src = photoUrl;
+        img.alt = 'foto';
+        img.loading = 'lazy';
+        const placeholder = thumb.querySelector('.thumb-loading');
+        if (placeholder) placeholder.replaceWith(img);
+        else thumb.prepend(img);
+      } else {
+        const placeholder = thumb.querySelector('.thumb-loading');
+        if (placeholder) placeholder.textContent = '🏠';
+      }
+    }
+  }, { rootMargin: '200px' });
+  cards.forEach(card => {
+    if (card.dataset.zpurl && !card.querySelector('img')) observer.observe(card);
+  });
+}
+
 async function loadProps() {
   document.getElementById('grid').innerHTML = '<div class="state-msg"><p>Cargando...</p></div>';
   try {
@@ -291,26 +360,42 @@ function render() {
 
   document.getElementById('grid').innerHTML = list.map(prop => {
     const zpUrl = findZpUrl(prop);
-    const opTag = (prop['Operación']||'').includes('Alquiler') ? 'tag-alquiler' : 'tag-venta';
+    const isAlq = (prop['Operación']||'').includes('Alquiler');
+    const opTag = isAlq ? 'tag-alquiler' : 'tag-venta';
+    const opBadge = isAlq ? 'badge-alquiler' : 'badge-venta';
     const details = [prop['Ambientes']?prop['Ambientes']+' amb.':'', prop['Dormitorios']?prop['Dormitorios']+' dorm.':'', prop['Baños']?prop['Baños']+' baños':'', prop['Cocheras']?prop['Cocheras']+' coch.':'', prop['Superficie']?prop['Superficie']+' m²':''].filter(Boolean).join(' · ');
     const waMsg = encodeURIComponent(`Hola Joaquín, vi la propiedad en ${prop['Dirección']}, ${prop['Ubicación']} (${prop['Precio']}) y quería más info.`);
-    return `<div class="prop-card">
-      <div class="prop-card-top">
-        <span class="prop-card-dir">${esc(prop['Dirección']||'')} · ${esc(prop['Ubicación']||'')}</span>
-        <span style="font-weight:700;font-size:14px;color:var(--red);flex-shrink:0">${esc(prop['Precio']||'Consultar')}</span>
+    const photoKey = zpUrl ? 'zpphoto_' + btoa(zpUrl).slice(-20) : null;
+    const cachedPhoto = photoKey ? localStorage.getItem(photoKey) : null;
+    const thumbHtml = cachedPhoto
+      ? `<img src="${cachedPhoto}" alt="foto" loading="lazy">`
+      : `<div class="thumb-loading">cargando foto...</div>`;
+    return `<div class="prop-card" data-zpurl="${esc(zpUrl||'')}" data-photokey="${esc(photoKey||'')}">
+      <div class="prop-thumb" onclick="${zpUrl?`window.open('${zpUrl}','_blank')`:''}">
+        ${thumbHtml}
+        <span class="prop-op-badge ${opBadge}">${esc(prop['Operación']||'')}</span>
       </div>
-      <div class="prop-meta">${esc(prop['Codigo']||'')}${details?' · '+esc(details):''}</div>
-      <div class="prop-tags">
-        <span class="prop-tag ${opTag}">${esc(prop['Operación']||'')}</span>
-        <span class="prop-tag ${tagClass(prop['Tipo Propiedad'])}">${esc(prop['Tipo Propiedad']||'')}</span>
-        ${prop['Estado Inmueble']?`<span class="prop-tag" style="background:var(--bg3);color:var(--gray)">${esc(prop['Estado Inmueble'])}</span>`:''}
-      </div>
-      <div class="prop-actions">
-        ${zpUrl?`<a href="${zpUrl}" target="_blank" class="btn btn-ghost btn-sm">🔍 Ver fotos</a>`:''}
-        <a href="https://wa.me/${WA}?text=${waMsg}" target="_blank" class="btn btn-wa btn-sm">💬 Consultar</a>
+      <div class="prop-card-body">
+        <div class="prop-card-top">
+          <span class="prop-card-dir">${esc(prop['Dirección']||'')} · ${esc(prop['Ubicación']||'')}</span>
+          <span style="font-weight:700;font-size:14px;color:var(--red);flex-shrink:0">${esc(prop['Precio']||'Consultar')}</span>
+        </div>
+        <div class="prop-meta">${esc(prop['Codigo']||'')}${details?' · '+esc(details):''}</div>
+        <div class="prop-tags">
+          <span class="prop-tag ${opTag}">${esc(prop['Operación']||'')}</span>
+          <span class="prop-tag ${tagClass(prop['Tipo Propiedad'])}">${esc(prop['Tipo Propiedad']||'')}</span>
+          ${prop['Estado Inmueble']?`<span class="prop-tag" style="background:var(--bg3);color:var(--gray)">${esc(prop['Estado Inmueble'])}</span>`:''}
+        </div>
+        <div class="prop-actions">
+          ${zpUrl?`<a href="${zpUrl}" target="_blank" class="btn btn-ghost btn-sm">🔍 Ver fotos</a>`:''}
+          <a href="https://wa.me/${WA}?text=${waMsg}" target="_blank" class="btn btn-wa btn-sm">💬 Consultar</a>
+        </div>
       </div>
     </div>`;
   }).join('');
+
+  // Cargar fotos faltantes con lazy loading
+  loadMissingPhotos();
 }
 
 function updateChips() {
