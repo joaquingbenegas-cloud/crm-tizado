@@ -1018,7 +1018,7 @@ function generateAI(id, type) {
     ? '\nNotas previas: ' + [...c.notes].slice(-3).map(n => `[${n.date}] ${n.text}`).join(' | ')
     : '';
 
-  const zpUrl = c.linkedProp ? findZonaPropUrl(c.linkedProp) : null;
+  const zpUrl = c.linkedProp ? (c.linkedProp.zpUrl || null) : null;
 
   const propInfo = c.linkedProp
     ? `\nPropiedad a presentar: ${c.linkedProp.tipo} en ${c.linkedProp.operacion} — ${c.linkedProp.direccion}, ${c.linkedProp.ubicacion} — ${c.linkedProp.precio}${c.linkedProp.superficie ? ` — ${c.linkedProp.superficie} m²` : ''}${c.linkedProp.ambientes ? ` — ${c.linkedProp.ambientes} ambientes` : ''}${zpUrl ? `\nLink de la propiedad: ${zpUrl}` : ''}`
@@ -1131,41 +1131,107 @@ function showTab(tab) {
   if (isProps && properties.length === 0) fetchProperties();
 }
 
-// ─── PROPIEDADES ─────────────────────────────────────────────────────────────
-function parseCSV(text) {
-  const lines = text.trim().split('\n');
-  const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
-  return lines.slice(1).map(line => {
-    // handle quoted fields with commas inside
-    const cols = [];
-    let cur = '', inQ = false;
-    for (let i = 0; i < line.length; i++) {
-      const ch = line[i];
-      if (ch === '"') { inQ = !inQ; }
-      else if (ch === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
-      else { cur += ch; }
-    }
-    cols.push(cur.trim());
-    const obj = {};
-    headers.forEach((h, i) => obj[h] = (cols[i] || '').replace(/^"|"$/g, '').trim());
-    return obj;
-  }).filter(r => r['Codigo'] && r['Codigo'] !== 'Codigo');
+// ─── PROPIEDADES — directo desde ZonaProp ────────────────────────────────────
+const ZP_AGENCY = 'https://www.zonaprop.com.ar/inmobiliarias/tizado_17635184-inmuebles-orden-precio-ascendente';
+
+async function fetchViaProxy(url) {
+  const proxies = [
+    async u => { const r = await fetch(`https://corsproxy.io/?url=${encodeURIComponent(u)}`, { signal: AbortSignal.timeout(12000) }); return r.ok ? r.text() : null; },
+    async u => { const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(u)}`, { signal: AbortSignal.timeout(12000) }); if (!r.ok) return null; const d = await r.json(); return d.contents || null; }
+  ];
+  for (const p of proxies) { try { const h = await p(url); if (h) return h; } catch(e) {} }
+  return null;
+}
+
+// Busca recursivamente un array de postings en el árbol JSON
+function findPostings(obj, depth = 0) {
+  if (depth > 8 || !obj || typeof obj !== 'object') return null;
+  if (Array.isArray(obj)) {
+    if (obj.length > 0 && (obj[0]?.listing?.id || obj[0]?.priceOperationTypes)) return obj;
+    for (const item of obj) { const r = findPostings(item, depth + 1); if (r) return r; }
+    return null;
+  }
+  for (const key of Object.keys(obj)) {
+    const r = findPostings(obj[key], depth + 1);
+    if (r) return r;
+  }
+  return null;
+}
+
+function mapPosting(raw) {
+  try {
+    const p = raw.listing || raw;
+
+    // Precio y operación
+    const priceOp = p.priceOperationTypes?.[0] || {};
+    const price = priceOp.prices?.[0] || {};
+    const moneda = price.currency === 'USD' ? 'U$S' : (price.currency || '$');
+    const num = price.amount;
+    const priceText = num ? `${moneda} ${Number(num).toLocaleString('es-AR')}` : '';
+    const op = (priceOp.operationType || '').toLowerCase().includes('alquiler') ? 'Alquiler' : 'Venta';
+
+    // Tipo
+    const tipo = p.realEstateType?.name || '';
+
+    // Ubicación
+    const loc = p.postingLocation || {};
+    const addr = loc.address?.name || p.title || '';
+    const ub = [loc.neighbourhood?.name, loc.city?.name, loc.state?.name].filter(Boolean).join(', ');
+
+    // Features clave
+    const feat = {};
+    (p.mainFeatures || p.features || []).forEach(f => { feat[f.key] = f.value; });
+    const amb  = feat.ambientes  || feat.rooms     || p.rooms     || '';
+    const dorm = feat.dormitorios|| feat.bedrooms  || p.bedrooms  || '';
+    const ban  = feat.banos      || feat.bathrooms || p.bathrooms || '';
+    const coch = feat.cocheras   || feat.garages   || p.garages   || '';
+    const sup  = feat.superficieCubierta || feat.totalArea || feat.coveredArea || p.coveredArea || p.totalArea || '';
+    const est  = p.propertyCondition || feat.estado || '';
+
+    // Foto y URL
+    const foto = p.mainPicture || p.pictures?.[0]?.url || p.thumbnail || '';
+    const zpUrl = p.url ? (p.url.startsWith('http') ? p.url : 'https://www.zonaprop.com.ar' + p.url) : '';
+    const id = String(p.id || p.postingId || '');
+
+    return { 'Dirección': addr, 'Ubicación': ub, 'Precio': priceText, '_precioNum': num || 0,
+      'Operación': op, 'Tipo Propiedad': tipo, 'Estado Inmueble': est,
+      'Ambientes': String(amb), 'Dormitorios': String(dorm), 'Baños': String(ban),
+      'Cocheras': String(coch), 'Superficie': String(sup),
+      'Codigo': id, '_foto': foto, '_zpUrl': zpUrl };
+  } catch(e) { return null; }
 }
 
 async function fetchProperties() {
-  document.getElementById('propsGrid').innerHTML = '<div class="props-loading">Cargando propiedades...</div>';
-  try {
-    const url = `https://docs.google.com/spreadsheets/d/${PROPS_SHEET_ID}/export?format=csv`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('No se pudo acceder al Sheet');
-    const text = await res.text();
-    properties = parseCSV(text);
-    renderProps();
-    toast(`${properties.length} propiedades cargadas ✓`, 'success');
-  } catch (e) {
-    document.getElementById('propsGrid').innerHTML = `<div class="props-loading" style="color:var(--red)">Error al cargar: ${e.message}</div>`;
+  const grid = document.getElementById('propsGrid');
+  grid.innerHTML = '<div class="props-loading">Cargando desde ZonaProp...</div>';
+  properties = [];
+  let page = 1;
+  while (page <= 5) {
+    const url = page === 1 ? ZP_AGENCY + '.html' : `${ZP_AGENCY}-pagina-${page}.html`;
+    try {
+      const html = await fetchViaProxy(url);
+      if (!html) break;
+      // Extraer __NEXT_DATA__
+      const m = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
+      if (!m) break;
+      const data = JSON.parse(m[1]);
+      const postings = findPostings(data);
+      if (!postings || postings.length === 0) break;
+      const mapped = postings.map(mapPosting).filter(Boolean);
+      if (mapped.length === 0) break;
+      properties = properties.concat(mapped);
+      document.getElementById('propsCount').textContent = `${properties.length} propiedades`;
+      renderProps();
+      page++;
+    } catch(e) { console.error('ZP page', page, e); break; }
   }
+  if (properties.length === 0) {
+    grid.innerHTML = '<div class="props-loading" style="color:var(--red)">No se pudo cargar ZonaProp. Intentá de nuevo.</div>';
+    return;
+  }
+  toast(`${properties.length} propiedades cargadas desde ZonaProp ✓`, 'success');
 }
+
 
 function setPropFilter(el) {
   document.querySelectorAll('[data-pf]').forEach(c => c.classList.remove('active'));
@@ -1379,16 +1445,15 @@ function renderProps(forModal = false) {
       p['Cocheras'] ? p['Cocheras'] + ' coch.' : '',
       p['Superficie'] ? p['Superficie'] + ' m²' : ''
     ].filter(Boolean).join(' · ');
-    const zpUrl = findZonaPropUrl(p);
+    const zpUrl = p._zpUrl || '';
+    const foto = p._foto || '';
     const opBadge = (p['Operación']||'').includes('Alquiler') ? 'badge-alquiler-p' : 'badge-venta-p';
-    const photoKey = zpUrl ? 'zpphoto_' + btoa(zpUrl).slice(-20) : null;
-    const cachedPhoto = photoKey ? localStorage.getItem(photoKey) : null;
-    const thumbInner = cachedPhoto
-      ? `<img src="${cachedPhoto}" alt="foto" loading="lazy">`
-      : `<div class="thumb-ph">cargando foto...</div>`;
+    const thumbInner = foto
+      ? `<img src="${esc(foto)}" alt="foto" loading="lazy" onerror="this.style.display='none'">`
+      : `<div class="thumb-ph">🏠</div>`;
     return `
-    <div class="prop-card" data-zpurl="${esc(zpUrl||'')}" data-photokey="${esc(photoKey||'')}">
-      <div class="prop-thumb" onclick="${zpUrl?`verEnZonaProp(${JSON.stringify(p).replace(/"/g,"'")})`:''}">${thumbInner}<span class="prop-op-badge ${opBadge}">${esc(p['Operación']||'')}</span></div>
+    <div class="prop-card">
+      <div class="prop-thumb" onclick="${zpUrl ? `window.open('${zpUrl}','_blank')` : ''}" style="${zpUrl?'cursor:pointer':''}">${thumbInner}<span class="prop-op-badge ${opBadge}">${esc(p['Operación']||'')}</span></div>
       <div class="prop-card-body">
         <div class="prop-card-top">
           <span class="prop-card-dir">${esc(p['Dirección']||'')} · ${esc(p['Ubicación']||'')}</span>
@@ -1401,7 +1466,7 @@ function renderProps(forModal = false) {
           ${p['Estado Inmueble'] ? `<span class="prop-tag" style="background:var(--bg3);color:var(--gray)">${esc(p['Estado Inmueble'])}</span>` : ''}
         </div>
         <div class="prop-actions">
-          <button class="btn btn-ghost btn-sm" onclick="verEnZonaProp(${JSON.stringify(p).replace(/"/g,'&quot;')})">🔍 Ver fotos</button>
+          ${zpUrl ? `<button class="btn btn-ghost btn-sm" onclick="window.open('${zpUrl}','_blank')">🔍 Ver en ZonaProp</button>` : ''}
           <button class="btn btn-ghost btn-sm" onclick="shareProperty(${JSON.stringify(p).replace(/"/g,'&quot;')})">📤 Compartir WA</button>
           <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="openLinkModal(${JSON.stringify(p['Codigo']).replace(/"/g,'&quot;')})">🔗 Vincular</button>
         </div>
@@ -1409,10 +1474,10 @@ function renderProps(forModal = false) {
     </div>`;
   }).join('');
 
-  loadMissingPhotosCRM();
 }
 
-async function fetchPhotoCRM(zpUrl, photoKey) {
+
+async function _fetchPhotoCRM_DEPRECATED(zpUrl, photoKey) {
   const proxies = [
     async (u) => {
       const r = await fetch(`https://corsproxy.io/?url=${encodeURIComponent(u)}`, { signal: AbortSignal.timeout(9000) });
@@ -1437,7 +1502,7 @@ async function fetchPhotoCRM(zpUrl, photoKey) {
   return null;
 }
 
-function loadMissingPhotosCRM() {
+function _loadMissingPhotosCRM_DEPRECATED() {
   const cards = document.querySelectorAll('#propsGrid .prop-card[data-zpurl]');
   const observer = new IntersectionObserver(async (entries) => {
     for (const entry of entries) {
@@ -1447,7 +1512,7 @@ function loadMissingPhotosCRM() {
       const photoKey = card.dataset.photokey;
       if (!zpUrl || !photoKey || card.querySelector('img')) continue;
       observer.unobserve(card);
-      const url = await fetchPhotoCRM(zpUrl, photoKey);
+      const url = await _fetchPhotoCRM_DEPRECATED(zpUrl, photoKey);
       const ph = card.querySelector('.thumb-ph');
       if (url && ph) { const img = document.createElement('img'); img.src = url; img.alt = 'foto'; ph.replaceWith(img); }
       else if (ph) ph.textContent = '🏠';
@@ -1511,7 +1576,7 @@ const ZP_URLS = [
   'https://www.zonaprop.com.ar/propiedades/clasificado/veclcain-casa-en-venta-en-bella-vista-san-miguel-g.-b.-a.-54911632.html'
 ];
 
-function findZonaPropUrl(p) {
+function _findZonaPropUrl_DEPRECATED(p) {
   // Si el Sheet ya tiene URL exacta, usarla
   if (p['URL ZonaProp'] && p['URL ZonaProp'].startsWith('http')) return p['URL ZonaProp'];
 
@@ -1548,12 +1613,8 @@ function findZonaPropUrl(p) {
 }
 
 function verEnZonaProp(p) {
-  const url = findZonaPropUrl(p);
-  if (url) {
-    window.open(url, '_blank');
-  } else {
-    window.open('https://www.zonaprop.com.ar/inmobiliarias/tizado_17635184-inmuebles-orden-precio-ascendente.html', '_blank');
-  }
+  const url = p._zpUrl || p.zpUrl || 'https://www.zonaprop.com.ar/inmobiliarias/tizado_17635184-inmuebles-orden-precio-ascendente.html';
+  window.open(url, '_blank');
 }
 
 function shareProperty(p) {
@@ -1596,7 +1657,9 @@ function linkPropToContact(codigo) {
     superficie: p['Superficie'],
     ambientes: p['Ambientes'],
     dormitorios: p['Dormitorios'],
-    banos: p['Baños']
+    banos: p['Baños'],
+    zpUrl: p._zpUrl || '',
+    foto: p._foto || ''
   };
   save();
   document.getElementById('linkPropModal').classList.remove('open');
