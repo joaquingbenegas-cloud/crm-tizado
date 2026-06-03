@@ -304,6 +304,16 @@
   /* PROPIEDADES PANEL */
   .props-panel { display: none; flex: 1; flex-direction: column; overflow: hidden; }
   .props-panel.visible { display: flex; }
+
+  /* SHARE BANNER */
+  .share-banner {
+    display: none; background: #fef3c7; border-bottom: 1px solid #fde68a;
+    padding: 10px 20px; align-items: center; gap: 12px; font-size: 13px;
+  }
+  .share-banner.visible { display: flex; }
+  .share-banner span { flex: 1; color: #92400e; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .share-banner .share-url { color: #1d4ed8; font-size: 12px; }
+  .btn-copy { background: var(--red); color: #fff; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; white-space: nowrap; }
   .props-toolbar {
     padding: 16px 20px; border-bottom: 1px solid var(--border);
     display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
@@ -436,7 +446,7 @@
 <!-- PANEL PROPIEDADES -->
 <div class="props-panel" id="propsPanel">
   <div class="props-toolbar">
-    <div class="search-box" style="max-width:280px">
+    <div class="search-box" style="max-width:240px">
       <span class="search-icon">⌕</span>
       <input type="text" id="propSearch" placeholder="Buscar propiedad..." oninput="renderProps()">
     </div>
@@ -446,9 +456,19 @@
     <button class="filter-chip" data-pf="Casa" onclick="setPropFilter(this)">Casas</button>
     <button class="filter-chip" data-pf="Terreno" onclick="setPropFilter(this)">Terrenos</button>
     <button class="filter-chip" data-pf="Departamento" onclick="setPropFilter(this)">Deptos</button>
+    <div style="width:1px;height:20px;background:var(--border);margin:0 2px"></div>
+    <button class="filter-chip" data-barrio="golf" onclick="setBarrioFilter(this)">⛳ Golf</button>
+    <button class="filter-chip" data-barrio="village" onclick="setBarrioFilter(this)">🏘 Village</button>
+    <button class="filter-chip" data-barrio="pueblo-nuevo" onclick="setBarrioFilter(this)">🏡 Pueblo Nuevo</button>
+    <button class="filter-chip" data-barrio="candelaria" onclick="setBarrioFilter(this)">🌿 La Candelaria</button>
     <span class="props-count" id="propsCount"></span>
     <button class="btn btn-ghost btn-sm" onclick="fetchProperties()">↺ Actualizar</button>
-    <a href="https://www.zonaprop.com.ar/inmobiliarias/tizado_17635184-inmuebles-orden-precio-ascendente.html" target="_blank" class="btn btn-ghost btn-sm">🌐 Ver todas en ZonaProp</a>
+    <a href="https://www.zonaprop.com.ar/inmobiliarias/tizado_17635184-inmuebles-orden-precio-ascendente.html" target="_blank" class="btn btn-ghost btn-sm">🌐 ZonaProp</a>
+  </div>
+  <div class="share-banner" id="shareBanner">
+    🔗 <strong>Link de esta vista:</strong>
+    <span class="share-url" id="shareUrl"></span>
+    <button class="btn-copy" onclick="copyShareLink()">Copiar link</button>
   </div>
   <div class="props-grid" id="propsGrid">
     <div class="props-loading">Cargando propiedades...</div>
@@ -525,6 +545,7 @@ const TODAY = new Date().toISOString().split('T')[0];
 
 let properties = [];
 let propFilter = 'all';
+let propBarrio = '';
 
 let contacts = [];
 let selectedId = null;
@@ -1048,7 +1069,60 @@ function setPropFilter(el) {
   document.querySelectorAll('[data-pf]').forEach(c => c.classList.remove('active'));
   el.classList.add('active');
   propFilter = el.dataset.pf;
+  updateShareBanner();
   renderProps();
+}
+
+function setBarrioFilter(el) {
+  const already = el.classList.contains('active');
+  document.querySelectorAll('[data-barrio]').forEach(c => c.classList.remove('active'));
+  if (already) {
+    propBarrio = '';
+  } else {
+    el.classList.add('active');
+    propBarrio = el.dataset.barrio;
+  }
+  updateShareBanner();
+  renderProps();
+}
+
+function updateShareBanner() {
+  const banner = document.getElementById('shareBanner');
+  const urlEl = document.getElementById('shareUrl');
+  if (!banner) return;
+  const params = new URLSearchParams();
+  if (propFilter !== 'all') params.set('op', propFilter);
+  if (propBarrio) params.set('barrio', propBarrio);
+  const hasFilter = params.toString().length > 0;
+  const url = location.origin + location.pathname + (hasFilter ? '?' + params.toString() : '');
+  banner.classList.toggle('visible', hasFilter);
+  if (urlEl) urlEl.textContent = url;
+}
+
+function copyShareLink() {
+  const params = new URLSearchParams();
+  if (propFilter !== 'all') params.set('op', propFilter);
+  if (propBarrio) params.set('barrio', propBarrio);
+  const url = location.origin + location.pathname + (params.toString() ? '?' + params.toString() : '');
+  navigator.clipboard.writeText(url).then(() => toast('Link copiado ✓', 'success'));
+}
+
+function applyUrlParams() {
+  const p = new URLSearchParams(location.search);
+  const op = p.get('op');
+  const barrio = p.get('barrio');
+  if (op) {
+    const btn = document.querySelector(`[data-pf="${op}"]`);
+    if (btn) { document.querySelectorAll('[data-pf]').forEach(c => c.classList.remove('active')); btn.classList.add('active'); propFilter = op; }
+  }
+  if (barrio) {
+    const btn = document.querySelector(`[data-barrio="${barrio}"]`);
+    if (btn) { btn.classList.add('active'); propBarrio = barrio; }
+  }
+  if (op || barrio) {
+    showTab('propiedades');
+    updateShareBanner();
+  }
 }
 
 function propTagClass(tipo) {
@@ -1078,7 +1152,17 @@ function renderProps(forModal = false) {
       else if (propFilter === 'Alquiler') matchF = (p['Operación']||'').includes('Alquiler');
       else matchF = (p['Tipo Propiedad']||'').includes(propFilter);
     }
-    return matchQ && matchF;
+    let matchB = true;
+    if (propBarrio && !forModal) {
+      const addr = ((p['Dirección']||'') + ' ' + (p['Ubicación']||'')).toLowerCase()
+        .normalize('NFD').replace(/[̀-ͯ]/g,'');
+      const b = propBarrio;
+      if (b === 'golf') matchB = addr.includes('golf');
+      else if (b === 'village') matchB = addr.includes('village');
+      else if (b === 'pueblo-nuevo') matchB = addr.includes('pueblo nuevo') || addr.includes('pueblo-nuevo');
+      else if (b === 'candelaria') matchB = addr.includes('candelaria');
+    }
+    return matchQ && matchF && matchB;
   });
 
   if (forModal) {
@@ -1385,6 +1469,7 @@ function cancelPin() {
 
 // ─── START ───────────────────────────────────────────────────────────────────
 init();
+applyUrlParams();
 // On load: if unlocked show contacts, else show propiedades
 if (isUnlocked()) {
   document.querySelector('.main').style.display = 'flex';
