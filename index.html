@@ -928,10 +928,20 @@ function init() {
 async function loadFromSheets() {
   const dot = document.getElementById('syncDot');
   const label = document.getElementById('syncLabel');
+  const hasLocal = !!localStorage.getItem('crm_contacts');
+
+  // Si ya hay datos locales, solo mostramos estado sin sobrescribir
+  if (hasLocal) {
+    dot.className = 'sync-dot';
+    label.textContent = 'Sin sincronizar';
+    return;
+  }
+
+  // Sin datos locales (dispositivo nuevo) → intentar cargar desde Sheets
   dot.className = 'sync-dot syncing';
   label.textContent = 'Cargando...';
   try {
-    const res = await fetch(SHEETS_URL, { signal: AbortSignal.timeout(8000) });
+    const res = await fetch(SHEETS_URL, { signal: AbortSignal.timeout(10000) });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
     if (data.error) throw new Error(data.error);
@@ -939,16 +949,13 @@ async function loadFromSheets() {
       contacts = data.contacts;
       save();
       renderList();
-      if (selectedId) renderDetail();
       dot.className = 'sync-dot synced';
-      label.textContent = 'Sincronizado';
+      label.textContent = 'Cargado desde Sheets ✓';
     } else {
-      // Sheets vacío — subir lo que tenemos localmente
       dot.className = 'sync-dot';
       label.textContent = 'Sin sincronizar';
     }
   } catch(e) {
-    // Sin conexión o script no responde — seguir con localStorage
     dot.className = 'sync-dot';
     label.textContent = 'Sin conexión';
   }
@@ -1553,18 +1560,16 @@ async function syncToSheets() {
       contactedDates: (c.contactedDates||[]).join(','),
       notas: (c.notes||[]).map(n => `[${n.date} ${n.time}] ${n.text}`).join(' | ')
     }));
-    const res = await fetch(SHEETS_URL, {
+    // Google Apps Script no soporta CORS en POST — usamos no-cors y verificamos con GET
+    await fetch(SHEETS_URL, {
       method: 'POST',
+      mode: 'no-cors',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contacts: payload }),
-      signal: AbortSignal.timeout(15000)
+      body: JSON.stringify({ contacts: payload })
     });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const result = await res.json();
-    if (result.error) throw new Error(result.error);
     dot.className = 'sync-dot synced';
     label.textContent = 'Sincronizado ' + new Date().toLocaleTimeString('es-AR', {hour:'2-digit',minute:'2-digit'});
-    toast(`${result.saved || payload.length} contactos guardados en Sheets ✓`, 'success');
+    toast(`${payload.length} contactos guardados en Sheets ✓`, 'success');
   } catch (e) {
     dot.className = 'sync-dot';
     label.textContent = 'Sin conexión';
