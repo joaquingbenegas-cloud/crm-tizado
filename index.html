@@ -408,6 +408,74 @@
     .sidebar.mobile-hide { display: none; }
     .props-grid { grid-template-columns: 1fr; }
   }
+
+  /* OVERDUE BADGE */
+  .tab-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--red); color: #fff; border-radius: 50%;
+    width: 16px; height: 16px; font-size: 10px; font-weight: 700;
+    margin-left: 5px; vertical-align: middle;
+  }
+
+  /* MATCHING SECTION */
+  .match-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .match-card {
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 6px;
+    padding: 10px 12px; cursor: pointer; transition: border-color 0.15s;
+  }
+  .match-card:hover { border-color: var(--red); }
+  .match-card-dir { font-weight: 600; font-size: 12px; margin-bottom: 3px; }
+  .match-card-meta { font-size: 11px; color: var(--gray); }
+  .match-card-price { font-size: 12px; font-weight: 700; color: var(--red); margin-top: 4px; }
+  .match-empty { color: var(--gray2); font-size: 13px; }
+
+  /* STATS PANEL */
+  .stats-panel { display: none; flex: 1; overflow-y: auto; padding: 28px; background: var(--bg); }
+  .stats-panel.visible { display: block; }
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; margin-bottom: 24px; }
+  .stat-card {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 18px 20px;
+  }
+  .stat-card-label { font-size: 11px; color: var(--gray); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px; }
+  .stat-card-num { font-family: 'Playfair Display', serif; font-size: 32px; font-weight: 700; line-height: 1; }
+  .stat-card-sub { font-size: 11px; color: var(--gray2); margin-top: 4px; }
+  .stat-card.red .stat-card-num { color: var(--red); }
+  .stat-card.green .stat-card-num { color: var(--green); }
+  .stat-card.yellow .stat-card-num { color: var(--yellow); }
+  .stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .stats-section { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+  .stats-section h3 { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--gray); margin-bottom: 14px; }
+  .stats-bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .stats-bar-label { width: 90px; font-size: 12px; flex-shrink: 0; }
+  .stats-bar-track { flex: 1; height: 8px; background: var(--bg3); border-radius: 4px; overflow: hidden; }
+  .stats-bar-fill { height: 100%; border-radius: 4px; background: var(--red); transition: width 0.4s; }
+  .stats-bar-val { font-size: 12px; color: var(--gray); width: 28px; text-align: right; flex-shrink: 0; }
+  .upcoming-list { display: flex; flex-direction: column; gap: 8px; }
+  .upcoming-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px; background: var(--bg3); border-radius: 6px; font-size: 12px;
+  }
+  .upcoming-item.overdue { background: var(--red-dim); border: 1px solid rgba(200,16,46,0.2); }
+  .upcoming-date { color: var(--gray2); font-size: 11px; flex-shrink: 0; }
+  .upcoming-name { flex: 1; font-weight: 500; }
+  .upcoming-action { color: var(--gray); font-size: 11px; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* ALQUILERES MODAL TABLE */
+  .alq-list { display: flex; flex-direction: column; gap: 8px; }
+  .alq-item {
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 6px;
+    padding: 10px 14px; display: flex; align-items: center; gap: 10px;
+  }
+  .alq-info { flex: 1; }
+  .alq-dir { font-weight: 600; font-size: 13px; }
+  .alq-meta { font-size: 11px; color: var(--gray); margin-top: 2px; }
+  .alq-empty { color: var(--gray2); text-align: center; padding: 20px; font-size: 13px; }
+
+  @media (max-width: 768px) {
+    .stats-row { grid-template-columns: 1fr; }
+    .match-grid { grid-template-columns: 1fr; }
+  }
 </style>
 </head>
 <body>
@@ -433,6 +501,7 @@
 <div class="tab-nav">
   <button class="tab-btn active" id="tab-contactos" onclick="tryShowTab('contactos')">🔒 Contactos</button>
   <button class="tab-btn" id="tab-propiedades" onclick="tryShowTab('propiedades')">🏠 Propiedades</button>
+  <button class="tab-btn locked" id="tab-stats" onclick="tryShowTab('stats')">📊 Stats</button>
 </div>
 
 <div class="main">
@@ -451,6 +520,7 @@
         <button class="filter-chip" data-filter="ALTA" onclick="setFilter(this)">🔴 Alta</button>
         <button class="filter-chip" data-filter="today" onclick="setFilter(this)">Hoy</button>
         <button class="filter-chip" data-filter="notable" onclick="setFilter(this)">★ Destacados</button>
+        <button class="filter-chip" data-filter="overdue" onclick="setFilter(this)" id="chipOverdue">🔔 Pendientes</button>
       </div>
       <div class="sort-row">
         <label>Ordenar:</label>
@@ -507,6 +577,7 @@
       <option value="mayor-precio">Mayor precio</option>
     </select>
     <button class="btn btn-ghost btn-sm" onclick="fetchProperties()" title="Actualizar desde ZonaProp">↺</button>
+    <button class="btn btn-ghost btn-sm" onclick="tryOpenAlquileres()" title="Gestionar alquileres manuales">🏘 Alquileres</button>
     <a href="https://www.zonaprop.com.ar/inmobiliarias/tizado_17635184-inmuebles-orden-precio-ascendente.html" target="_blank" class="btn btn-ghost btn-sm">🌐 ZonaProp</a>
   </div>
 
@@ -640,6 +711,111 @@
   </div>
 </div>
 
+<!-- STATS PANEL -->
+<div class="stats-panel" id="statsPanel">
+  <div style="max-width:900px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <h2 style="font-family:'Playfair Display',serif;font-size:22px">Dashboard</h2>
+      <span style="color:var(--gray);font-size:12px" id="statsDate"></span>
+    </div>
+    <div class="stats-grid" id="statsCards"></div>
+    <div class="stats-row">
+      <div class="stats-section">
+        <h3>Por operación</h3>
+        <div id="statsBarOp"></div>
+      </div>
+      <div class="stats-section">
+        <h3>Por urgencia</h3>
+        <div id="statsBarUrg"></div>
+      </div>
+    </div>
+    <div class="stats-section" style="margin-top:16px">
+      <h3>Próximos seguimientos</h3>
+      <div class="upcoming-list" id="statsUpcoming"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ALQUILERES -->
+<div class="modal-overlay" id="alquileresModal">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-header">
+      <h2>🏘 Mis Alquileres</h2>
+      <button class="modal-close" onclick="document.getElementById('alquileresModal').classList.remove('open')">×</button>
+    </div>
+    <div class="modal-body">
+      <!-- Form nuevo alquiler -->
+      <div id="alqForm" style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px">
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--gray);margin-bottom:12px" id="alqFormTitle">Nuevo alquiler</div>
+        <input type="hidden" id="alq_editId">
+        <div class="field-grid" style="grid-template-columns:1fr 1fr;gap:10px">
+          <div class="field" style="grid-column:1/-1">
+            <label>Dirección *</label>
+            <input type="text" id="alq_dir" placeholder="Ej: Moreno 1234">
+          </div>
+          <div class="field">
+            <label>Ubicación</label>
+            <input type="text" id="alq_ub" placeholder="Bella Vista, San Miguel" value="Bella Vista, San Miguel">
+          </div>
+          <div class="field">
+            <label>Tipo</label>
+            <select id="alq_tipo">
+              <option value="Casa">Casa</option>
+              <option value="Departamento">Departamento</option>
+              <option value="Local">Local</option>
+              <option value="Terreno">Terreno</option>
+              <option value="Otro">Otro</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Precio ($ o U$S)</label>
+            <input type="text" id="alq_precio" placeholder="Ej: $450.000">
+          </div>
+          <div class="field">
+            <label>Superficie (m²)</label>
+            <input type="number" id="alq_sup" placeholder="150">
+          </div>
+          <div class="field">
+            <label>Ambientes</label>
+            <input type="number" id="alq_amb" placeholder="3" min="0" max="20">
+          </div>
+          <div class="field">
+            <label>Dormitorios</label>
+            <input type="number" id="alq_dorm" placeholder="2" min="0" max="15">
+          </div>
+          <div class="field">
+            <label>Baños</label>
+            <input type="number" id="alq_ban" placeholder="1" min="0" max="10">
+          </div>
+          <div class="field">
+            <label>Cocheras</label>
+            <input type="number" id="alq_coch" placeholder="1" min="0" max="10">
+          </div>
+          <div class="field">
+            <label>Estado</label>
+            <select id="alq_est">
+              <option value="">Sin especificar</option>
+              <option value="Bueno">Bueno</option>
+              <option value="Muy Bueno">Muy Bueno</option>
+              <option value="Excelente">Excelente</option>
+            </select>
+          </div>
+          <div class="field" style="grid-column:1/-1">
+            <label>Descripción / Notas</label>
+            <textarea id="alq_desc" placeholder="Observaciones, características especiales..."></textarea>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end">
+          <button class="btn btn-ghost btn-sm" onclick="cancelAlqEdit()">Cancelar</button>
+          <button class="btn btn-primary btn-sm" onclick="saveAlquiler()">Guardar</button>
+        </div>
+      </div>
+      <!-- Lista de alquileres -->
+      <div id="alqList" class="alq-list"></div>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -708,6 +884,14 @@ let selectedId = null;
 let activeFilter = 'all';
 let aiMessage = '';
 
+// ─── ALQUILERES ──────────────────────────────────────────────────────────────
+let alquileres = [];
+function saveAlquileres() { localStorage.setItem('crm_alquileres', JSON.stringify(alquileres)); }
+function loadAlquileres() {
+  const s = localStorage.getItem('crm_alquileres');
+  alquileres = s ? JSON.parse(s) : [];
+}
+
 // ─── INIT ────────────────────────────────────────────────────────────────────
 function init() {
   const saved = localStorage.getItem('crm_contacts');
@@ -751,6 +935,7 @@ function renderList() {
     else if (activeFilter === 'ALTA') matchF = c.urgencia === 'ALTA';
     else if (activeFilter === 'today') matchF = c.contactedDates && c.contactedDates.includes(TODAY);
     else if (activeFilter === 'notable') matchF = !!c.notable;
+    else if (activeFilter === 'overdue') matchF = !!(c.nextAction && c.nextActionDate && c.nextActionDate <= TODAY);
     return matchQ && matchF;
   });
 
@@ -761,6 +946,9 @@ function renderList() {
   else if (sort === 'urgencia') list.sort((a,b) => (urgOrder[a.urgencia]??3) - (urgOrder[b.urgencia]??3));
 
   document.getElementById('countBadge').textContent = list.length + ' contactos';
+  // Update overdue badge on tab
+  const tabC = document.getElementById('tab-contactos');
+  if (tabC && isUnlocked()) tabC.innerHTML = '👥 Contactos' + overdueHtml();
 
   const el = document.getElementById('contactList');
   el.innerHTML = list.map(c => {
@@ -768,17 +956,20 @@ function renderList() {
     const badgeClass = c.interesEn === 'Compra' ? 'badge-compra' : c.interesEn === 'Venta' ? 'badge-venta' : c.interesEn === 'Alquiler' ? 'badge-alquiler' : 'badge-empty';
     const urgClass = c.urgencia === 'ALTA' ? 'urgency-alta' : c.urgencia === 'MEDIA' ? 'urgency-media' : c.urgencia === 'BAJA' ? 'urgency-baja' : '';
     const fmtDate = c.ultimo ? formatDate(c.ultimo) : '';
+    const isOverdue = c.nextAction && c.nextActionDate && c.nextActionDate < TODAY;
+    const isDueToday = c.nextAction && c.nextActionDate && c.nextActionDate === TODAY;
     return `<div class="contact-item${c.id===selectedId?' active':''}${c.notable?' notable':''}" onclick="selectContact('${c.id}')">
       <div class="ci-top">
         <span class="ci-name">${esc(c.nombre)}</span>
         <span class="ci-badge ${badgeClass}">${c.interesEn||'—'}</span>
+        ${isOverdue ? '<span style="color:var(--red);font-size:11px">🔔</span>' : isDueToday ? '<span style="font-size:11px">📌</span>' : ''}
       </div>
       <div class="ci-desc">${esc(c.desc||'')}</div>
       <div class="ci-bottom">
         ${urgClass ? `<div class="urgency-dot ${urgClass}"></div>` : ''}
         <span class="ci-date">${fmtDate}</span>
         ${isToday ? '<span class="contacted-today">✓ Contactado hoy</span>' : ''}
-        ${c.nextAction ? `<span class="next-action-preview">→ ${esc(c.nextAction)}</span>` : ''}
+        ${c.nextAction ? `<span class="next-action-preview">${isOverdue?'⚠️':'→'} ${esc(c.nextAction)}${c.nextActionDate?' ('+formatDate(c.nextActionDate)+')':''}</span>` : ''}
       </div>
     </div>`;
   }).join('');
@@ -934,6 +1125,9 @@ function renderDetail() {
         <button class="btn btn-ghost btn-sm" onclick="openLinkPropFromContact('${c.id}')">+ Vincular propiedad</button>
       </div>`}
     </div>
+
+    <!-- PROPIEDADES SUGERIDAS -->
+    ${renderMatchingSection(c)}
 
     <!-- IA WHATSAPP -->
     <div class="section ai-section">
@@ -1172,29 +1366,60 @@ function toast(msg, type = 'success') {
 // ─── TABS ────────────────────────────────────────────────────────────────────
 function showTab(tab) {
   const isProps = tab === 'propiedades';
+  const isStats = tab === 'stats';
+  const isContactos = tab === 'contactos';
   const btnC = document.getElementById('tab-contactos');
   const btnP = document.getElementById('tab-propiedades');
-  btnC.classList.toggle('active', !isProps);
+  const btnS = document.getElementById('tab-stats');
+  btnC.classList.toggle('active', isContactos);
   btnP.classList.toggle('active', isProps);
-  if (!isProps) {
-    btnC.textContent = '👥 Contactos';
+  if (btnS) btnS.classList.toggle('active', isStats);
+  if (isContactos) {
+    btnC.innerHTML = '👥 Contactos' + overdueHtml();
     btnC.classList.remove('locked');
   }
-  document.querySelector('.main').style.display = isProps ? 'none' : (isUnlocked() ? 'flex' : 'none');
+  document.querySelector('.main').style.display = isContactos ? (isUnlocked() ? 'flex' : 'none') : 'none';
   document.getElementById('propsPanel').classList.toggle('visible', isProps);
+  document.getElementById('statsPanel').classList.toggle('visible', isStats);
   if (isProps && properties.length === 0) fetchProperties();
+  if (isStats) renderStats();
+}
+
+function overdueHtml() {
+  const n = contacts.filter(c => c.nextActionDate && c.nextActionDate < TODAY && c.nextAction).length;
+  return n > 0 ? `<span class="tab-badge">${n}</span>` : '';
+}
+
+function tryShowTab(tab) {
+  if (tab === 'propiedades') { showTab('propiedades'); return; }
+  if (isUnlocked()) { showTab(tab); return; }
+  document.getElementById('pinOverlay').classList.add('visible');
+  document.getElementById('pinInput').value = '';
+  document.getElementById('pinError').textContent = '';
+  document.getElementById('pinInput').focus();
 }
 
 // ─── PROPIEDADES — Google Sheet (fuente confiable) ───────────────────────────
 function fetchProperties() {
+  loadAlquileres();
   // Normalizar PROPS_DATA al formato interno
-  properties = PROPS_DATA.map(p => ({
+  const zpProps = PROPS_DATA.map(p => ({
     'Dirección': p.dir, 'Ubicación': p.ub, 'Precio': p.precio,
     'Operación': p.op, 'Tipo Propiedad': p.tipo, 'Estado Inmueble': '',
     'Ambientes': p.amb || '', 'Dormitorios': p.dorm || '', 'Baños': p.ban || '', 'Cocheras': p.coch || '', 'Superficie': p.sup || '',
     'Codigo': p.id,
-    '_zpUrl': p.zpUrl, '_precioNum': p.num, '_foto': p.foto, '_fecha': parseInt(p.id) || 0
+    '_zpUrl': p.zpUrl, '_precioNum': p.num, '_foto': p.foto, '_fecha': parseInt(p.id) || 0,
+    '_manual': false
   }));
+  // Agregar alquileres manuales
+  const alqProps = alquileres.map(a => ({
+    'Dirección': a.dir, 'Ubicación': a.ub, 'Precio': a.precio,
+    'Operación': 'Alquiler', 'Tipo Propiedad': a.tipo, 'Estado Inmueble': a.est || '',
+    'Ambientes': a.amb || '', 'Dormitorios': a.dorm || '', 'Baños': a.ban || '', 'Cocheras': a.coch || '', 'Superficie': a.sup || '',
+    'Codigo': a.id, '_zpUrl': '', '_precioNum': a.num || 0, '_foto': '', '_fecha': 0, '_manual': true,
+    '_desc': a.desc || ''
+  }));
+  properties = [...alqProps, ...zpProps];
   renderProps();
   toast(`${properties.length} propiedades cargadas ✓`, 'success');
 }
@@ -1702,6 +1927,252 @@ function unlinkProp(contactId) {
   toast('Propiedad desvinculada', 'success');
 }
 
+// ─── MATCHING SECTION HTML ───────────────────────────────────────────────────
+function renderMatchingSection(c) {
+  if (!c.interesEn || c.interesEn === 'Venta') return '';
+  const matches = getMatchingProperties(c);
+  if (!matches.length) {
+    return `<div class="section">
+      <div class="section-title">Propiedades Sugeridas</div>
+      <span class="match-empty">Sin coincidencias por ahora${!properties.length ? ' — abrí la pestaña Propiedades primero' : ''}.</span>
+    </div>`;
+  }
+  const cards = matches.map(p => {
+    const details = [
+      p['Ambientes'] ? p['Ambientes']+' amb.' : '',
+      p['Superficie'] ? p['Superficie']+' m²' : ''
+    ].filter(Boolean).join(' · ');
+    const zpUrl = p._zpUrl || '';
+    return `<div class="match-card" onclick="${zpUrl ? `window.open('${zpUrl}','_blank')` : `openLinkPropFromContact('${c.id}')`}">
+      <div class="match-card-dir">${esc(p['Dirección']||'')} · ${esc(p['Tipo Propiedad']||'')}</div>
+      <div class="match-card-meta">${esc(p['Ubicación']||'')}${details ? ' · '+details : ''}</div>
+      <div class="match-card-price">${esc(p['Precio']||'')}</div>
+    </div>`;
+  }).join('');
+  return `<div class="section">
+    <div class="section-title">Propiedades Sugeridas · ${c.interesEn}</div>
+    <div class="match-grid">${cards}</div>
+  </div>`;
+}
+
+// ─── ALQUILERES CRUD ────────────────────────────────────────────────────────
+function tryOpenAlquileres() {
+  if (!isUnlocked()) {
+    document.getElementById('pinOverlay').classList.add('visible');
+    document.getElementById('pinInput').value = '';
+    document.getElementById('pinError').textContent = '';
+    document.getElementById('pinInput').focus();
+    return;
+  }
+  openAlquileresModal();
+}
+
+function openAlquileresModal() {
+  loadAlquileres();
+  document.getElementById('alquileresModal').classList.add('open');
+  cancelAlqEdit();
+  renderAlqList();
+}
+
+function renderAlqList() {
+  const el = document.getElementById('alqList');
+  if (!alquileres.length) {
+    el.innerHTML = '<div class="alq-empty">Sin alquileres cargados. Usá el formulario de arriba para agregar.</div>';
+    return;
+  }
+  el.innerHTML = alquileres.map(a => `
+    <div class="alq-item">
+      <div class="alq-info">
+        <div class="alq-dir">${esc(a.dir)} · ${esc(a.ub)}</div>
+        <div class="alq-meta">${esc(a.tipo)} · ${esc(a.precio)}${a.sup ? ` · ${a.sup} m²` : ''}${a.amb ? ` · ${a.amb} amb.` : ''}${a.est ? ` · ${a.est}` : ''}</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="editAlquiler('${a.id}')">✏️</button>
+      <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="deleteAlquiler('${a.id}')">✕</button>
+    </div>`).join('');
+}
+
+function cancelAlqEdit() {
+  document.getElementById('alq_editId').value = '';
+  document.getElementById('alqFormTitle').textContent = 'Nuevo alquiler';
+  ['alq_dir','alq_desc','alq_precio'].forEach(id => document.getElementById(id).value = '');
+  ['alq_amb','alq_dorm','alq_ban','alq_coch','alq_sup'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('alq_ub').value = 'Bella Vista, San Miguel';
+  document.getElementById('alq_tipo').value = 'Casa';
+  document.getElementById('alq_est').value = '';
+}
+
+function editAlquiler(id) {
+  const a = alquileres.find(x => x.id === id);
+  if (!a) return;
+  document.getElementById('alq_editId').value = a.id;
+  document.getElementById('alqFormTitle').textContent = 'Editar alquiler';
+  document.getElementById('alq_dir').value = a.dir || '';
+  document.getElementById('alq_ub').value = a.ub || '';
+  document.getElementById('alq_precio').value = a.precio || '';
+  document.getElementById('alq_tipo').value = a.tipo || 'Casa';
+  document.getElementById('alq_sup').value = a.sup || '';
+  document.getElementById('alq_amb').value = a.amb || '';
+  document.getElementById('alq_dorm').value = a.dorm || '';
+  document.getElementById('alq_ban').value = a.ban || '';
+  document.getElementById('alq_coch').value = a.coch || '';
+  document.getElementById('alq_est').value = a.est || '';
+  document.getElementById('alq_desc').value = a.desc || '';
+  document.getElementById('alqForm').scrollIntoView({ behavior: 'smooth' });
+}
+
+function saveAlquiler() {
+  const dir = document.getElementById('alq_dir').value.trim();
+  if (!dir) { toast('La dirección es obligatoria', 'error'); return; }
+  const editId = document.getElementById('alq_editId').value;
+  const precioStr = document.getElementById('alq_precio').value.trim();
+  const num = parseInt((precioStr || '').replace(/[^\d]/g,'')) || 0;
+  const alq = {
+    id: editId || uid(),
+    dir, ub: document.getElementById('alq_ub').value.trim() || 'Bella Vista, San Miguel',
+    precio: precioStr, num,
+    tipo: document.getElementById('alq_tipo').value,
+    sup: parseInt(document.getElementById('alq_sup').value) || 0,
+    amb: parseInt(document.getElementById('alq_amb').value) || 0,
+    dorm: parseInt(document.getElementById('alq_dorm').value) || 0,
+    ban: parseInt(document.getElementById('alq_ban').value) || 0,
+    coch: parseInt(document.getElementById('alq_coch').value) || 0,
+    est: document.getElementById('alq_est').value,
+    desc: document.getElementById('alq_desc').value.trim()
+  };
+  if (editId) {
+    const idx = alquileres.findIndex(x => x.id === editId);
+    if (idx >= 0) alquileres[idx] = alq;
+  } else {
+    alquileres.unshift(alq);
+  }
+  saveAlquileres();
+  fetchProperties();
+  cancelAlqEdit();
+  renderAlqList();
+  toast(editId ? 'Alquiler actualizado ✓' : 'Alquiler agregado ✓', 'success');
+}
+
+function deleteAlquiler(id) {
+  if (!confirm('¿Eliminar este alquiler?')) return;
+  alquileres = alquileres.filter(a => a.id !== id);
+  saveAlquileres();
+  fetchProperties();
+  renderAlqList();
+  toast('Alquiler eliminado', 'success');
+}
+
+// ─── MATCHING PROPIEDADES ───────────────────────────────────────────────────
+function getMatchingProperties(c) {
+  if (!properties.length) return [];
+  const op = c.interesEn === 'Compra' ? 'Venta' : c.interesEn === 'Alquiler' ? 'Alquiler' : null;
+  if (!op) return [];
+  let budget = 0;
+  if (c.presupuesto) {
+    const n = (c.presupuesto || '').replace(/[^\d]/g,'');
+    budget = parseInt(n) || 0;
+  }
+  const descLower = (c.desc || '').toLowerCase();
+  let list = properties.filter(p => (p['Operación']||'').includes(op));
+  const scored = list.map(p => {
+    let score = 0;
+    if (budget && p._precioNum) {
+      const ratio = p._precioNum / budget;
+      if (ratio <= 1.3) score += 2;
+      if (ratio <= 1.0) score += 2;
+      if (ratio <= 0.85) score++;
+    }
+    const addr = ((p['Dirección']||'')+' '+(p['Ubicación']||'')).toLowerCase();
+    const tipo = (p['Tipo Propiedad']||'').toLowerCase();
+    if ((descLower.includes('lote') || descLower.includes('terreno')) && tipo.includes('terreno')) score += 3;
+    if (descLower.includes('casa') && tipo.includes('casa')) score += 3;
+    if ((descLower.includes('depto') || descLower.includes('departamento')) && (tipo.includes('depto') || tipo.includes('departamento'))) score += 3;
+    if (descLower.includes('local') && tipo.includes('local')) score += 3;
+    if (descLower.includes('golf') && addr.includes('golf')) score += 2;
+    if (descLower.includes('village') && addr.includes('village')) score += 2;
+    if (descLower.includes('candelaria') && addr.includes('candelaria')) score += 2;
+    if (descLower.includes('pueblo nuevo') && addr.includes('pueblo')) score += 2;
+    if (descLower.includes('barrio cerrado') || descLower.includes('portón')) {
+      const esCerrado = BARRIOS_CERRADOS.some(b => addr.includes(b));
+      if (esCerrado) score += 2;
+    }
+    return { p, score };
+  });
+  scored.sort((a, b) => b.score - a.score);
+  return scored.slice(0, 6).filter(x => x.score > 0).map(x => x.p);
+}
+
+// ─── STATS ───────────────────────────────────────────────────────────────────
+function renderStats() {
+  document.getElementById('statsDate').textContent = formatDate(TODAY);
+  const total = contacts.length;
+  const hoy = contacts.filter(c => c.contactedDates && c.contactedDates.includes(TODAY)).length;
+  const alta = contacts.filter(c => c.urgencia === 'ALTA').length;
+  const overdue = contacts.filter(c => c.nextActionDate && c.nextActionDate <= TODAY && c.nextAction).length;
+  const cards = [
+    { label: 'Contactos', num: total, sub: 'en total', cls: '' },
+    { label: 'Contactados hoy', num: hoy, sub: 'marcados hoy', cls: 'green' },
+    { label: 'Urgencia Alta', num: alta, sub: 'prioritarios', cls: alta > 0 ? 'red' : '' },
+    { label: 'Seguimientos vencidos', num: overdue, sub: 'sin completar', cls: overdue > 0 ? 'yellow' : '' },
+  ];
+  document.getElementById('statsCards').innerHTML = cards.map(c => `
+    <div class="stat-card ${c.cls}">
+      <div class="stat-card-label">${c.label}</div>
+      <div class="stat-card-num">${c.num}</div>
+      <div class="stat-card-sub">${c.sub}</div>
+    </div>`).join('');
+
+  // Barras por operación
+  const ops = [
+    { label: 'Compra', val: contacts.filter(c => c.interesEn === 'Compra').length },
+    { label: 'Venta', val: contacts.filter(c => c.interesEn === 'Venta').length },
+    { label: 'Alquiler', val: contacts.filter(c => c.interesEn === 'Alquiler').length },
+    { label: 'Sin categoría', val: contacts.filter(c => !c.interesEn).length },
+  ];
+  const maxOp = Math.max(...ops.map(o => o.val), 1);
+  document.getElementById('statsBarOp').innerHTML = ops.map(o => `
+    <div class="stats-bar-row">
+      <span class="stats-bar-label">${o.label}</span>
+      <div class="stats-bar-track"><div class="stats-bar-fill" style="width:${Math.round(o.val/maxOp*100)}%"></div></div>
+      <span class="stats-bar-val">${o.val}</span>
+    </div>`).join('');
+
+  // Barras por urgencia
+  const urgs = [
+    { label: '🔴 Alta', val: contacts.filter(c => c.urgencia === 'ALTA').length, color: 'var(--red)' },
+    { label: '🟡 Media', val: contacts.filter(c => c.urgencia === 'MEDIA').length, color: 'var(--yellow)' },
+    { label: '⚫ Baja', val: contacts.filter(c => c.urgencia === 'BAJA').length, color: 'var(--gray2)' },
+    { label: 'Sin asignar', val: contacts.filter(c => !c.urgencia).length, color: 'var(--border)' },
+  ];
+  const maxUrg = Math.max(...urgs.map(u => u.val), 1);
+  document.getElementById('statsBarUrg').innerHTML = urgs.map(u => `
+    <div class="stats-bar-row">
+      <span class="stats-bar-label">${u.label}</span>
+      <div class="stats-bar-track"><div class="stats-bar-fill" style="width:${Math.round(u.val/maxUrg*100)}%;background:${u.color}"></div></div>
+      <span class="stats-bar-val">${u.val}</span>
+    </div>`).join('');
+
+  // Próximos seguimientos (ordenados por fecha)
+  const upcoming = contacts
+    .filter(c => c.nextAction && c.nextActionDate)
+    .sort((a, b) => a.nextActionDate.localeCompare(b.nextActionDate))
+    .slice(0, 10);
+  const upEl = document.getElementById('statsUpcoming');
+  if (!upcoming.length) {
+    upEl.innerHTML = '<div style="color:var(--gray2);font-size:13px">Sin seguimientos agendados</div>';
+  } else {
+    upEl.innerHTML = upcoming.map(c => {
+      const isOverdue = c.nextActionDate < TODAY;
+      const isToday = c.nextActionDate === TODAY;
+      return `<div class="upcoming-item ${isOverdue ? 'overdue' : ''}">
+        <span class="upcoming-date">${isOverdue ? '⚠️' : isToday ? '📌' : '📅'} ${formatDate(c.nextActionDate)}</span>
+        <span class="upcoming-name">${esc(c.nombre)}</span>
+        <span class="upcoming-action">${esc(c.nextAction)}</span>
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('tab-contactos').click();selectContact('${c.id}')">Ver</button>
+      </div>`;
+    }).join('');
+  }
+}
+
 // ─── PIN / ACCESO ────────────────────────────────────────────────────────────
 const PIN_CODE = '0214'; // ← cambiá esto por tu PIN
 const PIN_KEY  = 'crm_unlocked';
@@ -1710,20 +2181,13 @@ function isUnlocked() {
   return localStorage.getItem(PIN_KEY) === 'yes';
 }
 
-function tryShowTab(tab) {
-  if (tab === 'propiedades') { showTab('propiedades'); return; }
-  if (isUnlocked()) { showTab('contactos'); return; }
-  document.getElementById('pinOverlay').classList.add('visible');
-  document.getElementById('pinInput').value = '';
-  document.getElementById('pinError').textContent = '';
-  document.getElementById('pinInput').focus();
-}
 
 function submitPin() {
   const val = document.getElementById('pinInput').value;
   if (val === PIN_CODE) {
     localStorage.setItem(PIN_KEY, 'yes');
     document.getElementById('pinOverlay').classList.remove('visible');
+    document.getElementById('tab-stats').classList.remove('locked');
     document.querySelector('.main').style.display = 'flex';
     showTab('contactos');
   } else {
@@ -1742,12 +2206,14 @@ function cancelPin() {
 }
 
 // ─── START ───────────────────────────────────────────────────────────────────
+loadAlquileres();
 init();
 applyUrlParams();
 // On load: if unlocked show contacts, else show propiedades
 if (isUnlocked()) {
   document.querySelector('.main').style.display = 'flex';
-  document.getElementById('tab-contactos').textContent = '👥 Contactos';
+  document.getElementById('tab-contactos').innerHTML = '👥 Contactos' + overdueHtml();
+  document.getElementById('tab-stats').classList.remove('locked');
 } else {
   showTab('propiedades');
   document.getElementById('tab-propiedades').classList.add('active');
