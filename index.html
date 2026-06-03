@@ -400,13 +400,38 @@
   .linked-prop-box .lp-dir { font-weight: 600; font-size: 13px; }
   .linked-prop-box .lp-meta { font-size: 11px; color: var(--gray); }
 
-  /* RESPONSIVE HINT */
+  /* MOBILE BACK BAR */
+  .mobile-back {
+    display: none; align-items: center; gap: 8px;
+    padding: 10px 16px; border-bottom: 1px solid var(--border);
+    background: var(--bg2); flex-shrink: 0;
+  }
+  .mobile-back button {
+    background: none; border: none; color: var(--red); cursor: pointer;
+    font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; padding: 0;
+  }
+  .mobile-back-name { font-weight: 600; font-size: 13px; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* RESPONSIVE */
   @media (max-width: 768px) {
-    .sidebar { width: 100%; }
-    .detail { display: none; }
-    .detail.mobile-show { display: block; }
+    .main { flex-direction: column; height: auto; overflow: visible; }
+    .sidebar { width: 100%; min-width: unset; border-right: none; border-bottom: 1px solid var(--border); height: auto; max-height: calc(100vh - 100px); }
+    .detail { display: none; width: 100%; overflow-y: auto; }
+    .detail.mobile-show { display: flex; flex-direction: column; max-height: calc(100vh - 100px); }
     .sidebar.mobile-hide { display: none; }
+    .mobile-back { display: flex !important; }
+    .detail-content { padding: 16px; }
+    .detail-header { flex-direction: column; gap: 10px; }
+    .detail-actions { flex-wrap: wrap; gap: 6px; }
+    .field-grid { grid-template-columns: 1fr !important; }
     .props-grid { grid-template-columns: 1fr; }
+    .props-toolbar { gap: 6px; padding: 12px; }
+    .stats-row { grid-template-columns: 1fr; }
+    .match-grid { grid-template-columns: 1fr; }
+    .prop-actions { flex-wrap: wrap; }
+    header { padding: 0 14px; }
+    .logo h1 { font-size: 15px; }
+    .tab-btn { padding: 10px 12px; font-size: 12px; }
   }
 
   /* OVERDUE BADGE */
@@ -540,6 +565,10 @@
 
   <!-- DETAIL -->
   <div class="detail" id="detailPanel">
+    <div class="mobile-back" id="mobileBackBar">
+      <button onclick="mobileBack()">← Volver</button>
+      <span class="mobile-back-name" id="mobileBackName"></span>
+    </div>
     <div class="detail-empty" id="detailEmpty">
       <div class="detail-empty-icon">🏠</div>
       <p>Seleccioná un contacto</p>
@@ -1032,6 +1061,18 @@ function selectContact(id) {
   selectedId = id;
   renderList();
   renderDetail();
+  // Mobile: switch to detail view
+  if (window.innerWidth <= 768) {
+    document.getElementById('sidebar').classList.add('mobile-hide');
+    document.getElementById('detailPanel').classList.add('mobile-show');
+    const c = getContact(id);
+    if (c) document.getElementById('mobileBackName').textContent = c.nombre;
+  }
+}
+
+function mobileBack() {
+  document.getElementById('sidebar').classList.remove('mobile-hide');
+  document.getElementById('detailPanel').classList.remove('mobile-show');
 }
 
 function renderDetail() {
@@ -1073,7 +1114,10 @@ function renderDetail() {
         </div>
         <div class="field">
           <label>Teléfono (sin + ni espacios)</label>
-          <input type="text" value="${esc(c.tel||'')}" placeholder="549111234567" onchange="updateField('${c.id}','tel',this.value)">
+          <div style="display:flex;gap:6px;align-items:center">
+            <input type="text" style="flex:1" value="${esc(c.tel||'')}" placeholder="549111234567" onchange="updateField('${c.id}','tel',this.value)">
+            ${c.tel ? `<a href="https://wa.me/${c.tel.replace(/\D/g,'')}" target="_blank" class="btn btn-wa btn-sm" style="white-space:nowrap;text-decoration:none">💬 WA</a>` : ''}
+          </div>
         </div>
         <div class="field">
           <label>Interés en</label>
@@ -1138,15 +1182,7 @@ function renderDetail() {
         <textarea id="newNoteText" placeholder="Escribí una nota sobre este contacto..."></textarea>
         <button class="btn btn-ghost btn-sm" style="align-self:flex-end" onclick="addNote('${c.id}')">+ Agregar</button>
       </div>
-      <div class="notes-list" id="notesList">
-        ${(c.notes||[]).length === 0
-          ? '<div class="notes-empty">Sin notas aún</div>'
-          : [...(c.notes||[])].reverse().map(n => `
-            <div class="note-item">
-              <div class="note-date">${n.date} · ${n.time}</div>
-              <div class="note-text">${esc(n.text)}</div>
-            </div>`).join('')}
-      </div>
+      <div class="notes-list" id="notesList"></div>
     </div>
 
     <!-- PROPIEDAD VINCULADA -->
@@ -1183,6 +1219,7 @@ function renderDetail() {
       </div>
     </div>
   `;
+  renderNotesList(c);
 }
 
 function updateField(id, field, value) {
@@ -1280,14 +1317,78 @@ function addNote(id) {
   if (!c.notes) c.notes = [];
   const now = new Date();
   c.notes.push({
-    id: uid(),
-    text,
+    id: uid(), text,
     date: now.toLocaleDateString('es-AR'),
     time: now.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
   });
   save();
-  renderDetail();
+  document.getElementById('newNoteText').value = '';
+  renderNotesList(c);
   toast('Nota agregada', 'success');
+}
+
+// ─── NOTES CRUD ──────────────────────────────────────────────────────────────
+let editingNoteId = null;
+
+function renderNotesList(c) {
+  const el = document.getElementById('notesList');
+  if (!el) return;
+  const notes = c.notes || [];
+  if (!notes.length) { el.innerHTML = '<div class="notes-empty">Sin notas aún</div>'; return; }
+  el.innerHTML = [...notes].reverse().map(n => {
+    if (editingNoteId === n.id) {
+      return `<div class="note-item">
+        <div class="note-date">${n.date} · ${n.time}</div>
+        <textarea id="eni_${n.id}" style="width:100%;margin-top:4px;background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:7px 9px;font-family:Inter,sans-serif;font-size:13px;color:var(--white);resize:vertical;min-height:50px;outline:none">${esc(n.text)}</textarea>
+        <div style="display:flex;gap:6px;margin-top:6px">
+          <button class="btn btn-primary btn-sm" onclick="saveEditNote('${c.id}','${n.id}')">Guardar</button>
+          <button class="btn btn-ghost btn-sm" onclick="cancelEditNote('${c.id}')">Cancelar</button>
+        </div>
+      </div>`;
+    }
+    return `<div class="note-item">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+        <span class="note-date">${n.date} · ${n.time}</span>
+        <div style="display:flex;gap:3px">
+          <button class="btn btn-ghost btn-sm" style="padding:2px 7px;font-size:11px" title="Editar" onclick="startEditNote('${c.id}','${n.id}')">✏️</button>
+          <button class="btn btn-ghost btn-sm" style="padding:2px 7px;font-size:11px;color:var(--red)" title="Borrar" onclick="deleteNote('${c.id}','${n.id}')">🗑</button>
+        </div>
+      </div>
+      <div class="note-text">${esc(n.text)}</div>
+    </div>`;
+  }).join('');
+}
+
+function deleteNote(cId, nId) {
+  const c = getContact(cId);
+  if (!c || !confirm('¿Borrar esta nota?')) return;
+  c.notes = (c.notes||[]).filter(n => n.id !== nId);
+  save();
+  renderNotesList(c);
+  toast('Nota eliminada', 'success');
+}
+
+function startEditNote(cId, nId) {
+  editingNoteId = nId;
+  renderNotesList(getContact(cId));
+  setTimeout(() => document.getElementById('eni_' + nId)?.focus(), 50);
+}
+
+function saveEditNote(cId, nId) {
+  const c = getContact(cId);
+  const newText = document.getElementById('eni_' + nId)?.value.trim();
+  if (!newText) return;
+  const note = (c.notes||[]).find(n => n.id === nId);
+  if (note) note.text = newText;
+  editingNoteId = null;
+  save();
+  renderNotesList(c);
+  toast('Nota actualizada ✓', 'success');
+}
+
+function cancelEditNote(cId) {
+  editingNoteId = null;
+  renderNotesList(getContact(cId));
 }
 
 function deleteContact(id) {
