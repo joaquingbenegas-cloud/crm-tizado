@@ -502,6 +502,7 @@
     <div style="flex:1"></div>
     <select class="sort-select" id="propSortSelect" onchange="renderProps()" style="margin-left:4px">
       <option value="relevantes">Relevantes</option>
+      <option value="recientes">Recientes</option>
       <option value="menor-precio">Menor precio</option>
       <option value="mayor-precio">Mayor precio</option>
     </select>
@@ -1193,16 +1194,18 @@ function mapPosting(raw) {
     const sup  = feat.superficieCubierta || feat.totalArea || feat.coveredArea || p.coveredArea || p.totalArea || '';
     const est  = p.propertyCondition || feat.estado || '';
 
-    // Foto y URL
+    // Foto, URL y fecha
     const foto = p.mainPicture || p.pictures?.[0]?.url || p.thumbnail || '';
     const zpUrl = p.url ? (p.url.startsWith('http') ? p.url : 'https://www.zonaprop.com.ar' + p.url) : '';
     const id = String(p.id || p.postingId || '');
+    const fechaStr = p.publishedDate || p.createdAt || p.updatedAt || p.postingDate || raw.publishedDate || raw.createdAt || '';
+    const _fecha = fechaStr ? new Date(fechaStr).getTime() : 0;
 
     return { 'Dirección': addr, 'Ubicación': ub, 'Precio': priceText, '_precioNum': num || 0,
       'Operación': op, 'Tipo Propiedad': tipo, 'Estado Inmueble': est,
       'Ambientes': String(amb), 'Dormitorios': String(dorm), 'Baños': String(ban),
       'Cocheras': String(coch), 'Superficie': String(sup),
-      'Codigo': id, '_foto': foto, '_zpUrl': zpUrl };
+      'Codigo': id, '_foto': foto, '_zpUrl': zpUrl, '_fecha': _fecha };
   } catch(e) { return null; }
 }
 
@@ -1427,6 +1430,7 @@ function renderProps(forModal = false) {
     const sortVal = document.getElementById('propSortSelect')?.value || 'relevantes';
     if (sortVal === 'menor-precio') list.sort((a, b) => (a._precioNum || 0) - (b._precioNum || 0));
     else if (sortVal === 'mayor-precio') list.sort((a, b) => (b._precioNum || 0) - (a._precioNum || 0));
+    else if (sortVal === 'recientes') list.sort((a, b) => (b._fecha || 0) - (a._fecha || 0));
     // relevantes = orden original de ZonaProp (no modificar)
   }
 
