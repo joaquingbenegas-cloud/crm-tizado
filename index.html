@@ -58,7 +58,7 @@
   .btn-wa:hover { background: rgba(37,211,102,0.22); }
 
   /* LAYOUT */
-  .main { display: flex; height: calc(100vh - 60px); }
+  .main { display: none; height: calc(100vh - 60px); }
   .sidebar { width: 320px; min-width: 320px; border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
   .detail { flex: 1; overflow-y: auto; }
 
@@ -1003,7 +1003,7 @@ function showTab(tab) {
     btnC.textContent = '👥 Contactos';
     btnC.classList.remove('locked');
   }
-  document.querySelector('.main').style.display = isProps ? 'none' : 'flex';
+  document.querySelector('.main').style.display = isProps ? 'none' : (isUnlocked() ? 'flex' : 'none');
   document.getElementById('propsPanel').classList.toggle('visible', isProps);
   if (isProps && properties.length === 0) fetchProperties();
 }
@@ -1351,6 +1351,7 @@ function submitPin() {
   if (val === PIN_CODE) {
     localStorage.setItem(PIN_KEY, 'yes');
     document.getElementById('pinOverlay').classList.remove('visible');
+    document.querySelector('.main').style.display = 'flex';
     showTab('contactos');
   } else {
     const inp = document.getElementById('pinInput');
@@ -1369,8 +1370,11 @@ function cancelPin() {
 
 // ─── START ───────────────────────────────────────────────────────────────────
 init();
-// On load: if not unlocked, default to propiedades tab
-if (!isUnlocked()) {
+// On load: if unlocked show contacts, else show propiedades
+if (isUnlocked()) {
+  document.querySelector('.main').style.display = 'flex';
+  document.getElementById('tab-contactos').textContent = '👥 Contactos';
+} else {
   showTab('propiedades');
   document.getElementById('tab-propiedades').classList.add('active');
   document.getElementById('tab-contactos').classList.remove('active');
