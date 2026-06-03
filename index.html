@@ -1143,12 +1143,27 @@ function renderProps(forModal = false) {
 }
 
 async function fetchPhotoCRM(zpUrl, photoKey) {
-  try {
-    const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(zpUrl)}`, { signal: AbortSignal.timeout(8000) });
-    const data = await res.json();
-    const match = data.contents && data.contents.match(/og:image[^>]*content="([^"]+)"/);
-    if (match && match[1]) { localStorage.setItem(photoKey, match[1]); return match[1]; }
-  } catch(e) {}
+  const proxies = [
+    async (u) => {
+      const r = await fetch(`https://corsproxy.io/?url=${encodeURIComponent(u)}`, { signal: AbortSignal.timeout(9000) });
+      return r.ok ? await r.text() : null;
+    },
+    async (u) => {
+      const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(u)}`, { signal: AbortSignal.timeout(9000) });
+      if (!r.ok) return null;
+      const d = await r.json();
+      return d.contents || null;
+    }
+  ];
+  for (const proxy of proxies) {
+    try {
+      const html = await proxy(zpUrl);
+      if (!html) continue;
+      const m = html.match(/(?:property="og:image"|name="og:image")[^>]*content="([^"]+)"|content="([^"]+)"[^>]*property="og:image"/);
+      const url = m && (m[1] || m[2]);
+      if (url) { localStorage.setItem(photoKey, url); return url; }
+    } catch(e) {}
+  }
   return null;
 }
 
