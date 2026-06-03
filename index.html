@@ -1125,23 +1125,22 @@ function renderDetail() {
       <div class="notes-list" id="notesList"></div>
     </div>
 
-    <!-- PROPIEDAD VINCULADA -->
+    <!-- PROPIEDADES VINCULADAS -->
     <div class="section">
-      <div class="section-title">Propiedad Vinculada</div>
-      ${c.linkedProp ? `
-      <div class="linked-prop-box">
-        <div class="lp-info">
-          <div class="lp-dir">🏠 ${esc(c.linkedProp.direccion)} · ${esc(c.linkedProp.ubicacion)}</div>
-          <div class="lp-meta">${esc(c.linkedProp.tipo)} · ${esc(c.linkedProp.operacion)} · ${esc(c.linkedProp.precio)}${c.linkedProp.superficie ? ` · ${esc(c.linkedProp.superficie)} m²` : ''}${c.linkedProp.ambientes ? ` · ${esc(c.linkedProp.ambientes)} amb.` : ''}</div>
-        </div>
-        <button class="btn btn-ghost btn-sm" onclick="shareProperty(${JSON.stringify(c.linkedProp).replace(/"/g,'&quot;')})">📤 WA</button>
-        <button class="btn btn-ghost btn-sm" onclick="openLinkPropFromContact('${c.id}')">✏️</button>
-        <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="unlinkProp('${c.id}')">✕</button>
-      </div>` : `
-      <div style="display:flex;align-items:center;gap:10px">
-        <span style="color:var(--gray);font-size:13px">Sin propiedad vinculada</span>
-        <button class="btn btn-ghost btn-sm" onclick="openLinkPropFromContact('${c.id}')">+ Vincular propiedad</button>
-      </div>`}
+      <div class="section-title">Propiedades Vinculadas${getLinkedProps(c).length ? ` <span style="font-weight:400;color:var(--gray)">(${getLinkedProps(c).length})</span>` : ''}</div>
+      <div style="display:flex;flex-direction:column;gap:8px" id="linkedPropsList">
+        ${getLinkedProps(c).length ? getLinkedProps(c).map(lp => `
+        <div class="linked-prop-box">
+          <div class="lp-info">
+            <div class="lp-dir">🏠 ${esc(lp.direccion)} · ${esc(lp.ubicacion)}</div>
+            <div class="lp-meta">${esc(lp.tipo)} · ${esc(lp.operacion)} · ${esc(lp.precio)}${lp.superficie ? ` · ${lp.superficie} m²` : ''}${lp.ambientes ? ` · ${lp.ambientes} amb.` : ''}</div>
+          </div>
+          ${lp.zpUrl ? `<a href="${esc(lp.zpUrl)}" target="_blank" class="btn btn-ghost btn-sm" style="text-decoration:none">🔍</a>` : ''}
+          <button class="btn btn-ghost btn-sm" onclick="shareProperty(${JSON.stringify(lp).replace(/"/g,'&quot;')})">📤 WA</button>
+          <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="unlinkProp('${c.id}','${lp.codigo}')">✕</button>
+        </div>`).join('') : `<span style="color:var(--gray);font-size:13px">Sin propiedades vinculadas</span>`}
+      </div>
+      <button class="btn btn-ghost btn-sm" style="margin-top:10px" onclick="openLinkPropFromContact('${c.id}')">+ Vincular propiedad</button>
     </div>
 
     <!-- PROPIEDADES SUGERIDAS -->
@@ -1383,10 +1382,12 @@ function generateAI(id, type) {
     ? '\nNotas previas: ' + [...c.notes].slice(-3).map(n => `[${n.date}] ${n.text}`).join(' | ')
     : '';
 
-  const zpUrl = c.linkedProp ? (c.linkedProp.zpUrl || null) : null;
-
-  const propInfo = c.linkedProp
-    ? `\nPropiedad a presentar: ${c.linkedProp.tipo} en ${c.linkedProp.operacion} — ${c.linkedProp.direccion}, ${c.linkedProp.ubicacion} — ${c.linkedProp.precio}${c.linkedProp.superficie ? ` — ${c.linkedProp.superficie} m²` : ''}${c.linkedProp.ambientes ? ` — ${c.linkedProp.ambientes} ambientes` : ''}${zpUrl ? `\nLink de la propiedad: ${zpUrl}` : ''}`
+  const lps = getLinkedProps(c);
+  const zpUrl = lps.length ? (lps[0].zpUrl || null) : null;
+  const propInfo = lps.length
+    ? '\nPropiedades a presentar:\n' + lps.map(lp =>
+        `- ${lp.tipo} en ${lp.operacion} — ${lp.direccion}, ${lp.ubicacion} — ${lp.precio}${lp.superficie ? ` — ${lp.superficie} m²` : ''}${lp.ambientes ? ` — ${lp.ambientes} amb.` : ''}${lp.zpUrl ? `\n  Link: ${lp.zpUrl}` : ''}`
+      ).join('\n')
     : '';
 
   const prompt = `Soy Joaquín González Benegas, asesor inmobiliario de Tizado Bella Vista. Escribime un mensaje de WhatsApp para ${c.nombre}, que está interesado en ${c.interesEn || 'una operación inmobiliaria'}.
@@ -2071,12 +2072,28 @@ function openLinkPropFromContact(contactId) {
   renderProps(true);
 }
 
+// Retrocompatibilidad: devuelve siempre un array de propiedades vinculadas
+function getLinkedProps(c) {
+  if (c.linkedProps && c.linkedProps.length) return c.linkedProps;
+  if (c.linkedProp) return [c.linkedProp]; // migración del formato viejo
+  return [];
+}
+
 function linkPropToContact(codigo) {
   if (!linkingContactId) return;
   const c = getContact(linkingContactId);
   const p = properties.find(p => p['Codigo'] === codigo);
   if (!c || !p) return;
-  c.linkedProp = {
+  // Migrar formato viejo si existe
+  if (!c.linkedProps) {
+    c.linkedProps = c.linkedProp ? [c.linkedProp] : [];
+    delete c.linkedProp;
+  }
+  // Evitar duplicados
+  if (c.linkedProps.find(lp => lp.codigo === p['Codigo'])) {
+    toast('Ya está vinculada', 'error'); return;
+  }
+  c.linkedProps.push({
     codigo: p['Codigo'],
     direccion: p['Dirección'],
     ubicacion: p['Ubicación'],
@@ -2089,18 +2106,30 @@ function linkPropToContact(codigo) {
     banos: p['Baños'],
     zpUrl: p._zpUrl || '',
     foto: p._foto || ''
-  };
+  });
   save();
-  document.getElementById('linkPropModal').classList.remove('open');
   renderDetail();
   renderList();
-  toast('Propiedad vinculada ✓', 'success');
+  // Mantener modal abierto y actualizar la lista con el tilde
+  renderProps(true);
+  // Actualizar contador en header del modal
+  const n = c.linkedProps.length;
+  document.querySelector('#linkPropModal .modal-header h2').textContent =
+    `Vincular Propiedad${n ? ` · ${n} vinculada${n > 1 ? 's' : ''}` : ''}`;
+  toast(`Vinculada ✓ — Podés seguir agregando`, 'success');
 }
 
-function unlinkProp(contactId) {
+function unlinkProp(contactId, codigo) {
   const c = getContact(contactId);
   if (!c) return;
-  delete c.linkedProp;
+  if (codigo) {
+    // Quitar prop específica del array
+    if (c.linkedProps) c.linkedProps = c.linkedProps.filter(lp => lp.codigo !== codigo);
+    if (c.linkedProp && c.linkedProp.codigo === codigo) delete c.linkedProp;
+  } else {
+    // Quitar todo (fallback)
+    delete c.linkedProps; delete c.linkedProp;
+  }
   save();
   renderDetail();
   toast('Propiedad desvinculada', 'success');
