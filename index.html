@@ -500,7 +500,12 @@
     </button>
     <span class="props-count" id="propsCount"></span>
     <div style="flex:1"></div>
-    <button class="btn btn-ghost btn-sm" onclick="fetchProperties()">↺</button>
+    <select class="sort-select" id="propSortSelect" onchange="renderProps()" style="margin-left:4px">
+      <option value="relevantes">Relevantes</option>
+      <option value="menor-precio">Menor precio</option>
+      <option value="mayor-precio">Mayor precio</option>
+    </select>
+    <button class="btn btn-ghost btn-sm" onclick="fetchProperties()" title="Actualizar desde ZonaProp">↺</button>
     <a href="https://www.zonaprop.com.ar/inmobiliarias/tizado_17635184-inmuebles-orden-precio-ascendente.html" target="_blank" class="btn btn-ghost btn-sm">🌐 ZonaProp</a>
   </div>
 
@@ -1416,6 +1421,14 @@ function renderProps(forModal = false) {
     }
     return matchQ && matchF && matchB && matchAdv;
   });
+
+  // Ordenar
+  if (!forModal) {
+    const sortVal = document.getElementById('propSortSelect')?.value || 'relevantes';
+    if (sortVal === 'menor-precio') list.sort((a, b) => (a._precioNum || 0) - (b._precioNum || 0));
+    else if (sortVal === 'mayor-precio') list.sort((a, b) => (b._precioNum || 0) - (a._precioNum || 0));
+    // relevantes = orden original de ZonaProp (no modificar)
+  }
 
   if (forModal) {
     const container = document.getElementById('linkPropList');
