@@ -129,6 +129,9 @@
   .urgency-media { background: var(--yellow); }
   .urgency-baja { background: var(--gray2); }
   .contacted-today { color: var(--green); font-size: 10px; }
+  .ci-stale { font-size: 10px; font-weight: 600; }
+  .ci-stale-orange { color: #d97706; }
+  .ci-stale-red { color: var(--red); }
   .next-action-preview { color: #1d4ed8; font-size: 10px; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
   /* DETAIL PANEL */
@@ -784,7 +787,11 @@
       </div>
     </div>
     <div class="stats-section" style="margin-top:16px">
-      <h3>Próximos seguimientos</h3>
+      <h3>⚡ Acción esta semana</h3>
+      <div class="upcoming-list" id="statsWeekly"></div>
+    </div>
+    <div class="stats-section" style="margin-top:16px">
+      <h3>📅 Próximos seguimientos</h3>
       <div class="upcoming-list" id="statsUpcoming"></div>
     </div>
   </div>
@@ -969,6 +976,10 @@ function renderList() {
     const fmtDate = c.ultimo ? formatDate(c.ultimo) : '';
     const isOverdue = c.nextAction && c.nextActionDate && c.nextActionDate < TODAY;
     const isDueToday = c.nextAction && c.nextActionDate && c.nextActionDate === TODAY;
+    const daysSince = c.ultimo ? Math.floor((new Date(TODAY) - new Date(c.ultimo)) / 86400000) : null;
+    const staleHtml = !isToday && daysSince !== null && daysSince >= 7
+      ? `<span class="ci-stale ${daysSince >= 14 ? 'ci-stale-red' : 'ci-stale-orange'}">${daysSince >= 14 ? '🔴' : '🟡'} ${daysSince}d sin contacto</span>`
+      : '';
     return `<div class="contact-item${c.id===selectedId?' active':''}${c.notable?' notable':''}" onclick="selectContact('${c.id}')">
       <div class="ci-top">
         <span class="ci-name">${esc(c.nombre)}</span>
@@ -979,7 +990,7 @@ function renderList() {
       <div class="ci-bottom">
         ${urgClass ? `<div class="urgency-dot ${urgClass}"></div>` : ''}
         <span class="ci-date">${fmtDate}</span>
-        ${isToday ? '<span class="contacted-today">✓ Contactado hoy</span>' : ''}
+        ${isToday ? '<span class="contacted-today">✓ Contactado hoy</span>' : staleHtml}
         ${c.nextAction ? `<span class="next-action-preview">${isOverdue?'⚠️':'→'} ${esc(c.nextAction)}${c.nextActionDate?' ('+formatDate(c.nextActionDate)+')':''}</span>` : ''}
       </div>
     </div>`;
@@ -2210,11 +2221,15 @@ function renderStats() {
   const hoy = contacts.filter(c => c.contactedDates && c.contactedDates.includes(TODAY)).length;
   const alta = contacts.filter(c => c.urgencia === 'ALTA').length;
   const overdue = contacts.filter(c => c.nextActionDate && c.nextActionDate <= TODAY && c.nextAction).length;
+  const stale7 = contacts.filter(c => {
+    const d = c.ultimo ? Math.floor((new Date(TODAY) - new Date(c.ultimo)) / 86400000) : 999;
+    return d >= 7;
+  }).length;
   const cards = [
     { label: 'Contactos', num: total, sub: 'en total', cls: '' },
     { label: 'Contactados hoy', num: hoy, sub: 'marcados hoy', cls: 'green' },
-    { label: 'Urgencia Alta', num: alta, sub: 'prioritarios', cls: alta > 0 ? 'red' : '' },
-    { label: 'Seguimientos vencidos', num: overdue, sub: 'sin completar', cls: overdue > 0 ? 'yellow' : '' },
+    { label: 'Sin contactar +7d', num: stale7, sub: 'necesitan seguimiento', cls: stale7 > 0 ? 'yellow' : '' },
+    { label: 'Seguimientos vencidos', num: overdue, sub: 'sin completar', cls: overdue > 0 ? 'red' : '' },
   ];
   document.getElementById('statsCards').innerHTML = cards.map(c => `
     <div class="stat-card ${c.cls}">
@@ -2252,6 +2267,43 @@ function renderStats() {
       <div class="stats-bar-track"><div class="stats-bar-fill" style="width:${Math.round(u.val/maxUrg*100)}%;background:${u.color}"></div></div>
       <span class="stats-bar-val">${u.val}</span>
     </div>`).join('');
+
+  // Sección "Acción esta semana": vencidos + alta urgencia sin contactar + 7+ días sin contacto
+  const weeklyEl = document.getElementById('statsWeekly');
+  const needsAction = contacts.filter(c => {
+    const overduePending = c.nextAction && c.nextActionDate && c.nextActionDate <= TODAY;
+    const altaSinContactar = c.urgencia === 'ALTA' && (!c.contactedDates || !c.contactedDates.includes(TODAY));
+    const daysSince = c.ultimo ? Math.floor((new Date(TODAY) - new Date(c.ultimo)) / 86400000) : 999;
+    const stale = daysSince >= 7;
+    return overduePending || altaSinContactar || stale;
+  }).sort((a, b) => {
+    // Prioridad: vencidos > alta urgencia > días sin contacto
+    const score = c => {
+      const overdue = c.nextAction && c.nextActionDate && c.nextActionDate <= TODAY ? 3 : 0;
+      const alta = c.urgencia === 'ALTA' ? 2 : 0;
+      const days = c.ultimo ? Math.floor((new Date(TODAY) - new Date(c.ultimo)) / 86400000) : 999;
+      return overdue + alta + (days >= 14 ? 1 : 0);
+    };
+    return score(b) - score(a);
+  }).slice(0, 15);
+
+  if (!needsAction.length) {
+    weeklyEl.innerHTML = '<div style="color:var(--gray2);font-size:13px">✅ Todo al día — sin contactos pendientes</div>';
+  } else {
+    weeklyEl.innerHTML = needsAction.map(c => {
+      const daysSince = c.ultimo ? Math.floor((new Date(TODAY) - new Date(c.ultimo)) / 86400000) : null;
+      const overdue = c.nextAction && c.nextActionDate && c.nextActionDate <= TODAY;
+      let reason = '';
+      if (overdue) reason = `<span style="color:var(--red);font-size:11px">⚠️ ${esc(c.nextAction)}</span>`;
+      else if (c.urgencia === 'ALTA') reason = `<span style="color:var(--red);font-size:11px">🔴 Urgencia alta</span>`;
+      else if (daysSince !== null) reason = `<span style="color:${daysSince>=14?'var(--red)':'#d97706'};font-size:11px">${daysSince>=14?'🔴':'🟡'} ${daysSince} días sin contacto</span>`;
+      return `<div class="upcoming-item${overdue?' overdue':''}">
+        <span class="upcoming-name">${esc(c.nombre)}</span>
+        <span class="upcoming-action">${reason}</span>
+        <button class="btn btn-ghost btn-sm" onclick="tryShowTab('contactos');selectContact('${c.id}')">Ver</button>
+      </div>`;
+    }).join('');
+  }
 
   // Próximos seguimientos (ordenados por fecha)
   const upcoming = contacts
