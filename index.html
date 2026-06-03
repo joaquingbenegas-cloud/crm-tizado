@@ -1138,14 +1138,32 @@ function showTab(tab) {
 }
 
 // ─── PROPIEDADES — directo desde ZonaProp ────────────────────────────────────
-const ZP_AGENCY = 'https://www.zonaprop.com.ar/inmobiliarias/tizado_17635184-inmuebles-orden-precio-ascendente';
+const ZP_AGENCY_ID = '17635184';
+const ZP_AGENCY = 'https://www.zonaprop.com.ar/inmobiliarias/tizado_' + ZP_AGENCY_ID + '-inmuebles-orden-precio-ascendente';
+
+// Intenta la API interna de ZonaProp (Next.js / nomen) directo sin proxy
+async function fetchZpApi(from = 0) {
+  const endpoints = [
+    `https://www.zonaprop.com.ar/nomen/api/portal/posting/real-estate/agency-postings-next?agency=${ZP_AGENCY_ID}&from=${from}&size=28&order=price-asc`,
+    `https://www.zonaprop.com.ar/nomen/api/portal/home/agency-search?agency=${ZP_AGENCY_ID}&from=${from}&size=28`,
+  ];
+  for (const ep of endpoints) {
+    try {
+      const r = await fetch(ep, { signal: AbortSignal.timeout(10000), headers: { 'Accept': 'application/json' } });
+      if (r.ok) { const d = await r.json(); return d; }
+    } catch(e) {}
+  }
+  return null;
+}
 
 async function fetchViaProxy(url) {
   const proxies = [
     async u => { const r = await fetch(`https://corsproxy.io/?url=${encodeURIComponent(u)}`, { signal: AbortSignal.timeout(12000) }); return r.ok ? r.text() : null; },
-    async u => { const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(u)}`, { signal: AbortSignal.timeout(12000) }); if (!r.ok) return null; const d = await r.json(); return d.contents || null; }
+    async u => { const r = await fetch(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`, { signal: AbortSignal.timeout(12000) }); return r.ok ? r.text() : null; },
+    async u => { const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(u)}`, { signal: AbortSignal.timeout(12000) }); if (!r.ok) return null; const d = await r.json(); return d.contents || null; },
+    async u => { const r = await fetch(`https://thingproxy.freeboard.io/fetch/${u}`, { signal: AbortSignal.timeout(12000) }); return r.ok ? r.text() : null; },
   ];
-  for (const p of proxies) { try { const h = await p(url); if (h) return h; } catch(e) {} }
+  for (const p of proxies) { try { const h = await p(url); if (h && h.length > 500) return h; } catch(e) {} }
   return null;
 }
 
@@ -1213,16 +1231,14 @@ async function fetchProperties() {
   const grid = document.getElementById('propsGrid');
   grid.innerHTML = '<div class="props-loading">Cargando desde ZonaProp...</div>';
   properties = [];
-  let page = 1;
-  while (page <= 5) {
-    const url = page === 1 ? ZP_AGENCY + '.html' : `${ZP_AGENCY}-pagina-${page}.html`;
-    try {
-      const html = await fetchViaProxy(url);
-      if (!html) break;
-      // Extraer __NEXT_DATA__
-      const m = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
-      if (!m) break;
-      const data = JSON.parse(m[1]);
+
+  // INTENTO 1: API interna de ZonaProp (sin proxy, CORS nativo)
+  let apiOk = false;
+  try {
+    let from = 0;
+    while (true) {
+      const data = await fetchZpApi(from);
+      if (!data) break;
       const postings = findPostings(data);
       if (!postings || postings.length === 0) break;
       const mapped = postings.map(mapPosting).filter(Boolean);
@@ -1230,11 +1246,38 @@ async function fetchProperties() {
       properties = properties.concat(mapped);
       document.getElementById('propsCount').textContent = `${properties.length} propiedades`;
       renderProps();
-      page++;
-    } catch(e) { console.error('ZP page', page, e); break; }
+      if (mapped.length < 28) break;
+      from += 28;
+      if (from > 200) break;
+    }
+    if (properties.length > 0) apiOk = true;
+  } catch(e) {}
+
+  // INTENTO 2: Proxy HTML → __NEXT_DATA__
+  if (!apiOk) {
+    let page = 1;
+    while (page <= 5) {
+      const url = page === 1 ? ZP_AGENCY + '.html' : `${ZP_AGENCY}-pagina-${page}.html`;
+      try {
+        const html = await fetchViaProxy(url);
+        if (!html) break;
+        const m = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
+        if (!m) break;
+        const data = JSON.parse(m[1]);
+        const postings = findPostings(data);
+        if (!postings || postings.length === 0) break;
+        const mapped = postings.map(mapPosting).filter(Boolean);
+        if (mapped.length === 0) break;
+        properties = properties.concat(mapped);
+        document.getElementById('propsCount').textContent = `${properties.length} propiedades`;
+        renderProps();
+        page++;
+      } catch(e) { console.error('ZP page', page, e); break; }
+    }
   }
+
   if (properties.length === 0) {
-    grid.innerHTML = '<div class="props-loading" style="color:var(--red)">No se pudo cargar ZonaProp. Intentá de nuevo.</div>';
+    grid.innerHTML = '<div class="props-loading" style="color:var(--red)">No se pudo conectar con ZonaProp.<br><button class="btn btn-ghost btn-sm" style="margin-top:12px" onclick="fetchProperties()">↺ Reintentar</button></div>';
     return;
   }
   toast(`${properties.length} propiedades cargadas desde ZonaProp ✓`, 'success');
