@@ -314,6 +314,39 @@
   .share-banner span { flex: 1; color: #92400e; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .share-banner .share-url { color: #1d4ed8; font-size: 12px; }
   .btn-copy { background: var(--red); color: #fff; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; white-space: nowrap; }
+
+  /* FILTROS AVANZADOS */
+  .adv-filters-panel {
+    display: none; background: var(--bg2); border-bottom: 2px solid var(--border);
+    padding: 16px 20px; gap: 20px; flex-wrap: wrap; align-items: flex-end;
+  }
+  .adv-filters-panel.open { display: flex; }
+  .adv-filter-group { display: flex; flex-direction: column; gap: 6px; min-width: 140px; }
+  .adv-filter-group label { font-size: 11px; font-weight: 600; color: var(--gray); text-transform: uppercase; letter-spacing: .04em; }
+  .adv-filter-group input[type=number] {
+    width: 100%; padding: 7px 10px; border: 1px solid var(--border); border-radius: 6px;
+    background: var(--bg3); color: var(--white); font-size: 13px; outline: none;
+    font-family: 'Inter', sans-serif;
+  }
+  .adv-filter-group input[type=number]:focus { border-color: var(--red); }
+  .adv-chips { display: flex; gap: 5px; flex-wrap: wrap; }
+  .adv-chip {
+    padding: 4px 10px; border-radius: 20px; border: 1px solid var(--border);
+    background: var(--bg3); color: var(--gray); font-size: 12px; cursor: pointer;
+    transition: all .12s; font-family: 'Inter', sans-serif;
+  }
+  .adv-chip:hover { border-color: var(--gray2); color: var(--white); }
+  .adv-chip.active { background: var(--red); color: #fff; border-color: var(--red); }
+  .adv-divider { width: 1px; background: var(--border); align-self: stretch; margin: 0 4px; }
+  .btn-adv-toggle { position: relative; }
+  .adv-badge {
+    display: none; position: absolute; top: -4px; right: -4px;
+    background: var(--red); color: #fff; border-radius: 50%;
+    width: 16px; height: 16px; font-size: 10px; align-items: center; justify-content: center;
+  }
+  .adv-badge.visible { display: flex; }
+  .btn-clear-adv { color: var(--red); font-size: 12px; cursor: pointer; background: none; border: none; font-family: 'Inter', sans-serif; padding: 0; white-space: nowrap; }
+  .btn-clear-adv:hover { text-decoration: underline; }
   .props-toolbar {
     padding: 16px 20px; border-bottom: 1px solid var(--border);
     display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
@@ -446,9 +479,9 @@
 <!-- PANEL PROPIEDADES -->
 <div class="props-panel" id="propsPanel">
   <div class="props-toolbar">
-    <div class="search-box" style="max-width:240px">
+    <div class="search-box" style="max-width:200px">
       <span class="search-icon">⌕</span>
-      <input type="text" id="propSearch" placeholder="Buscar propiedad..." oninput="renderProps()">
+      <input type="text" id="propSearch" placeholder="Buscar..." oninput="renderProps()">
     </div>
     <button class="filter-chip active" data-pf="all" onclick="setPropFilter(this)">Todas</button>
     <button class="filter-chip" data-pf="Venta" onclick="setPropFilter(this)">Venta</button>
@@ -460,11 +493,79 @@
     <button class="filter-chip" data-barrio="golf" onclick="setBarrioFilter(this)">⛳ Golf</button>
     <button class="filter-chip" data-barrio="village" onclick="setBarrioFilter(this)">🏘 Village</button>
     <button class="filter-chip" data-barrio="pueblo-nuevo" onclick="setBarrioFilter(this)">🏡 Pueblo Nuevo</button>
-    <button class="filter-chip" data-barrio="candelaria" onclick="setBarrioFilter(this)">🌿 La Candelaria</button>
+    <button class="filter-chip" data-barrio="candelaria" onclick="setBarrioFilter(this)">🌿 Candelaria</button>
+    <div style="width:1px;height:20px;background:var(--border);margin:0 2px"></div>
+    <button class="btn btn-ghost btn-sm btn-adv-toggle" onclick="toggleAdvFilters()" id="btnAdv">
+      ⚙ Filtros <span class="adv-badge" id="advBadge">0</span>
+    </button>
     <span class="props-count" id="propsCount"></span>
-    <button class="btn btn-ghost btn-sm" onclick="fetchProperties()">↺ Actualizar</button>
+    <div style="flex:1"></div>
+    <button class="btn btn-ghost btn-sm" onclick="fetchProperties()">↺</button>
     <a href="https://www.zonaprop.com.ar/inmobiliarias/tizado_17635184-inmuebles-orden-precio-ascendente.html" target="_blank" class="btn btn-ghost btn-sm">🌐 ZonaProp</a>
   </div>
+
+  <!-- FILTROS AVANZADOS -->
+  <div class="adv-filters-panel" id="advFiltersPanel">
+    <div class="adv-filter-group">
+      <label>Precio mín (U$S)</label>
+      <input type="number" id="fPrecioMin" placeholder="0" oninput="renderProps();updateAdvBadge()">
+    </div>
+    <div class="adv-filter-group">
+      <label>Precio máx (U$S)</label>
+      <input type="number" id="fPrecioMax" placeholder="sin límite" oninput="renderProps();updateAdvBadge()">
+    </div>
+    <div class="adv-divider"></div>
+    <div class="adv-filter-group">
+      <label>Ambientes mín</label>
+      <div class="adv-chips">
+        <button class="adv-chip active" data-amb="0" onclick="setAdvChip('amb',this)">Todos</button>
+        <button class="adv-chip" data-amb="2" onclick="setAdvChip('amb',this)">2+</button>
+        <button class="adv-chip" data-amb="3" onclick="setAdvChip('amb',this)">3+</button>
+        <button class="adv-chip" data-amb="4" onclick="setAdvChip('amb',this)">4+</button>
+        <button class="adv-chip" data-amb="5" onclick="setAdvChip('amb',this)">5+</button>
+      </div>
+    </div>
+    <div class="adv-filter-group">
+      <label>Dormitorios mín</label>
+      <div class="adv-chips">
+        <button class="adv-chip active" data-dorm="0" onclick="setAdvChip('dorm',this)">Todos</button>
+        <button class="adv-chip" data-dorm="2" onclick="setAdvChip('dorm',this)">2+</button>
+        <button class="adv-chip" data-dorm="3" onclick="setAdvChip('dorm',this)">3+</button>
+        <button class="adv-chip" data-dorm="4" onclick="setAdvChip('dorm',this)">4+</button>
+      </div>
+    </div>
+    <div class="adv-divider"></div>
+    <div class="adv-filter-group">
+      <label>Sup. mín (m²)</label>
+      <input type="number" id="fSupMin" placeholder="0" oninput="renderProps();updateAdvBadge()">
+    </div>
+    <div class="adv-filter-group">
+      <label>Sup. máx (m²)</label>
+      <input type="number" id="fSupMax" placeholder="sin límite" oninput="renderProps();updateAdvBadge()">
+    </div>
+    <div class="adv-divider"></div>
+    <div class="adv-filter-group">
+      <label>Estado</label>
+      <div class="adv-chips">
+        <button class="adv-chip active" data-est="" onclick="setAdvChip('est',this)">Todos</button>
+        <button class="adv-chip" data-est="Bueno" onclick="setAdvChip('est',this)">Bueno</button>
+        <button class="adv-chip" data-est="Muy Bueno" onclick="setAdvChip('est',this)">Muy bueno</button>
+        <button class="adv-chip" data-est="Excelente" onclick="setAdvChip('est',this)">Excelente</button>
+      </div>
+    </div>
+    <div class="adv-filter-group">
+      <label>Barrio cerrado</label>
+      <div class="adv-chips">
+        <button class="adv-chip active" data-bc="all" onclick="setAdvChip('bc',this)">Todos</button>
+        <button class="adv-chip" data-bc="yes" onclick="setAdvChip('bc',this)">Solo cerrados</button>
+        <button class="adv-chip" data-bc="no" onclick="setAdvChip('bc',this)">Solo abiertos</button>
+      </div>
+    </div>
+    <div style="align-self:flex-end">
+      <button class="btn-clear-adv" onclick="clearAdvFilters()">✕ Limpiar filtros</button>
+    </div>
+  </div>
+
   <div class="share-banner" id="shareBanner">
     🔗 <strong>Link de esta vista:</strong>
     <span class="share-url" id="shareUrl"></span>
@@ -546,6 +647,7 @@ const TODAY = new Date().toISOString().split('T')[0];
 let properties = [];
 let propFilter = 'all';
 let propBarrio = '';
+let advAmb = 0, advDorm = 0, advEst = '', advBc = 'all';
 
 let contacts = [];
 let selectedId = null;
@@ -1107,6 +1209,67 @@ function copyShareLink() {
   navigator.clipboard.writeText(url).then(() => toast('Link copiado ✓', 'success'));
 }
 
+function toggleAdvFilters() {
+  document.getElementById('advFiltersPanel').classList.toggle('open');
+}
+
+function setAdvChip(type, el) {
+  const group = el.closest('.adv-filter-group');
+  group.querySelectorAll('.adv-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  if (type === 'amb') advAmb = parseInt(el.dataset.amb);
+  else if (type === 'dorm') advDorm = parseInt(el.dataset.dorm);
+  else if (type === 'est') advEst = el.dataset.est;
+  else if (type === 'bc') advBc = el.dataset.bc;
+  updateAdvBadge();
+  renderProps();
+}
+
+function updateAdvBadge() {
+  let count = 0;
+  if (advAmb > 0) count++;
+  if (advDorm > 0) count++;
+  if (advEst) count++;
+  if (advBc !== 'all') count++;
+  const pMin = document.getElementById('fPrecioMin')?.value;
+  const pMax = document.getElementById('fPrecioMax')?.value;
+  const sMin = document.getElementById('fSupMin')?.value;
+  const sMax = document.getElementById('fSupMax')?.value;
+  if (pMin) count++; if (pMax) count++;
+  if (sMin) count++; if (sMax) count++;
+  const badge = document.getElementById('advBadge');
+  if (badge) { badge.textContent = count; badge.classList.toggle('visible', count > 0); }
+  updateShareBanner();
+}
+
+function clearAdvFilters() {
+  advAmb = 0; advDorm = 0; advEst = ''; advBc = 'all';
+  ['fPrecioMin','fPrecioMax','fSupMin','fSupMax'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  document.querySelectorAll('[data-amb]').forEach(c => c.classList.toggle('active', c.dataset.amb === '0'));
+  document.querySelectorAll('[data-dorm]').forEach(c => c.classList.toggle('active', c.dataset.dorm === '0'));
+  document.querySelectorAll('[data-est]').forEach(c => c.classList.toggle('active', c.dataset.est === ''));
+  document.querySelectorAll('[data-bc]').forEach(c => c.classList.toggle('active', c.dataset.bc === 'all'));
+  updateAdvBadge();
+  renderProps();
+}
+
+function parsePrice(str) {
+  if (!str) return null;
+  const n = str.replace(/[^\d]/g, '');
+  return n ? parseInt(n) : null;
+}
+
+function parseSup(str) {
+  if (!str) return null;
+  const m = str.match(/[\d,.]+/);
+  if (!m) return null;
+  return parseFloat(m[0].replace(',','.'));
+}
+
+const BARRIOS_CERRADOS = ['golf','village','pueblo nuevo','candelaria','los platanos','los plátanos','santa barbara','santa bárbara'];
+
 function applyUrlParams() {
   const p = new URLSearchParams(location.search);
   const op = p.get('op');
@@ -1156,13 +1319,36 @@ function renderProps(forModal = false) {
     if (propBarrio && !forModal) {
       const addr = ((p['Dirección']||'') + ' ' + (p['Ubicación']||'')).toLowerCase()
         .normalize('NFD').replace(/[̀-ͯ]/g,'');
-      const b = propBarrio;
-      if (b === 'golf') matchB = addr.includes('golf');
-      else if (b === 'village') matchB = addr.includes('village');
-      else if (b === 'pueblo-nuevo') matchB = addr.includes('pueblo nuevo') || addr.includes('pueblo-nuevo');
-      else if (b === 'candelaria') matchB = addr.includes('candelaria');
+      if (propBarrio === 'golf') matchB = addr.includes('golf');
+      else if (propBarrio === 'village') matchB = addr.includes('village');
+      else if (propBarrio === 'pueblo-nuevo') matchB = addr.includes('pueblo nuevo') || addr.includes('pueblo-nuevo');
+      else if (propBarrio === 'candelaria') matchB = addr.includes('candelaria');
     }
-    return matchQ && matchF && matchB;
+    // ADVANCED FILTERS
+    let matchAdv = true;
+    if (!forModal) {
+      const pMin = parseInt(document.getElementById('fPrecioMin')?.value||'0')||0;
+      const pMax = parseInt(document.getElementById('fPrecioMax')?.value||'0')||0;
+      const sMin = parseInt(document.getElementById('fSupMin')?.value||'0')||0;
+      const sMax = parseInt(document.getElementById('fSupMax')?.value||'0')||0;
+      const price = parsePrice(p['Precio']);
+      const sup = parseSup(p['Superficie']);
+      const amb = parseInt(p['Ambientes'])||0;
+      const dorm = parseInt(p['Dormitorios'])||0;
+      const addr2 = ((p['Dirección']||'') + ' ' + (p['Ubicación']||'')).toLowerCase()
+        .normalize('NFD').replace(/[̀-ͯ]/g,'');
+      const esCerrado = BARRIOS_CERRADOS.some(b => addr2.includes(b));
+      if (pMin && price !== null && price < pMin) matchAdv = false;
+      if (pMax && price !== null && price > pMax) matchAdv = false;
+      if (sMin && sup !== null && sup < sMin) matchAdv = false;
+      if (sMax && sup !== null && sup > sMax) matchAdv = false;
+      if (advAmb > 0 && amb < advAmb) matchAdv = false;
+      if (advDorm > 0 && dorm < advDorm) matchAdv = false;
+      if (advEst && !(p['Estado Inmueble']||'').includes(advEst)) matchAdv = false;
+      if (advBc === 'yes' && !esCerrado) matchAdv = false;
+      if (advBc === 'no' && esCerrado) matchAdv = false;
+    }
+    return matchQ && matchF && matchB && matchAdv;
   });
 
   if (forModal) {
