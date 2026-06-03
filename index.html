@@ -271,6 +271,35 @@
   }
   .tab-btn:hover { color: var(--white); }
   .tab-btn.active { color: var(--red); border-bottom-color: var(--red); }
+  .tab-btn.locked { opacity: 0.5; }
+
+  /* PIN MODAL */
+  .pin-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+    z-index: 999; align-items: center; justify-content: center;
+  }
+  .pin-overlay.visible { display: flex; }
+  .pin-box {
+    background: var(--bg2); border-radius: 12px; padding: 32px 28px;
+    width: 300px; text-align: center; border: 1px solid var(--border);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+  }
+  .pin-box h2 { font-family: 'Playfair Display', serif; font-size: 20px; margin-bottom: 6px; }
+  .pin-box p { color: var(--gray); font-size: 13px; margin-bottom: 20px; }
+  .pin-input {
+    width: 100%; padding: 12px; font-size: 22px; letter-spacing: 8px; text-align: center;
+    border: 2px solid var(--border); border-radius: var(--radius); background: var(--bg3);
+    color: var(--white); font-family: 'Inter', sans-serif; outline: none;
+    transition: border-color 0.15s;
+  }
+  .pin-input:focus { border-color: var(--red); }
+  .pin-input.shake { animation: shake 0.3s; border-color: var(--red); }
+  @keyframes shake {
+    0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)}
+  }
+  .pin-error { color: var(--red); font-size: 12px; margin-top: 8px; min-height: 18px; }
+  .pin-actions { display: flex; gap: 8px; margin-top: 16px; }
+  .pin-actions .btn { flex: 1; justify-content: center; }
 
   /* PROPIEDADES PANEL */
   .props-panel { display: none; flex: 1; flex-direction: column; overflow: hidden; }
@@ -359,8 +388,8 @@
 </header>
 
 <div class="tab-nav">
-  <button class="tab-btn active" id="tab-contactos" onclick="showTab('contactos')">👥 Contactos</button>
-  <button class="tab-btn" id="tab-propiedades" onclick="showTab('propiedades')">🏠 Propiedades</button>
+  <button class="tab-btn active" id="tab-contactos" onclick="tryShowTab('contactos')">🔒 Contactos</button>
+  <button class="tab-btn" id="tab-propiedades" onclick="tryShowTab('propiedades')">🏠 Propiedades</button>
 </div>
 
 <div class="main">
@@ -966,8 +995,14 @@ function toast(msg, type = 'success') {
 // ─── TABS ────────────────────────────────────────────────────────────────────
 function showTab(tab) {
   const isProps = tab === 'propiedades';
-  document.getElementById('tab-contactos').classList.toggle('active', !isProps);
-  document.getElementById('tab-propiedades').classList.toggle('active', isProps);
+  const btnC = document.getElementById('tab-contactos');
+  const btnP = document.getElementById('tab-propiedades');
+  btnC.classList.toggle('active', !isProps);
+  btnP.classList.toggle('active', isProps);
+  if (!isProps) {
+    btnC.textContent = '👥 Contactos';
+    btnC.classList.remove('locked');
+  }
   document.querySelector('.main').style.display = isProps ? 'none' : 'flex';
   document.getElementById('propsPanel').classList.toggle('visible', isProps);
   if (isProps && properties.length === 0) fetchProperties();
@@ -1294,8 +1329,69 @@ function unlinkProp(contactId) {
   toast('Propiedad desvinculada', 'success');
 }
 
+// ─── PIN / ACCESO ────────────────────────────────────────────────────────────
+const PIN_CODE = '1234'; // ← cambiá esto por tu PIN
+const PIN_KEY  = 'crm_unlocked';
+
+function isUnlocked() {
+  return localStorage.getItem(PIN_KEY) === 'yes';
+}
+
+function tryShowTab(tab) {
+  if (tab === 'propiedades') { showTab('propiedades'); return; }
+  if (isUnlocked()) { showTab('contactos'); return; }
+  document.getElementById('pinOverlay').classList.add('visible');
+  document.getElementById('pinInput').value = '';
+  document.getElementById('pinError').textContent = '';
+  document.getElementById('pinInput').focus();
+}
+
+function submitPin() {
+  const val = document.getElementById('pinInput').value;
+  if (val === PIN_CODE) {
+    localStorage.setItem(PIN_KEY, 'yes');
+    document.getElementById('pinOverlay').classList.remove('visible');
+    showTab('contactos');
+  } else {
+    const inp = document.getElementById('pinInput');
+    inp.classList.remove('shake');
+    void inp.offsetWidth;
+    inp.classList.add('shake');
+    document.getElementById('pinError').textContent = 'PIN incorrecto';
+    inp.value = '';
+    inp.focus();
+  }
+}
+
+function cancelPin() {
+  document.getElementById('pinOverlay').classList.remove('visible');
+}
+
 // ─── START ───────────────────────────────────────────────────────────────────
 init();
+// On load: if not unlocked, default to propiedades tab
+if (!isUnlocked()) {
+  showTab('propiedades');
+  document.getElementById('tab-propiedades').classList.add('active');
+  document.getElementById('tab-contactos').classList.remove('active');
+  document.getElementById('tab-contactos').classList.add('locked');
+}
 </script>
+
+<!-- PIN MODAL -->
+<div class="pin-overlay" id="pinOverlay">
+  <div class="pin-box">
+    <h2>🔒 Acceso privado</h2>
+    <p>Ingresá tu PIN para ver los contactos</p>
+    <input class="pin-input" id="pinInput" type="password" maxlength="10" inputmode="numeric"
+      placeholder="••••"
+      onkeydown="if(event.key==='Enter')submitPin()">
+    <div class="pin-error" id="pinError"></div>
+    <div class="pin-actions">
+      <button class="btn btn-ghost" onclick="cancelPin()">Cancelar</button>
+      <button class="btn btn-primary" onclick="submitPin()">Entrar</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
