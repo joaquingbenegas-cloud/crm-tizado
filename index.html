@@ -911,20 +911,47 @@ let aiMessage = '';
 
 // ─── INIT ────────────────────────────────────────────────────────────────────
 function init() {
+  // Mostrar datos locales de inmediato (respuesta rápida)
   const saved = localStorage.getItem('crm_contacts');
   if (saved) {
     contacts = JSON.parse(saved);
-    // Merge any new BASE contacts not in saved
-    BASE.forEach(b => {
-      if (!contacts.find(c => c.nombre === b.nombre)) {
-        contacts.push(Object.assign({ id: uid(), notes: [], contactedDates: [] }, b));
-      }
-    });
   } else {
     contacts = BASE.map(b => Object.assign({ id: uid(), notes: [], contactedDates: [] }, b));
+    save();
   }
-  save();
   renderList();
+
+  // Intentar cargar desde Sheets en segundo plano
+  loadFromSheets();
+}
+
+async function loadFromSheets() {
+  const dot = document.getElementById('syncDot');
+  const label = document.getElementById('syncLabel');
+  dot.className = 'sync-dot syncing';
+  label.textContent = 'Cargando...';
+  try {
+    const res = await fetch(SHEETS_URL, { signal: AbortSignal.timeout(8000) });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    if (data.contacts && data.contacts.length > 0) {
+      contacts = data.contacts;
+      save();
+      renderList();
+      if (selectedId) renderDetail();
+      dot.className = 'sync-dot synced';
+      label.textContent = 'Sincronizado';
+    } else {
+      // Sheets vacío — subir lo que tenemos localmente
+      dot.className = 'sync-dot';
+      label.textContent = 'Sin sincronizar';
+    }
+  } catch(e) {
+    // Sin conexión o script no responde — seguir con localStorage
+    dot.className = 'sync-dot';
+    label.textContent = 'Sin conexión';
+  }
 }
 
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
@@ -1523,21 +1550,25 @@ async function syncToSheets() {
       nextAction: c.nextAction || '',
       nextActionDate: c.nextActionDate || '',
       notable: c.notable ? 'Sí' : '',
+      contactedDates: (c.contactedDates||[]).join(','),
       notas: (c.notes||[]).map(n => `[${n.date} ${n.time}] ${n.text}`).join(' | ')
     }));
-    await fetch(SHEETS_URL, {
+    const res = await fetch(SHEETS_URL, {
       method: 'POST',
-      mode: 'no-cors',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contacts: payload })
+      body: JSON.stringify({ contacts: payload }),
+      signal: AbortSignal.timeout(15000)
     });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const result = await res.json();
+    if (result.error) throw new Error(result.error);
     dot.className = 'sync-dot synced';
     label.textContent = 'Sincronizado ' + new Date().toLocaleTimeString('es-AR', {hour:'2-digit',minute:'2-digit'});
-    toast('Datos enviados a Google Sheets ✓', 'success');
+    toast(`${result.saved || payload.length} contactos guardados en Sheets ✓`, 'success');
   } catch (e) {
     dot.className = 'sync-dot';
-    label.textContent = 'Error de sincronización';
-    toast('Error al sincronizar: ' + e.message, 'error');
+    label.textContent = 'Sin conexión';
+    toast('No se pudo sincronizar: ' + e.message, 'error');
   }
 }
 
