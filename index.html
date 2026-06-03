@@ -292,6 +292,14 @@
   }
   .prop-card:hover { border-color: var(--gray2); }
   .prop-card.linked { border-color: var(--red); background: var(--red-dim); }
+  .prop-card { padding: 0 !important; overflow: hidden; }
+  .prop-thumb { height: 150px; background: var(--bg3); overflow: hidden; position: relative; cursor: pointer; }
+  .prop-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .prop-thumb .thumb-ph { width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--gray2);font-size:11px; }
+  .prop-op-badge { position:absolute;top:8px;left:8px;padding:2px 7px;border-radius:3px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em; }
+  .badge-venta-p { background:var(--red);color:#fff; }
+  .badge-alquiler-p { background:#7c3aed;color:#fff; }
+  .prop-card-body { padding: 12px 14px; }
   .prop-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
   .prop-card-dir { font-weight: 600; font-size: 13px; flex: 1; }
   .prop-price { font-weight: 700; font-size: 14px; color: var(--red); flex-shrink: 0; }
@@ -1066,25 +1074,66 @@ function renderProps(forModal = false) {
       p['Cocheras'] ? p['Cocheras'] + ' coch.' : '',
       p['Superficie'] ? p['Superficie'] + ' m²' : ''
     ].filter(Boolean).join(' · ');
+    const zpUrl = findZonaPropUrl(p);
+    const opBadge = (p['Operación']||'').includes('Alquiler') ? 'badge-alquiler-p' : 'badge-venta-p';
+    const photoKey = zpUrl ? 'zpphoto_' + btoa(zpUrl).slice(-20) : null;
+    const cachedPhoto = photoKey ? localStorage.getItem(photoKey) : null;
+    const thumbInner = cachedPhoto
+      ? `<img src="${cachedPhoto}" alt="foto" loading="lazy">`
+      : `<div class="thumb-ph">cargando foto...</div>`;
     return `
-    <div class="prop-card">
-      <div class="prop-card-top">
-        <span class="prop-card-dir">${esc(p['Dirección']||'')} · ${esc(p['Ubicación']||'')}</span>
-        <span class="prop-price">${esc(p['Precio']||'')}</span>
-      </div>
-      <div class="prop-meta">${esc(p['Codigo']||'')} · ${details || '—'}</div>
-      <div class="prop-tags">
-        <span class="prop-tag ${opTag}">${esc(p['Operación']||'')}</span>
-        <span class="prop-tag ${tipoTag}">${esc(p['Tipo Propiedad']||'')}</span>
-        ${p['Estado Inmueble'] ? `<span class="prop-tag" style="background:var(--bg3);color:var(--gray)">${esc(p['Estado Inmueble'])}</span>` : ''}
-      </div>
-      <div class="prop-actions">
-        <button class="btn btn-ghost btn-sm" onclick="verEnZonaProp(${JSON.stringify(p).replace(/"/g,'&quot;')})">🔍 Ver fotos</button>
-        <button class="btn btn-ghost btn-sm" onclick="shareProperty(${JSON.stringify(p).replace(/"/g,'&quot;')})">📤 Compartir WA</button>
-        <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="openLinkModal(${JSON.stringify(p['Codigo']).replace(/"/g,'&quot;')})">🔗 Vincular</button>
+    <div class="prop-card" data-zpurl="${esc(zpUrl||'')}" data-photokey="${esc(photoKey||'')}">
+      <div class="prop-thumb" onclick="${zpUrl?`verEnZonaProp(${JSON.stringify(p).replace(/"/g,"'")})`:''}">${thumbInner}<span class="prop-op-badge ${opBadge}">${esc(p['Operación']||'')}</span></div>
+      <div class="prop-card-body">
+        <div class="prop-card-top">
+          <span class="prop-card-dir">${esc(p['Dirección']||'')} · ${esc(p['Ubicación']||'')}</span>
+          <span class="prop-price">${esc(p['Precio']||'')}</span>
+        </div>
+        <div class="prop-meta">${esc(p['Codigo']||'')} · ${details || '—'}</div>
+        <div class="prop-tags">
+          <span class="prop-tag ${opTag}">${esc(p['Operación']||'')}</span>
+          <span class="prop-tag ${tipoTag}">${esc(p['Tipo Propiedad']||'')}</span>
+          ${p['Estado Inmueble'] ? `<span class="prop-tag" style="background:var(--bg3);color:var(--gray)">${esc(p['Estado Inmueble'])}</span>` : ''}
+        </div>
+        <div class="prop-actions">
+          <button class="btn btn-ghost btn-sm" onclick="verEnZonaProp(${JSON.stringify(p).replace(/"/g,'&quot;')})">🔍 Ver fotos</button>
+          <button class="btn btn-ghost btn-sm" onclick="shareProperty(${JSON.stringify(p).replace(/"/g,'&quot;')})">📤 Compartir WA</button>
+          <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="openLinkModal(${JSON.stringify(p['Codigo']).replace(/"/g,'&quot;')})">🔗 Vincular</button>
+        </div>
       </div>
     </div>`;
   }).join('');
+
+  loadMissingPhotosCRM();
+}
+
+async function fetchPhotoCRM(zpUrl, photoKey) {
+  try {
+    const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(zpUrl)}`, { signal: AbortSignal.timeout(8000) });
+    const data = await res.json();
+    const match = data.contents && data.contents.match(/og:image[^>]*content="([^"]+)"/);
+    if (match && match[1]) { localStorage.setItem(photoKey, match[1]); return match[1]; }
+  } catch(e) {}
+  return null;
+}
+
+function loadMissingPhotosCRM() {
+  const cards = document.querySelectorAll('#propsGrid .prop-card[data-zpurl]');
+  const observer = new IntersectionObserver(async (entries) => {
+    for (const entry of entries) {
+      if (!entry.isIntersecting) continue;
+      const card = entry.target;
+      const zpUrl = card.dataset.zpurl;
+      const photoKey = card.dataset.photokey;
+      if (!zpUrl || !photoKey || card.querySelector('img')) continue;
+      observer.unobserve(card);
+      const url = await fetchPhotoCRM(zpUrl, photoKey);
+      const ph = card.querySelector('.thumb-ph');
+      if (url && ph) { const img = document.createElement('img'); img.src = url; img.alt = 'foto'; ph.replaceWith(img); }
+      else if (ph) ph.textContent = '🏠';
+    }
+  }, { rootMargin: '200px' });
+  cards.forEach(c => { if (!c.querySelector('img')) observer.observe(c); });
 }
 
 function slugify(str) {
