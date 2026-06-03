@@ -486,16 +486,6 @@
   .upcoming-name { flex: 1; font-weight: 500; }
   .upcoming-action { color: var(--gray); font-size: 11px; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-  /* ALQUILERES MODAL TABLE */
-  .alq-list { display: flex; flex-direction: column; gap: 8px; }
-  .alq-item {
-    background: var(--bg3); border: 1px solid var(--border); border-radius: 6px;
-    padding: 10px 14px; display: flex; align-items: center; gap: 10px;
-  }
-  .alq-info { flex: 1; }
-  .alq-dir { font-weight: 600; font-size: 13px; }
-  .alq-meta { font-size: 11px; color: var(--gray); margin-top: 2px; }
-  .alq-empty { color: var(--gray2); text-align: center; padding: 20px; font-size: 13px; }
 
   @media (max-width: 768px) {
     .stats-row { grid-template-columns: 1fr; }
@@ -608,7 +598,7 @@
       <option value="mayor-precio">Mayor precio</option>
     </select>
     <button class="btn btn-ghost btn-sm" onclick="fetchProperties()" title="Actualizar desde ZonaProp">↺</button>
-    <button class="btn btn-ghost btn-sm" onclick="tryOpenAlquileres()" title="Gestionar alquileres manuales">🏘 Alquileres</button>
+
     <a href="https://www.zonaprop.com.ar/inmobiliarias/tizado_17635184-inmuebles-orden-precio-ascendente.html" target="_blank" class="btn btn-ghost btn-sm">🌐 ZonaProp</a>
   </div>
 
@@ -767,89 +757,6 @@
   </div>
 </div>
 
-<!-- MODAL ALQUILERES -->
-<div class="modal-overlay" id="alquileresModal">
-  <div class="modal" style="max-width:640px">
-    <div class="modal-header">
-      <h2>🏘 Mis Alquileres</h2>
-      <button class="modal-close" onclick="document.getElementById('alquileresModal').classList.remove('open')">×</button>
-    </div>
-    <div class="modal-body">
-      <!-- Form nuevo alquiler -->
-      <div id="alqForm" style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px">
-        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--gray);margin-bottom:12px" id="alqFormTitle">Nuevo alquiler</div>
-        <input type="hidden" id="alq_editId">
-        <div class="field-grid" style="grid-template-columns:1fr 1fr;gap:10px">
-          <div class="field" style="grid-column:1/-1">
-            <label>Dirección *</label>
-            <input type="text" id="alq_dir" placeholder="Ej: Moreno 1234">
-          </div>
-          <div class="field">
-            <label>Ubicación</label>
-            <input type="text" id="alq_ub" placeholder="Bella Vista, San Miguel" value="Bella Vista, San Miguel">
-          </div>
-          <div class="field">
-            <label>Tipo</label>
-            <select id="alq_tipo">
-              <option value="Casa">Casa</option>
-              <option value="Departamento">Departamento</option>
-              <option value="Local">Local</option>
-              <option value="Terreno">Terreno</option>
-              <option value="Otro">Otro</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>Precio ($ o U$S)</label>
-            <input type="text" id="alq_precio" placeholder="Ej: $450.000">
-          </div>
-          <div class="field">
-            <label>Superficie (m²)</label>
-            <input type="number" id="alq_sup" placeholder="150">
-          </div>
-          <div class="field">
-            <label>Ambientes</label>
-            <input type="number" id="alq_amb" placeholder="3" min="0" max="20">
-          </div>
-          <div class="field">
-            <label>Dormitorios</label>
-            <input type="number" id="alq_dorm" placeholder="2" min="0" max="15">
-          </div>
-          <div class="field">
-            <label>Baños</label>
-            <input type="number" id="alq_ban" placeholder="1" min="0" max="10">
-          </div>
-          <div class="field">
-            <label>Cocheras</label>
-            <input type="number" id="alq_coch" placeholder="1" min="0" max="10">
-          </div>
-          <div class="field">
-            <label>Estado</label>
-            <select id="alq_est">
-              <option value="">Sin especificar</option>
-              <option value="Bueno">Bueno</option>
-              <option value="Muy Bueno">Muy Bueno</option>
-              <option value="Excelente">Excelente</option>
-            </select>
-          </div>
-          <div class="field" style="grid-column:1/-1">
-            <label>Foto URL (opcional)</label>
-            <input type="url" id="alq_foto" placeholder="https://...jpg">
-          </div>
-          <div class="field" style="grid-column:1/-1">
-            <label>Descripción / Notas</label>
-            <textarea id="alq_desc" placeholder="Observaciones, características especiales..."></textarea>
-          </div>
-        </div>
-        <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end">
-          <button class="btn btn-ghost btn-sm" onclick="cancelAlqEdit()">Cancelar</button>
-          <button class="btn btn-primary btn-sm" onclick="saveAlquiler()">Guardar</button>
-        </div>
-      </div>
-      <!-- Lista de alquileres -->
-      <div id="alqList" class="alq-list"></div>
-    </div>
-  </div>
-</div>
 
 <div id="toast"></div>
 
@@ -952,14 +859,6 @@ let contacts = [];
 let selectedId = null;
 let activeFilter = 'all';
 let aiMessage = '';
-
-// ─── ALQUILERES ──────────────────────────────────────────────────────────────
-let alquileres = [];
-function saveAlquileres() { localStorage.setItem('crm_alquileres', JSON.stringify(alquileres)); }
-function loadAlquileres() {
-  const s = localStorage.getItem('crm_alquileres');
-  alquileres = s ? JSON.parse(s) : [];
-}
 
 // ─── INIT ────────────────────────────────────────────────────────────────────
 function init() {
@@ -1577,25 +1476,13 @@ function tryShowTab(tab) {
 
 // ─── PROPIEDADES — Google Sheet (fuente confiable) ───────────────────────────
 function fetchProperties() {
-  loadAlquileres();
-  // Normalizar PROPS_DATA al formato interno
-  const zpProps = PROPS_DATA.map(p => ({
+  properties = PROPS_DATA.map(p => ({
     'Dirección': p.dir, 'Ubicación': p.ub, 'Precio': p.precio,
     'Operación': p.op, 'Tipo Propiedad': p.tipo, 'Estado Inmueble': '',
     'Ambientes': p.amb || '', 'Dormitorios': p.dorm || '', 'Baños': p.ban || '', 'Cocheras': p.coch || '', 'Superficie': p.sup || '',
     'Codigo': p.id,
-    '_zpUrl': p.zpUrl, '_precioNum': p.num, '_foto': p.foto, '_fecha': parseInt(p.id) || 0,
-    '_manual': false
+    '_zpUrl': p.zpUrl, '_precioNum': p.num, '_foto': p.foto, '_fecha': parseInt(p.id) || 0
   }));
-  // Agregar alquileres manuales
-  const alqProps = alquileres.map(a => ({
-    'Dirección': a.dir, 'Ubicación': a.ub, 'Precio': a.precio,
-    'Operación': 'Alquiler', 'Tipo Propiedad': a.tipo, 'Estado Inmueble': a.est || '',
-    'Ambientes': a.amb || '', 'Dormitorios': a.dorm || '', 'Baños': a.ban || '', 'Cocheras': a.coch || '', 'Superficie': a.sup || '',
-    'Codigo': a.id, '_zpUrl': '', '_precioNum': a.num || 0, '_foto': a.foto || '', '_fecha': 0, '_manual': true,
-    '_desc': a.desc || ''
-  }));
-  properties = [...alqProps, ...zpProps];
   renderProps();
   toast(`${properties.length} propiedades cargadas ✓`, 'success');
 }
@@ -2159,114 +2046,6 @@ function renderMatchingSection(c) {
   </div>`;
 }
 
-// ─── ALQUILERES CRUD ────────────────────────────────────────────────────────
-function tryOpenAlquileres() {
-  if (!isUnlocked()) {
-    document.getElementById('pinOverlay').classList.add('visible');
-    document.getElementById('pinInput').value = '';
-    document.getElementById('pinError').textContent = '';
-    document.getElementById('pinInput').focus();
-    return;
-  }
-  openAlquileresModal();
-}
-
-function openAlquileresModal() {
-  loadAlquileres();
-  document.getElementById('alquileresModal').classList.add('open');
-  cancelAlqEdit();
-  renderAlqList();
-}
-
-function renderAlqList() {
-  const el = document.getElementById('alqList');
-  if (!alquileres.length) {
-    el.innerHTML = '<div class="alq-empty">Sin alquileres cargados. Usá el formulario de arriba para agregar.</div>';
-    return;
-  }
-  el.innerHTML = alquileres.map(a => `
-    <div class="alq-item">
-      <div class="alq-info">
-        <div class="alq-dir">${esc(a.dir)} · ${esc(a.ub)}</div>
-        <div class="alq-meta">${esc(a.tipo)} · ${esc(a.precio)}${a.sup ? ` · ${a.sup} m²` : ''}${a.amb ? ` · ${a.amb} amb.` : ''}${a.est ? ` · ${a.est}` : ''}</div>
-      </div>
-      <button class="btn btn-ghost btn-sm" onclick="editAlquiler('${a.id}')">✏️</button>
-      <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="deleteAlquiler('${a.id}')">✕</button>
-    </div>`).join('');
-}
-
-function cancelAlqEdit() {
-  document.getElementById('alq_editId').value = '';
-  document.getElementById('alqFormTitle').textContent = 'Nuevo alquiler';
-  ['alq_dir','alq_desc','alq_precio','alq_foto'].forEach(id => document.getElementById(id).value = '');
-  ['alq_amb','alq_dorm','alq_ban','alq_coch','alq_sup'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('alq_ub').value = 'Bella Vista, San Miguel';
-  document.getElementById('alq_tipo').value = 'Casa';
-  document.getElementById('alq_est').value = '';
-}
-
-function editAlquiler(id) {
-  const a = alquileres.find(x => x.id === id);
-  if (!a) return;
-  document.getElementById('alq_editId').value = a.id;
-  document.getElementById('alqFormTitle').textContent = 'Editar alquiler';
-  document.getElementById('alq_dir').value = a.dir || '';
-  document.getElementById('alq_ub').value = a.ub || '';
-  document.getElementById('alq_precio').value = a.precio || '';
-  document.getElementById('alq_tipo').value = a.tipo || 'Casa';
-  document.getElementById('alq_sup').value = a.sup || '';
-  document.getElementById('alq_amb').value = a.amb || '';
-  document.getElementById('alq_dorm').value = a.dorm || '';
-  document.getElementById('alq_ban').value = a.ban || '';
-  document.getElementById('alq_coch').value = a.coch || '';
-  document.getElementById('alq_est').value = a.est || '';
-  document.getElementById('alq_foto').value = a.foto || '';
-  document.getElementById('alq_desc').value = a.desc || '';
-  document.getElementById('alqForm').scrollIntoView({ behavior: 'smooth' });
-}
-
-function saveAlquiler() {
-  const dir = document.getElementById('alq_dir').value.trim();
-  if (!dir) { toast('La dirección es obligatoria', 'error'); return; }
-  const editId = document.getElementById('alq_editId').value;
-  const precioStr = document.getElementById('alq_precio').value.trim();
-  const num = parseInt((precioStr || '').replace(/[^\d]/g,'')) || 0;
-  const alq = {
-    id: editId || uid(),
-    dir, ub: document.getElementById('alq_ub').value.trim() || 'Bella Vista, San Miguel',
-    precio: precioStr, num,
-    tipo: document.getElementById('alq_tipo').value,
-    sup: parseInt(document.getElementById('alq_sup').value) || 0,
-    amb: parseInt(document.getElementById('alq_amb').value) || 0,
-    dorm: parseInt(document.getElementById('alq_dorm').value) || 0,
-    ban: parseInt(document.getElementById('alq_ban').value) || 0,
-    coch: parseInt(document.getElementById('alq_coch').value) || 0,
-    est: document.getElementById('alq_est').value,
-    foto: document.getElementById('alq_foto').value.trim(),
-    desc: document.getElementById('alq_desc').value.trim()
-  };
-  if (editId) {
-    const idx = alquileres.findIndex(x => x.id === editId);
-    if (idx >= 0) alquileres[idx] = alq;
-  } else {
-    alquileres.unshift(alq);
-  }
-  saveAlquileres();
-  fetchProperties();
-  cancelAlqEdit();
-  renderAlqList();
-  toast(editId ? 'Alquiler actualizado ✓' : 'Alquiler agregado ✓', 'success');
-}
-
-function deleteAlquiler(id) {
-  if (!confirm('¿Eliminar este alquiler?')) return;
-  alquileres = alquileres.filter(a => a.id !== id);
-  saveAlquileres();
-  fetchProperties();
-  renderAlqList();
-  toast('Alquiler eliminado', 'success');
-}
-
 // ─── MATCHING PROPIEDADES ───────────────────────────────────────────────────
 function getMatchingProperties(c) {
   if (!properties.length) return [];
@@ -2412,7 +2191,6 @@ function cancelPin() {
 }
 
 // ─── START ───────────────────────────────────────────────────────────────────
-loadAlquileres();
 init();
 applyUrlParams();
 // On load: if unlocked show contacts, else show propiedades
