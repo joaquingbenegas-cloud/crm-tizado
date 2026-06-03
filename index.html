@@ -518,9 +518,11 @@
         <button class="filter-chip" data-filter="Venta" onclick="setFilter(this)">Venta</button>
         <button class="filter-chip" data-filter="Alquiler" onclick="setFilter(this)">Alquiler</button>
         <button class="filter-chip" data-filter="ALTA" onclick="setFilter(this)">🔴 Alta</button>
+        <button class="filter-chip" data-filter="MEDIA" onclick="setFilter(this)">🟡 Media</button>
         <button class="filter-chip" data-filter="today" onclick="setFilter(this)">Hoy</button>
         <button class="filter-chip" data-filter="notable" onclick="setFilter(this)">★ Destacados</button>
         <button class="filter-chip" data-filter="overdue" onclick="setFilter(this)" id="chipOverdue">🔔 Pendientes</button>
+        <button class="filter-chip" data-filter="sintel" onclick="setFilter(this)">📵 Sin tel.</button>
       </div>
       <div class="sort-row">
         <label>Ordenar:</label>
@@ -801,6 +803,10 @@
             </select>
           </div>
           <div class="field" style="grid-column:1/-1">
+            <label>Foto URL (opcional)</label>
+            <input type="url" id="alq_foto" placeholder="https://...jpg">
+          </div>
+          <div class="field" style="grid-column:1/-1">
             <label>Descripción / Notas</label>
             <textarea id="alq_desc" placeholder="Observaciones, características especiales..."></textarea>
           </div>
@@ -817,6 +823,36 @@
 </div>
 
 <div id="toast"></div>
+
+<!-- MODAL REGISTRAR CONTACTO -->
+<div class="modal-overlay" id="contactLogModal">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header">
+      <h2>Registrar contacto</h2>
+      <button class="modal-close" onclick="document.getElementById('contactLogModal').classList.remove('open')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>¿Cómo fue el contacto?</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px" id="logTypeChips">
+          <button class="adv-chip active" data-logtype="WhatsApp" onclick="selectLogType(this)">💬 WhatsApp</button>
+          <button class="adv-chip" data-logtype="Llamada" onclick="selectLogType(this)">📞 Llamada</button>
+          <button class="adv-chip" data-logtype="Visita" onclick="selectLogType(this)">🤝 Visita</button>
+          <button class="adv-chip" data-logtype="Email" onclick="selectLogType(this)">📧 Email</button>
+          <button class="adv-chip" data-logtype="Otro" onclick="selectLogType(this)">💭 Otro</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>Nota rápida (opcional)</label>
+        <textarea id="logNoteText" placeholder="Ej: Quedó en ver la casa el sábado..." style="min-height:70px"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="document.getElementById('contactLogModal').classList.remove('open')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveContactLog()">Guardar</button>
+    </div>
+  </div>
+</div>
 
 <script>
 // ─── DATA ───────────────────────────────────────────────────────────────────
@@ -931,15 +967,17 @@ function renderList() {
   const sort = document.getElementById('sortSelect').value;
 
   let list = contacts.filter(c => {
-    const matchQ = !q || c.nombre.toLowerCase().includes(q) || (c.desc||'').toLowerCase().includes(q);
+    const matchQ = !q || c.nombre.toLowerCase().includes(q) || (c.desc||'').toLowerCase().includes(q) || (c.tel||'').includes(q);
     let matchF = true;
     if (activeFilter === 'Compra') matchF = c.interesEn === 'Compra';
     else if (activeFilter === 'Venta') matchF = c.interesEn === 'Venta';
     else if (activeFilter === 'Alquiler') matchF = c.interesEn === 'Alquiler';
     else if (activeFilter === 'ALTA') matchF = c.urgencia === 'ALTA';
+    else if (activeFilter === 'MEDIA') matchF = c.urgencia === 'MEDIA';
     else if (activeFilter === 'today') matchF = c.contactedDates && c.contactedDates.includes(TODAY);
     else if (activeFilter === 'notable') matchF = !!c.notable;
     else if (activeFilter === 'overdue') matchF = !!(c.nextAction && c.nextActionDate && c.nextActionDate <= TODAY);
+    else if (activeFilter === 'sintel') matchF = !c.tel;
     return matchQ && matchF;
   });
 
@@ -1167,18 +1205,51 @@ function setUrgency(id, val) {
   renderDetail();
 }
 
+let contactLogTargetId = null;
+let contactLogType = 'WhatsApp';
+
 function markContactedToday(id) {
-  const c = getContact(id);
+  contactLogTargetId = id;
+  contactLogType = 'WhatsApp';
+  document.querySelectorAll('#logTypeChips .adv-chip').forEach(b => {
+    b.classList.toggle('active', b.dataset.logtype === 'WhatsApp');
+  });
+  document.getElementById('logNoteText').value = '';
+  document.getElementById('contactLogModal').classList.add('open');
+  setTimeout(() => document.getElementById('logNoteText').focus(), 100);
+}
+
+function selectLogType(el) {
+  document.querySelectorAll('#logTypeChips .adv-chip').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  contactLogType = el.dataset.logtype;
+}
+
+function saveContactLog() {
+  const c = getContact(contactLogTargetId);
   if (!c) return;
   if (!c.contactedDates) c.contactedDates = [];
   if (!c.contactedDates.includes(TODAY)) {
     c.contactedDates.push(TODAY);
     c.ultimo = TODAY;
   }
+  // Auto-log en notas
+  const note = document.getElementById('logNoteText').value.trim();
+  const icons = { WhatsApp:'💬', Llamada:'📞', Visita:'🤝', Email:'📧', Otro:'💭' };
+  const icon = icons[contactLogType] || '📋';
+  const logText = note ? `${icon} ${contactLogType}: ${note}` : `${icon} ${contactLogType}`;
+  if (!c.notes) c.notes = [];
+  const now = new Date();
+  c.notes.push({
+    id: uid(), text: logText,
+    date: now.toLocaleDateString('es-AR'),
+    time: now.toLocaleTimeString('es-AR', { hour:'2-digit', minute:'2-digit' })
+  });
   save();
+  document.getElementById('contactLogModal').classList.remove('open');
   renderList();
   renderDetail();
-  toast('Marcado como contactado hoy ✓', 'success');
+  toast('Contacto registrado ✓', 'success');
 }
 
 function toggleNotable(id) {
@@ -1420,7 +1491,7 @@ function fetchProperties() {
     'Dirección': a.dir, 'Ubicación': a.ub, 'Precio': a.precio,
     'Operación': 'Alquiler', 'Tipo Propiedad': a.tipo, 'Estado Inmueble': a.est || '',
     'Ambientes': a.amb || '', 'Dormitorios': a.dorm || '', 'Baños': a.ban || '', 'Cocheras': a.coch || '', 'Superficie': a.sup || '',
-    'Codigo': a.id, '_zpUrl': '', '_precioNum': a.num || 0, '_foto': '', '_fecha': 0, '_manual': true,
+    'Codigo': a.id, '_zpUrl': '', '_precioNum': a.num || 0, '_foto': a.foto || '', '_fecha': 0, '_manual': true,
     '_desc': a.desc || ''
   }));
   properties = [...alqProps, ...zpProps];
@@ -1872,9 +1943,40 @@ function verEnZonaProp(p) {
 }
 
 function shareProperty(p) {
-  const msg = `🏠 *${p['Tipo Propiedad']} en ${p['Operación']}*\n📍 ${p['Dirección']}, ${p['Ubicación']}\n💰 ${p['Precio']}${p['Superficie'] ? `\n📐 ${p['Superficie']} m²` : ''}${p['Ambientes'] ? ` · ${p['Ambientes']} ambientes` : ''}\n\n_Tizado Bella Vista_`;
+  const tipo = p['Tipo Propiedad'] || p.tipo || '';
+  const op = p['Operación'] || p.op || '';
+  const dir = p['Dirección'] || p.dir || '';
+  const ub = p['Ubicación'] || p.ub || '';
+  const precio = p['Precio'] || p.precio || '';
+  const sup = p['Superficie'] || p.sup || '';
+  const amb = p['Ambientes'] || p.amb || '';
+  const dorm = p['Dormitorios'] || p.dorm || '';
+  const ban = p['Baños'] || p.ban || '';
+  const coch = p['Cocheras'] || p.coch || '';
+  const zpUrl = p._zpUrl || p.zpUrl || '';
+
+  const details = [
+    sup ? `📐 ${sup} m²` : '',
+    amb ? `🚪 ${amb} amb.` : '',
+    dorm ? `🛏 ${dorm} dorm.` : '',
+    ban ? `🚿 ${ban} baños` : '',
+    coch ? `🚗 ${coch} coch.` : '',
+  ].filter(Boolean).join('  ·  ');
+
+  const msg = [
+    `🏠 *${tipo} en ${op}*`,
+    `📍 ${dir}, ${ub}`,
+    `💰 ${precio}`,
+    details,
+    zpUrl ? `🔗 ${zpUrl}` : '',
+    ``,
+    `_Tizado · Bella Vista_`
+  ].filter(l => l !== undefined && (l !== '' || l === '')).join('\n').replace(/\n{3,}/g, '\n\n').trim();
+
   window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
 }
+
+function renderLinkProps() { renderProps(true); }
 
 // ─── VINCULAR PROP ────────────────────────────────────────────────────────────
 let linkingContactId = null;
@@ -1995,7 +2097,7 @@ function renderAlqList() {
 function cancelAlqEdit() {
   document.getElementById('alq_editId').value = '';
   document.getElementById('alqFormTitle').textContent = 'Nuevo alquiler';
-  ['alq_dir','alq_desc','alq_precio'].forEach(id => document.getElementById(id).value = '');
+  ['alq_dir','alq_desc','alq_precio','alq_foto'].forEach(id => document.getElementById(id).value = '');
   ['alq_amb','alq_dorm','alq_ban','alq_coch','alq_sup'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('alq_ub').value = 'Bella Vista, San Miguel';
   document.getElementById('alq_tipo').value = 'Casa';
@@ -2017,6 +2119,7 @@ function editAlquiler(id) {
   document.getElementById('alq_ban').value = a.ban || '';
   document.getElementById('alq_coch').value = a.coch || '';
   document.getElementById('alq_est').value = a.est || '';
+  document.getElementById('alq_foto').value = a.foto || '';
   document.getElementById('alq_desc').value = a.desc || '';
   document.getElementById('alqForm').scrollIntoView({ behavior: 'smooth' });
 }
@@ -2038,6 +2141,7 @@ function saveAlquiler() {
     ban: parseInt(document.getElementById('alq_ban').value) || 0,
     coch: parseInt(document.getElementById('alq_coch').value) || 0,
     est: document.getElementById('alq_est').value,
+    foto: document.getElementById('alq_foto').value.trim(),
     desc: document.getElementById('alq_desc').value.trim()
   };
   if (editId) {
