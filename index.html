@@ -858,8 +858,10 @@ function generateAI(id, type) {
     ? '\nNotas previas: ' + [...c.notes].slice(-3).map(n => `[${n.date}] ${n.text}`).join(' | ')
     : '';
 
+  const zpUrl = c.linkedProp ? findZonaPropUrl(c.linkedProp) : null;
+
   const propInfo = c.linkedProp
-    ? `\nPropiedad a presentar: ${c.linkedProp.tipo} en ${c.linkedProp.operacion} — ${c.linkedProp.direccion}, ${c.linkedProp.ubicacion} — ${c.linkedProp.precio}${c.linkedProp.superficie ? ` — ${c.linkedProp.superficie} m²` : ''}${c.linkedProp.ambientes ? ` — ${c.linkedProp.ambientes} ambientes` : ''}`
+    ? `\nPropiedad a presentar: ${c.linkedProp.tipo} en ${c.linkedProp.operacion} — ${c.linkedProp.direccion}, ${c.linkedProp.ubicacion} — ${c.linkedProp.precio}${c.linkedProp.superficie ? ` — ${c.linkedProp.superficie} m²` : ''}${c.linkedProp.ambientes ? ` — ${c.linkedProp.ambientes} ambientes` : ''}${zpUrl ? `\nLink de la propiedad: ${zpUrl}` : ''}`
     : '';
 
   const prompt = `Soy Joaquín González Benegas, asesor inmobiliario de Tizado Bella Vista. Escribime un mensaje de WhatsApp para ${c.nombre}, que está interesado en ${c.interesEn || 'una operación inmobiliaria'}.
@@ -869,7 +871,7 @@ Descripción: ${c.desc || 'Sin descripción'}${c.presupuesto ? `\nPresupuesto: $
 
 Tono: ${typeLabels[type]}.
 
-El mensaje tiene que ser en español rioplatense, máximo 4 líneas, directo y cálido, sin sonar a agencia. Sin asteriscos ni markdown. Firmá como "Joaquín - Tizado Bella Vista". Solo el texto del mensaje, sin explicaciones.`;
+El mensaje tiene que ser en español rioplatense, máximo 4 líneas, directo y cálido, sin sonar a agencia. Sin asteriscos ni markdown.${zpUrl ? ' Incluí el link de la propiedad en el mensaje.' : ''} Firmá como "Joaquín - Tizado Bella Vista". Solo el texto del mensaje, sin explicaciones.`;
 
   window.open('https://claude.ai/new?q=' + encodeURIComponent(prompt), '_blank');
   toast('Abriendo Claude con el prompt ✓', 'success');
