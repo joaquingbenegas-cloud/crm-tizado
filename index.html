@@ -760,6 +760,15 @@
         <label>Presupuesto</label>
         <input type="text" id="nc_presupuesto" placeholder="$300.000">
       </div>
+      <div class="field">
+        <label>Urgencia</label>
+        <select id="nc_urgencia">
+          <option value="">Sin asignar</option>
+          <option value="ALTA">🔴 Alta</option>
+          <option value="MEDIA">🟡 Media</option>
+          <option value="BAJA">⚫ Baja</option>
+        </select>
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeNewContact()">Cancelar</button>
@@ -1431,6 +1440,7 @@ function closeNewContact() {
   document.getElementById('newContactModal').classList.remove('open');
   ['nc_nombre','nc_tel','nc_desc','nc_presupuesto'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('nc_interes').value = '';
+  document.getElementById('nc_urgencia').value = '';
 }
 function saveNewContact() {
   const nombre = document.getElementById('nc_nombre').value.trim();
@@ -1442,6 +1452,7 @@ function saveNewContact() {
     interesEn: document.getElementById('nc_interes').value,
     desc: document.getElementById('nc_desc').value.trim(),
     presupuesto: document.getElementById('nc_presupuesto').value.trim(),
+    urgencia: document.getElementById('nc_urgencia').value,
     ultimo: TODAY,
     notes: [],
     contactedDates: []
@@ -1451,7 +1462,9 @@ function saveNewContact() {
   renderList();
   closeNewContact();
   selectContact(c.id);
-  toast('Contacto creado', 'success');
+  toast('Contacto creado ✓', 'success');
+  // Sincronizar automáticamente con Google Sheets
+  syncToSheets();
 }
 
 // ─── EXPORT / IMPORT ─────────────────────────────────────────────────────────
