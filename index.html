@@ -491,6 +491,27 @@
     .stats-row { grid-template-columns: 1fr; }
     .match-grid { grid-template-columns: 1fr; }
   }
+
+  /* AI SECTION */
+  .ai-type-btns { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+  .ai-type-btn {
+    padding: 7px 13px; border-radius: var(--radius); border: 1px solid var(--border);
+    background: var(--bg3); color: var(--white); font-size: 12px; font-weight: 500;
+    cursor: pointer; font-family: 'Inter', sans-serif; transition: all .15s;
+  }
+  .ai-type-btn:hover { border-color: var(--red); color: var(--red); }
+  .ai-open-claude {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--red); color: #fff; border: none; border-radius: var(--radius);
+    padding: 8px 16px; font-size: 13px; font-weight: 600; cursor: pointer;
+    font-family: 'Inter', sans-serif; transition: background .15s; text-decoration: none;
+  }
+  .ai-open-claude:hover { background: #a50d25; }
+  .stale-days-select {
+    background: var(--bg3); border: 1px solid var(--red); color: var(--white);
+    border-radius: 4px; padding: 2px 6px; font-size: 11px; font-family: 'Inter', sans-serif;
+    cursor: pointer; margin-left: 4px;
+  }
 </style>
 </head>
 <body>
@@ -509,6 +530,8 @@
       <span id="syncLabel">Sin sincronizar</span>
     </div>
     <button class="btn btn-ghost btn-sm" onclick="syncToSheets()">↑ Sheets</button>
+    <button class="btn btn-ghost btn-sm" onclick="exportContacts()" title="Descargar backup JSON">⬇ Backup</button>
+    <label class="btn btn-ghost btn-sm" style="cursor:pointer" title="Restaurar desde backup JSON">⬆ Restaurar<input type="file" id="importInput" accept=".json" style="display:none" onchange="importContacts(event)"></label>
     <button class="btn btn-primary btn-sm" onclick="openNewContact()">+ Contacto</button>
   </div>
 </header>
@@ -538,6 +561,16 @@
         <button class="filter-chip" data-filter="notable" onclick="setFilter(this)">★ Destacados</button>
         <button class="filter-chip" data-filter="overdue" onclick="setFilter(this)" id="chipOverdue">🔔 Pendientes</button>
         <button class="filter-chip" data-filter="sintel" onclick="setFilter(this)">📵 Sin tel.</button>
+        <button class="filter-chip" data-filter="stale" onclick="setFilter(this)" id="chipStale">😴 Sin contactar</button>
+      </div>
+      <div id="staleDaysRow" style="display:none;margin-top:8px;align-items:center;gap:6px;font-size:12px;color:var(--gray)">
+        😴 Sin contactar en más de
+        <select class="stale-days-select" id="staleDaysSelect" onchange="renderList()">
+          <option value="7">7 días</option>
+          <option value="14">14 días</option>
+          <option value="30" selected>30 días</option>
+          <option value="60">60 días</option>
+        </select>
       </div>
       <div class="sort-row">
         <label>Ordenar:</label>
@@ -887,6 +920,8 @@ function setFilter(el) {
   document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
   el.classList.add('active');
   activeFilter = el.dataset.filter;
+  const staleRow = document.getElementById('staleDaysRow');
+  if (staleRow) staleRow.style.display = activeFilter === 'stale' ? 'flex' : 'none';
   renderList();
 }
 
@@ -906,6 +941,12 @@ function renderList() {
     else if (activeFilter === 'notable') matchF = !!c.notable;
     else if (activeFilter === 'overdue') matchF = !!(c.nextAction && c.nextActionDate && c.nextActionDate <= TODAY);
     else if (activeFilter === 'sintel') matchF = !c.tel;
+    else if (activeFilter === 'stale') {
+      const days = parseInt(document.getElementById('staleDaysSelect')?.value || '30');
+      const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - days);
+      const cutoffStr = cutoff.toISOString().split('T')[0];
+      matchF = !c.ultimo || c.ultimo < cutoffStr;
+    }
     return matchQ && matchF;
   });
 
@@ -1108,13 +1149,14 @@ function renderDetail() {
 
     <!-- IA WHATSAPP -->
     <div class="section ai-section">
-      <div class="section-title">Generar Mensaje con IA</div>
-      <textarea class="ai-context-area" id="aiContext" placeholder="Contexto adicional: propiedades disponibles, novedades, info extra..."></textarea>
-      <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
-        <button class="btn btn-ghost btn-sm" onclick="generateAI('${c.id}','check-in')">💬 Check-in</button>
-        <button class="btn btn-ghost btn-sm" onclick="generateAI('${c.id}','novedad')">🏠 Novedad prop.</button>
-        <button class="btn btn-ghost btn-sm" onclick="generateAI('${c.id}','reactivar')">🔄 Reactivar</button>
-        <button class="btn btn-ghost btn-sm" onclick="generateAI('${c.id}','captar')">🤝 Captar</button>
+      <div class="section-title">✨ Generar Mensaje con IA</div>
+      <textarea class="ai-context-area" id="aiContext" placeholder="Contexto extra: propiedades disponibles, novedades, precio actualizado..."></textarea>
+      <div style="font-size:11px;color:var(--gray2);margin-bottom:8px">Elegí el tipo de mensaje y se abre Claude con el prompt listo:</div>
+      <div class="ai-type-btns">
+        <button class="ai-type-btn" onclick="generateAI('${c.id}','check-in')">💬 Check-in</button>
+        <button class="ai-type-btn" onclick="generateAI('${c.id}','novedad')">🏠 Novedad prop.</button>
+        <button class="ai-type-btn" onclick="generateAI('${c.id}','reactivar')">🔄 Reactivar</button>
+        <button class="ai-type-btn" onclick="generateAI('${c.id}','captar')">🤝 Captar</button>
       </div>
     </div>
   `;
@@ -1356,8 +1398,17 @@ Tono: ${typeLabels[type]}.
 
 El mensaje tiene que ser en español rioplatense, máximo 4 líneas, directo y cálido, sin sonar a agencia. Sin asteriscos ni markdown.${zpUrl ? ' Incluí el link de la propiedad en el mensaje.' : ''} Firmá como "Joaquín - Tizado Bella Vista". Solo el texto del mensaje, sin explicaciones.`;
 
-  window.open('https://claude.ai/new?q=' + encodeURIComponent(prompt), '_blank');
-  toast('Abriendo Claude con el prompt ✓', 'success');
+  // Copy to clipboard as fallback
+  navigator.clipboard.writeText(prompt).catch(() => {});
+  // Open Claude with pre-filled prompt
+  const claudeUrl = 'https://claude.ai/new?q=' + encodeURIComponent(prompt);
+  const opened = window.open(claudeUrl, '_blank');
+  if (!opened) {
+    // Popup blocked — show the URL they can open manually
+    toast('Prompt copiado ✓ — Si no se abrió Claude, pegá el texto directo', 'success');
+  } else {
+    toast('Prompt copiado y abriendo Claude ✓', 'success');
+  }
 }
 
 // ─── NEW CONTACT MODAL ───────────────────────────────────────────────────────
@@ -1389,6 +1440,43 @@ function saveNewContact() {
   closeNewContact();
   selectContact(c.id);
   toast('Contacto creado', 'success');
+}
+
+// ─── EXPORT / IMPORT ─────────────────────────────────────────────────────────
+function exportContacts() {
+  const data = { version: 1, date: new Date().toISOString(), contacts };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `crm-tizado-backup-${TODAY}.json`;
+  a.click();
+  localStorage.setItem('crm_last_backup', TODAY);
+  toast(`Backup de ${contacts.length} contactos descargado ✓`, 'success');
+}
+
+function importContacts(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      const imported = data.contacts || (Array.isArray(data) ? data : null);
+      if (!imported) throw new Error('Formato inválido');
+      if (!confirm(`¿Restaurar ${imported.length} contactos? Esto reemplazará los datos actuales.`)) return;
+      contacts = imported;
+      save();
+      selectedId = null;
+      renderList();
+      document.getElementById('detailEmpty').style.display = 'flex';
+      document.getElementById('detailContent').style.display = 'none';
+      toast(`${imported.length} contactos restaurados ✓`, 'success');
+    } catch(err) {
+      toast('Error al leer el archivo: ' + err.message, 'error');
+    }
+    event.target.value = '';
+  };
+  reader.readAsText(file);
 }
 
 // ─── GOOGLE SHEETS ───────────────────────────────────────────────────────────
