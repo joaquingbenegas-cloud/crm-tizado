@@ -1570,8 +1570,8 @@ function parsePrice(str) {
 }
 
 function parseSup(str) {
-  if (!str) return null;
-  const m = str.match(/[\d,.]+/);
+  if (!str && str !== 0) return null;
+  const m = String(str).match(/[\d,.]+/);
   if (!m) return null;
   return parseFloat(m[0].replace(',','.'));
 }
@@ -1889,11 +1889,8 @@ function openLinkPropFromContact(contactId) {
   linkingContactId = contactId;
   document.getElementById('linkPropModal').classList.add('open');
   document.getElementById('linkPropSearch').value = '';
-  if (properties.length === 0) {
-    fetchProperties().then(() => renderProps(true));
-  } else {
-    renderProps(true);
-  }
+  if (properties.length === 0) fetchProperties();
+  renderProps(true);
 }
 
 function linkPropToContact(codigo) {
