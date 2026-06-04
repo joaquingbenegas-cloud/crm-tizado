@@ -648,6 +648,27 @@
   .dash-stage-bar { flex: 1; height: 6px; background: var(--bg3); border-radius: 3px; overflow: hidden; }
   .dash-stage-fill { height: 100%; border-radius: 3px; background: var(--red); transition: width .4s; }
   .dash-stage-count { font-size: 12px; color: var(--gray); width: 20px; text-align: right; }
+  /* BÚSQUEDA GLOBAL */
+  .global-search-wrap { position: relative; }
+  .global-search-input { background: var(--bg3); border: 1px solid var(--border); border-radius: 20px; padding: 5px 14px 5px 32px; font-size: 13px; color: var(--white); font-family: 'Inter',sans-serif; width: 200px; outline: none; transition: width .2s, border-color .2s; }
+  .global-search-input:focus { width: 260px; border-color: var(--gray2); }
+  .global-search-input::placeholder { color: var(--gray2); }
+  .global-search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--gray2); font-size: 13px; pointer-events: none; }
+  .global-search-results { position: absolute; top: calc(100% + 6px); right: 0; width: 300px; background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,.15); z-index: 200; max-height: 320px; overflow-y: auto; display: none; }
+  .global-search-results.open { display: block; }
+  .global-result-item { padding: 9px 14px; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: background .1s; }
+  .global-result-item:hover { background: var(--bg3); }
+  .global-result-name { font-size: 13px; font-weight: 600; flex: 1; }
+  .global-result-sub { font-size: 11px; color: var(--gray); }
+  /* ETIQUETAS */
+  .tag-badge { font-size: 10px; padding: 1px 7px; border-radius: 20px; background: rgba(99,102,241,.12); color: #4f46e5; border: 1px solid rgba(99,102,241,.2); white-space: nowrap; cursor: pointer; }
+  .tag-badge:hover { background: rgba(99,102,241,.2); }
+  .tag-input-wrap { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  /* DÍAS EN ETAPA */
+  .opp-days { font-size: 10px; padding: 1px 5px; border-radius: 3px; font-weight: 600; }
+  .opp-days-ok { background: rgba(22,163,74,.1); color: var(--green); }
+  .opp-days-warn { background: rgba(202,138,4,.12); color: #a16207; }
+  .opp-days-alert { background: rgba(200,16,46,.1); color: var(--red); }
   .bar-chart { display: flex; align-items: flex-end; gap: 8px; height: 140px; padding: 0 4px; }
   .bar-month { display: flex; flex-direction: column; align-items: center; gap: 3px; flex: 1; }
   .bar-wrap { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; width: 100%; position: relative; min-height: 0; }
@@ -674,6 +695,11 @@
     </div>
   </div>
   <div class="header-actions">
+    <div class="global-search-wrap" id="globalSearchWrap">
+      <span class="global-search-icon">🔍</span>
+      <input class="global-search-input" id="globalSearchInput" type="text" placeholder="Buscar contacto..." oninput="globalSearch(this.value)" onblur="setTimeout(()=>closeGlobalSearch(),200)">
+      <div class="global-search-results" id="globalSearchResults"></div>
+    </div>
     <div class="sync-status">
       <div class="sync-dot" id="syncDot"></div>
       <span id="syncLabel">Sin sincronizar</span>
@@ -1235,19 +1261,27 @@ function renderPipeline() {
 
   // Columna 0: todos los contactos del CRM
   const pipeSearch = (document.getElementById('pipeContactSearch') || {value:''}).value.toLowerCase();
+  const pipeTagActive = (document.getElementById('pipeTagFilter') || {value:''}).value;
   const filteredContacts = [...contacts]
-    .filter(c => !c.archived && (!pipeSearch || (c.nombre||'').toLowerCase().includes(pipeSearch)))
+    .filter(c => !c.archived
+      && (!pipeSearch || (c.nombre||'').toLowerCase().includes(pipeSearch))
+      && (!pipeTagActive || (c.tags||[]).includes(pipeTagActive)))
     .sort((a,b) => (a.nombre||'').localeCompare(b.nombre||''));
+  const allTagsList = getAllTags();
 
   const contactsCol = `<div class="pipeline-col col-contactos" style="width:210px">
     <div class="pipeline-col-header">
       <span class="pipeline-col-title">Contactos</span>
       <span class="pipeline-col-count">${filteredContacts.length}${pipeSearch ? '/'+contacts.filter(c=>!c.archived).length : ''}${contacts.filter(c=>c.archived).length ? ` <span style="color:var(--gray2);font-size:9px">(${contacts.filter(c=>c.archived).length} arch.)</span>` : ''}</span>
     </div>
-    <div style="padding:6px 8px;border-bottom:1px solid var(--border);flex-shrink:0">
+    <div style="padding:6px 8px;border-bottom:1px solid var(--border);flex-shrink:0;display:flex;flex-direction:column;gap:4px">
       <input id="pipeContactSearch" type="text" placeholder="Buscar..." value="${pipeSearch}"
         oninput="renderPipeline()"
         style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:5px 8px;font-size:12px;color:var(--white);font-family:'Inter',sans-serif;outline:none">
+      ${allTagsList.length ? `<select id="pipeTagFilter" onchange="renderPipeline()" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:4px 8px;font-size:11px;color:var(--gray);font-family:'Inter',sans-serif;outline:none">
+        <option value="">Todas las etiquetas</option>
+        ${allTagsList.map(t => `<option value="${esc(t)}" ${pipeTagActive===t?'selected':''}>${esc(t)}</option>`).join('')}
+      </select>` : ''}
     </div>
     <div class="pipeline-col-body" style="gap:4px">
       ${filteredContacts.map(c => {
@@ -1264,9 +1298,10 @@ function renderPipeline() {
             <span class="opp-card-name" style="flex:1">${esc(c.nombre)}</span>
             <span style="font-size:9px;color:var(--gray2)">⠿</span>
           </div>
-          <div style="display:flex;align-items:center;gap:5px">
+          <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
             <span class="ci-badge ${badgeCls}" style="font-size:9px">${c.interesEn||'—'}</span>
             ${myOpps.length ? `<span style="font-size:10px;color:var(--red);font-weight:600">${myOpps.length} opp</span>` : ''}
+            ${(c.tags||[]).slice(0,2).map(t=>`<span class="tag-badge" style="font-size:9px;padding:0 5px">${esc(t)}</span>`).join('')}
           </div>
         </div>`;
       }).join('')}
@@ -1319,6 +1354,12 @@ function renderOppCard(o) {
   const nombre = c ? c.nombre : (o.contactNombre || '?');
   const urgDot = o.urgencia === 'ALTA' ? 'urgency-alta' : o.urgencia === 'MEDIA' ? 'urgency-media' : o.urgencia === 'BAJA' ? 'urgency-baja' : '';
   const tipoClass = (o.tipo||'').toLowerCase();
+  // Días en etapa
+  const sinceDate = o.etapaChangedAt || o.createdAt || '';
+  const daysSince = sinceDate ? Math.floor((new Date(TODAY) - new Date(sinceDate)) / 86400000) : null;
+  const daysCls = daysSince === null ? '' : daysSince <= 7 ? 'opp-days-ok' : daysSince <= 21 ? 'opp-days-warn' : 'opp-days-alert';
+  const daysHtml = daysSince !== null && !['Cierre','Negociación Caída'].includes(o.etapa)
+    ? `<span class="opp-days ${daysCls}">${daysSince}d</span>` : '';
   return `<div class="opp-card" draggable="true"
       ondragstart="dragOpp(event,'${o.id}')"
       ondragend="document.querySelectorAll('.pipeline-col-body').forEach(b=>b.classList.remove('drag-over'))"
@@ -1328,6 +1369,7 @@ function renderOppCard(o) {
     <div class="opp-card-bottom">
       ${o.valor ? `<span class="opp-card-val">${fmtUSD(o.valor)}</span>` : '<span class="opp-card-val" style="color:var(--gray2)">—</span>'}
       ${o.compartida ? `<span class="opp-card-compartida">Compartida</span>` : `<span class="opp-card-tipo ${tipoClass}">${o.tipo||''}</span>`}
+      ${daysHtml}
       ${urgDot ? `<span class="opp-urg ${urgDot}"></span>` : ''}
     </div>
   </div>`;
@@ -1345,6 +1387,7 @@ function dropOpp(e, stage) {
     const o = opps.find(x => x.id === dragOppId);
     if (o) {
       o.etapa = stage;
+      o.etapaChangedAt = TODAY;
       saveOpps();
       renderPipeline();
       if (stage === 'Cierre') {
@@ -1507,6 +1550,18 @@ function renderOppSide(contactId) {
         <div class="field" style="grid-column:1/-1">
           <label>Descripción</label>
           <textarea style="min-height:52px" onchange="updateField('${c.id}','desc',this.value)">${esc(c.desc||'')}</textarea>
+        </div>
+        <div class="field" style="grid-column:1/-1">
+          <label>Etiquetas</label>
+          <div class="tag-input-wrap" style="margin-bottom:6px">
+            ${(c.tags||[]).map(t => `<span class="tag-badge" onclick="removeTagFromContact('${c.id}','${t}')" title="Clic para eliminar">${esc(t)} ×</span>`).join('')}
+          </div>
+          <div style="display:flex;gap:6px">
+            <input type="text" id="side_tagInput" placeholder="Nueva etiqueta..." style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:5px 8px;font-size:12px;color:var(--white);font-family:'Inter',sans-serif;outline:none"
+              onkeydown="if(event.key==='Enter'){addTagToContact('${c.id}',this.value.trim());this.value='';event.preventDefault()}">
+            <button class="btn btn-ghost btn-sm" onclick="addTagToContact('${c.id}',document.getElementById('side_tagInput').value.trim());document.getElementById('side_tagInput').value=''">+ Tag</button>
+          </div>
+          ${getAllTags().filter(t => !(c.tags||[]).includes(t)).length ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px">${getAllTags().filter(t=>!(c.tags||[]).includes(t)).map(t=>`<span class="tag-badge" style="opacity:.6;cursor:pointer" onclick="addTagToContact('${c.id}','${t}')">${esc(t)}</span>`).join('')}</div>` : ''}
         </div>
       </div>
     </div>
@@ -2727,6 +2782,60 @@ function showTab(tab) {
   if (isKPIs) renderKPIs();
   if (isIngresos) renderIngresos();
   if (isDashboard) renderDashboard();
+}
+
+// ─── BÚSQUEDA GLOBAL ─────────────────────────────────────────────────────────
+function globalSearch(q) {
+  const results = document.getElementById('globalSearchResults');
+  if (!q || q.length < 2) { results.classList.remove('open'); return; }
+  const q2 = q.toLowerCase();
+  const matches = contacts.filter(c => (c.nombre||'').toLowerCase().includes(q2) || (c.desc||'').toLowerCase().includes(q2)).slice(0, 8);
+  if (!matches.length) { results.innerHTML = '<div style="padding:12px 14px;color:var(--gray2);font-size:13px">Sin resultados</div>'; results.classList.add('open'); return; }
+  const badgeClass = c => c.interesEn === 'Compra' ? 'badge-compra' : c.interesEn === 'Venta' ? 'badge-venta' : c.interesEn === 'Alquiler' ? 'badge-alquiler' : c.interesEn === 'Inmobiliaria' ? 'badge-inmobiliaria' : 'badge-empty';
+  results.innerHTML = matches.map(c => `
+    <div class="global-result-item" onclick="selectGlobalResult('${c.id}')">
+      <div style="flex:1;min-width:0">
+        <div class="global-result-name">${esc(c.nombre)}</div>
+        ${c.desc ? `<div class="global-result-sub" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(c.desc)}</div>` : ''}
+      </div>
+      <span class="ci-badge ${badgeClass(c)}" style="font-size:10px">${c.interesEn||'—'}</span>
+    </div>`).join('');
+  results.classList.add('open');
+}
+
+function selectGlobalResult(contactId) {
+  document.getElementById('globalSearchInput').value = '';
+  closeGlobalSearch();
+  if (!isUnlocked()) return;
+  tryShowTab('pipeline');
+  setTimeout(() => openContactSide(contactId), 300);
+}
+
+function closeGlobalSearch() {
+  document.getElementById('globalSearchResults').classList.remove('open');
+}
+
+// ─── ETIQUETAS ────────────────────────────────────────────────────────────────
+let allTags = [];
+
+function getAllTags() {
+  const set = new Set();
+  contacts.forEach(c => (c.tags||[]).forEach(t => set.add(t)));
+  return [...set].sort();
+}
+
+function addTagToContact(contactId, tag) {
+  const c = getContact(contactId);
+  if (!c || !tag) return;
+  if (!c.tags) c.tags = [];
+  if (!c.tags.includes(tag)) { c.tags.push(tag); save(); renderOppSide(contactId); renderPipeline(); }
+}
+
+function removeTagFromContact(contactId, tag) {
+  const c = getContact(contactId);
+  if (!c) return;
+  c.tags = (c.tags||[]).filter(t => t !== tag);
+  save(); renderOppSide(contactId); renderPipeline();
 }
 
 function renderDashboard() {
