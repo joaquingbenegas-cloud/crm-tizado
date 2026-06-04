@@ -1200,10 +1200,15 @@ function renderPipeline() {
         const urgDot = c.urgencia === 'ALTA' ? 'urgency-alta' : c.urgencia === 'MEDIA' ? 'urgency-media' : c.urgencia === 'BAJA' ? 'urgency-baja' : '';
         const badgeCls = c.interesEn === 'Compra' ? 'badge-compra' : c.interesEn === 'Venta' ? 'badge-venta' : c.interesEn === 'Alquiler' ? 'badge-alquiler' : 'badge-empty';
         const myOpps = opps.filter(o => o.contactId === c.id && !['Perdida','Negociación Caída','Cierre'].includes(o.etapa));
-        return `<div class="contact-opp-card" onclick="openContactSide('${c.id}')">
+        return `<div class="contact-opp-card" draggable="true"
+          ondragstart="dragContact(event,'${c.id}')"
+          ondragend="document.querySelectorAll('.pipeline-col-body').forEach(b=>b.classList.remove('drag-over'))"
+          onclick="openContactSide('${c.id}')"
+          title="Arrastrá a una columna para crear oportunidad">
           <div style="display:flex;align-items:center;gap:5px;margin-bottom:2px">
             ${urgDot ? `<span class="opp-urg ${urgDot}"></span>` : ''}
             <span class="opp-card-name" style="flex:1">${esc(c.nombre)}</span>
+            <span style="font-size:9px;color:var(--gray2)">⠿</span>
           </div>
           <div style="display:flex;align-items:center;gap:5px">
             <span class="ci-badge ${badgeCls}" style="font-size:9px">${c.interesEn||'—'}</span>
@@ -1269,14 +1274,33 @@ function renderOppCard(o) {
 }
 
 let dragOppId = null;
-function dragOpp(e, id) { dragOppId = id; e.dataTransfer.effectAllowed = 'move'; }
+let dragContactId = null;
+function dragOpp(e, id) { dragOppId = id; dragContactId = null; e.dataTransfer.effectAllowed = 'move'; }
+function dragContact(e, id) { dragContactId = id; dragOppId = null; e.dataTransfer.effectAllowed = 'move'; }
 function dropOpp(e, stage) {
   e.preventDefault();
   document.querySelectorAll('.pipeline-col-body').forEach(b => b.classList.remove('drag-over'));
-  if (!dragOppId) return;
-  const o = opps.find(x => x.id === dragOppId);
-  if (o) { o.etapa = stage; saveOpps(); renderPipeline(); }
-  dragOppId = null;
+  if (dragOppId) {
+    // Mover oportunidad existente
+    const o = opps.find(x => x.id === dragOppId);
+    if (o) { o.etapa = stage; saveOpps(); renderPipeline(); }
+    dragOppId = null;
+  } else if (dragContactId) {
+    // Crear nueva oportunidad desde contacto
+    const c = contacts.find(x => x.id === dragContactId);
+    if (c) {
+      opps.push({
+        id: uid(), contactId: c.id,
+        prop: '', tipo: c.interesEn || 'Compra',
+        etapa: stage, urgencia: c.urgencia || '',
+        valor: 0, nota: '', createdAt: TODAY
+      });
+      saveOpps();
+      renderPipeline();
+      toast(`${c.nombre} agregado a ${stage} ✓`, 'success');
+    }
+    dragContactId = null;
+  }
 }
 
 // ─── OPP MODAL ───────────────────────────────────────────────────────────────
@@ -2325,11 +2349,15 @@ async function syncToSheets() {
       method: 'POST',
       mode: 'no-cors',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contacts: payload })
+      body: JSON.stringify({
+      contacts: payload,
+      opps: opps,
+      ingresos: ingresos
+    })
     });
     dot.className = 'sync-dot synced';
     label.textContent = 'Sincronizado ' + new Date().toLocaleTimeString('es-AR', {hour:'2-digit',minute:'2-digit'});
-    toast(`${payload.length} contactos guardados en Sheets ✓`, 'success');
+    toast(`Sincronizado: ${payload.length} contactos · ${opps.length} oportunidades · ${ingresos.length} ingresos ✓`, 'success');
   } catch (e) {
     dot.className = 'sync-dot';
     label.textContent = 'Sin conexión';
