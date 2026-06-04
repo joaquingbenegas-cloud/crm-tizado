@@ -743,6 +743,7 @@
     </div>
     <button class="btn btn-ghost btn-sm" onclick="tryShowTab('contactos')" title="Ver directorio de contactos">👥 Contactos</button>
     <button class="btn btn-ghost btn-sm" onclick="syncToSheets()">↑ Sheets</button>
+    <button class="btn btn-ghost btn-sm" onclick="pullFromSheets()" title="Cargar datos desde Sheets (otro dispositivo)">↓ Sheets</button>
     <button class="btn btn-ghost btn-sm" onclick="exportContacts()" title="Descargar backup JSON">⬇ Backup</button>
     <label class="btn btn-ghost btn-sm" style="cursor:pointer" title="Restaurar desde backup JSON">⬆ Restaurar<input type="file" id="importInput" accept=".json" style="display:none" onchange="importContacts(event)"></label>
     <button class="btn btn-primary btn-sm" onclick="openNewContact()">+ Contacto</button>
@@ -1035,6 +1036,12 @@
   <div class="pipeline-header">
     <h2>Pipeline</h2>
     <span id="pipelineSummary" style="font-size:12px;color:var(--gray)"></span>
+    <div style="position:relative">
+      <input type="text" id="pipePropSearch" placeholder="🏠 Buscar por propiedad..." oninput="searchByProperty(this.value)"
+        style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:12px;color:var(--white);font-family:Inter,sans-serif;outline:none;width:200px;transition:border-color .15s"
+        onfocus="this.style.borderColor='var(--red)'" onblur="this.style.borderColor='var(--border)'">
+      <div id="pipePropResults" style="display:none;position:absolute;top:calc(100%+4px);right:0;width:320px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.15);z-index:200;max-height:300px;overflow-y:auto"></div>
+    </div>
     <button class="btn btn-primary btn-sm" onclick="openOppModal(null)">+ Nueva oportunidad</button>
   </div>
   <div class="pipeline-scroll" id="pipelineBoard"></div>
@@ -1148,11 +1155,15 @@
   <div style="max-width:900px">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
       <h2 style="font-family:'Playfair Display',serif;font-size:22px">Ingresos</h2>
-      <button class="btn btn-primary btn-sm" onclick="openIngresosModal()">+ Operación cerrada</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-sm" onclick="editObjetivo()">🎯 Editar objetivo</button>
+        <button class="btn btn-ghost btn-sm" onclick="printReport()">🖨 Reporte PDF</button>
+        <button class="btn btn-primary btn-sm" onclick="openIngresosModal()">+ Operación cerrada</button>
+      </div>
     </div>
     <div class="stats-grid" id="ingresosCards" style="margin-bottom:20px"></div>
     <div class="stats-section" style="margin-bottom:20px">
-      <h3>Ingreso mensual vs objetivo ($2.500/mes)</h3>
+      <h3 id="ingresosChartTitle">Ingreso mensual vs objetivo</h3>
       <div id="ingresosChart" style="margin-top:10px"></div>
     </div>
     <div class="stats-section">
@@ -1785,8 +1796,11 @@ function renderKPIs() {
 }
 
 // ─── INGRESOS RENDER ─────────────────────────────────────────────────────────
-const OBJ_MENSUAL = 2500;
-const OBJ_ANUAL = 25000;
+function getObjMensual() { return parseInt(localStorage.getItem('crm_obj_mensual') || '2500'); }
+function getObjAnual()   { return parseInt(localStorage.getItem('crm_obj_anual')   || '25000'); }
+// aliases usados en el código existente (se recalculan en cada render)
+let OBJ_MENSUAL = getObjMensual();
+let OBJ_ANUAL   = getObjAnual();
 
 function fmtUSD(n) {
   n = parseFloat(n)||0;
@@ -1794,6 +1808,8 @@ function fmtUSD(n) {
 }
 
 function renderIngresos() {
+  OBJ_MENSUAL = getObjMensual();
+  OBJ_ANUAL   = getObjAnual();
   const year = new Date().getFullYear();
   const ytd = ingresos.filter(i => i.fecha && i.fecha.startsWith(String(year))).reduce((s,i) => s+(parseFloat(i.comision)||0), 0);
   const avance = Math.min(Math.round(ytd/OBJ_ANUAL*100), 999);
@@ -1816,6 +1832,8 @@ function renderIngresos() {
     months.push({ label: d.toLocaleString('es-AR',{month:'short'}), key: `${year}-${String(m+1).padStart(2,'0')}` });
   }
   const maxVal = Math.max(OBJ_MENSUAL, ...months.map(m => ingresos.filter(i => (i.fecha||'').startsWith(m.key)).reduce((s,i)=>s+(parseFloat(i.comision)||0),0))) * 1.2;
+  const titleEl = document.getElementById('ingresosChartTitle');
+  if (titleEl) titleEl.textContent = `Ingreso mensual vs objetivo ($${OBJ_MENSUAL.toLocaleString('es-AR')}/mes)`;
   document.getElementById('ingresosChart').innerHTML = `
     <div style="display:flex;align-items:flex-end;gap:0;height:140px;background:var(--bg3);border-radius:6px;padding:10px 8px 0;overflow:hidden">
       ${months.map(m => {
@@ -1963,6 +1981,144 @@ function deleteIngreso() {
   closeIngresosModal();
   renderIngresos();
   toast('Eliminada', 'success');
+}
+
+// ─── OBJETIVO CONFIGURABLE ───────────────────────────────────────────────────
+function editObjetivo() {
+  const om = getObjMensual();
+  const oa = getObjAnual();
+  const html = `<div style="display:flex;flex-direction:column;gap:14px;padding:24px">
+    <h3 style="font-family:'Playfair Display',serif;font-size:17px;margin-bottom:4px">🎯 Editar objetivos</h3>
+    <div class="field">
+      <label>Objetivo mensual (USD)</label>
+      <input type="number" id="obj_mensual" value="${om}" placeholder="2500" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--white);padding:8px 10px;font-family:Inter,sans-serif;font-size:13px;outline:none;width:100%">
+    </div>
+    <div class="field">
+      <label>Objetivo anual (USD)</label>
+      <input type="number" id="obj_anual" value="${oa}" placeholder="25000" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--white);padding:8px 10px;font-family:Inter,sans-serif;font-size:13px;outline:none;width:100%">
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px">
+      <button class="btn btn-ghost" onclick="document.getElementById('objModal').remove()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveObjetivo()">Guardar</button>
+    </div>
+  </div>`;
+  const overlay = document.createElement('div');
+  overlay.id = 'objModal';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px';
+  overlay.innerHTML = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;width:100%;max-width:380px">${html}</div>`;
+  overlay.addEventListener('click', e => { if(e.target===overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+  document.getElementById('obj_mensual').focus();
+}
+
+function saveObjetivo() {
+  const om = parseInt(document.getElementById('obj_mensual').value) || 2500;
+  const oa = parseInt(document.getElementById('obj_anual').value) || 25000;
+  localStorage.setItem('crm_obj_mensual', om);
+  localStorage.setItem('crm_obj_anual', oa);
+  document.getElementById('objModal')?.remove();
+  renderIngresos();
+  renderDashboard();
+  toast('Objetivos guardados ✓', 'success');
+}
+
+// ─── REPORTE PDF ──────────────────────────────────────────────────────────────
+function printReport() {
+  OBJ_MENSUAL = getObjMensual();
+  OBJ_ANUAL   = getObjAnual();
+  const year = new Date().getFullYear();
+  const now = new Date();
+  const mesKey = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const mesNombre = now.toLocaleString('es-AR', {month:'long', year:'numeric'});
+  const ingMes = ingresos.filter(i => (i.fecha||'').startsWith(mesKey)).reduce((s,i)=>s+(parseFloat(i.comision)||0),0);
+  const ytd = ingresos.filter(i => i.fecha && i.fecha.startsWith(String(year))).reduce((s,i)=>s+(parseFloat(i.comision)||0),0);
+  const closedOpps = opps.filter(o => o.etapa === 'Cierre');
+  const activeOpps = opps.filter(o => !['Negociación Caída','Cierre'].includes(o.etapa));
+  const pipeVal = activeOpps.reduce((s,o) => s+(parseFloat(o.valor)||0), 0);
+  const due = contacts.filter(c => c.nextAction && c.nextActionDate && c.nextActionDate <= TODAY && !c.archived).length;
+
+  const sorted = [...ingresos].sort((a,b) => (b.fecha||'').localeCompare(a.fecha||''));
+  const ingRows = sorted.map(i => `<tr>
+    <td>${i.fecha ? formatDate(i.fecha) : '—'}</td>
+    <td>${esc(i.contacto||'')}</td>
+    <td>${esc(i.propiedad||'')}</td>
+    <td>$${Math.round(i.comision||0).toLocaleString('es-AR')}</td>
+  </tr>`).join('');
+
+  const stageRows = STAGES.filter(s => s !== 'Negociación Caída').map(s => {
+    const col = opps.filter(o => o.etapa === s);
+    if (!col.length) return '';
+    return `<tr><td>${s}</td><td>${col.length}</td><td>${fmtUSD(col.reduce((s,o)=>s+(parseFloat(o.valor)||0),0))}</td></tr>`;
+  }).join('');
+
+  const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+  <title>Reporte CRM · Tizado Bella Vista · ${mesNombre}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 13px; color: #1a1a1a; background: #fff; padding: 32px; }
+    h1 { font-size: 22px; margin-bottom: 4px; }
+    h2 { font-size: 15px; margin: 20px 0 10px; color: #333; border-bottom: 1px solid #ddd; padding-bottom: 6px; }
+    .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; }
+    .logo { font-weight: 700; font-size: 18px; }
+    .date { color: #666; font-size: 12px; }
+    .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+    .metric { background: #f5f5f5; border-radius: 8px; padding: 14px 16px; }
+    .metric-label { font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: #666; margin-bottom: 6px; }
+    .metric-num { font-size: 22px; font-weight: 700; }
+    .metric-sub { font-size: 11px; color: #888; margin-top: 3px; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th { text-align: left; padding: 7px 10px; background: #f0f0f0; font-size: 10px; text-transform: uppercase; letter-spacing: .05em; }
+    td { padding: 7px 10px; border-bottom: 1px solid #eee; }
+    .green { color: #16a34a; font-weight: 700; }
+    .footer { margin-top: 32px; text-align: center; font-size: 11px; color: #aaa; }
+    @media print { body { padding: 16px; } }
+  </style>
+  </head><body>
+  <div class="header">
+    <div>
+      <div class="logo">Tizado · Bella Vista</div>
+      <h1>Reporte de gestión</h1>
+      <div class="date">${now.toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div>
+    </div>
+    <div style="text-align:right;color:#888;font-size:11px">CRM Inmobiliario</div>
+  </div>
+
+  <div class="metrics">
+    <div class="metric">
+      <div class="metric-label">Ingresos ${mesNombre}</div>
+      <div class="metric-num green">$${Math.round(ingMes).toLocaleString('es-AR')}</div>
+      <div class="metric-sub">${Math.round(ingMes/OBJ_MENSUAL*100)}% del objetivo mensual</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Ingresos ${year}</div>
+      <div class="metric-num">$${Math.round(ytd).toLocaleString('es-AR')}</div>
+      <div class="metric-sub">Objetivo: $${OBJ_ANUAL.toLocaleString('es-AR')}</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Opps activas</div>
+      <div class="metric-num">${activeOpps.length}</div>
+      <div class="metric-sub">${fmtUSD(pipeVal)} en pipeline</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Seguimientos pendientes</div>
+      <div class="metric-num" style="color:${due>0?'#C8102E':'#16a34a'}">${due}</div>
+      <div class="metric-sub">al ${formatDate(TODAY)}</div>
+    </div>
+  </div>
+
+  <h2>💰 Operaciones cerradas</h2>
+  ${sorted.length ? `<table><thead><tr><th>Fecha</th><th>Contacto</th><th>Propiedad</th><th>Comisión</th></tr></thead><tbody>${ingRows}</tbody></table>` : '<p style="color:#888;padding:10px 0">Sin operaciones registradas</p>'}
+
+  <h2>🏗 Estado del pipeline</h2>
+  ${stageRows ? `<table><thead><tr><th>Etapa</th><th>Opps</th><th>Valor</th></tr></thead><tbody>${stageRows}</tbody></table>` : '<p style="color:#888;padding:10px 0">Sin oportunidades</p>'}
+
+  <div class="footer">Generado el ${now.toLocaleString('es-AR')} · Tizado Bella Vista CRM</div>
+  <script>window.onload=()=>window.print();<\/script>
+  </body></html>`;
+
+  const w = window.open('', '_blank');
+  if (w) { w.document.write(html); w.document.close(); }
+  else toast('Habilitá ventanas emergentes para imprimir', 'error');
 }
 
 // ─── PROPIEDADES EMBEBIDAS (extraídas de ZonaProp el 2026-06-03) ──────────────
@@ -2781,6 +2937,49 @@ async function syncToSheets() {
   }
 }
 
+// ─── PULL FROM SHEETS (múltiples dispositivos) ───────────────────────────────
+async function pullFromSheets() {
+  const dot = document.getElementById('syncDot');
+  const label = document.getElementById('syncLabel');
+  dot.className = 'sync-dot syncing';
+  label.textContent = 'Cargando desde Sheets...';
+  try {
+    const res = await fetch(SHEETS_URL + '?t=' + Date.now(), { signal: AbortSignal.timeout(12000) });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    const remoteContacts = data.contacts || [];
+    const remoteOpps = data.opps || [];
+    const remoteIngresos = data.ingresos || [];
+    if (!remoteContacts.length) { toast('Sin datos en Sheets para importar', 'error'); dot.className='sync-dot'; label.textContent='Sin sincronizar'; return; }
+    // Merge: para cada contacto remoto, si existe localmente lo actualiza, si no existe lo agrega
+    let added = 0, updated = 0;
+    remoteContacts.forEach(rc => {
+      const local = contacts.find(c => c.id === rc.id);
+      if (!local) { contacts.push(rc); added++; }
+      else {
+        // Actualizar campos básicos pero conservar notas locales si el remoto no las tiene
+        const mergedNotes = (rc.notes && rc.notes.length) ? rc.notes : (local.notes || []);
+        Object.assign(local, rc, { notes: mergedNotes });
+        updated++;
+      }
+    });
+    if (remoteOpps.length) opps = remoteOpps, saveOpps();
+    if (remoteIngresos.length) ingresos = remoteIngresos, saveIngresos();
+    save();
+    renderList();
+    renderFollowUpBanner();
+    updateTabBadges();
+    dot.className = 'sync-dot synced';
+    label.textContent = 'Cargado ✓';
+    toast(`Sincronizado: +${added} nuevos · ${updated} actualizados ✓`, 'success');
+  } catch(e) {
+    dot.className = 'sync-dot';
+    label.textContent = 'Sin conexión';
+    toast('No se pudo cargar desde Sheets: ' + e.message, 'error');
+  }
+}
+
 // ─── TOAST ───────────────────────────────────────────────────────────────────
 let toastTimer;
 function toast(msg, type = 'success') {
@@ -2860,7 +3059,96 @@ function closeGlobalSearch() {
   document.getElementById('globalSearchResults').classList.remove('open');
 }
 
+// ─── BUSCAR CONTACTOS POR PROPIEDAD ──────────────────────────────────────────
+function searchByProperty(q) {
+  const resultsEl = document.getElementById('pipePropResults');
+  if (!resultsEl) return;
+  if (!q || q.length < 2) { resultsEl.style.display = 'none'; return; }
+  const q2 = q.toLowerCase();
+  // Buscar en descripción, interés, opps del contacto
+  const matches = contacts.filter(c => {
+    if (c.archived) return false;
+    const desc = (c.desc||'').toLowerCase();
+    const myOpps = opps.filter(o => o.contactId === c.id);
+    const oppMatch = myOpps.some(o => (o.prop||'').toLowerCase().includes(q2) || (o.nota||'').toLowerCase().includes(q2));
+    return desc.includes(q2) || oppMatch;
+  }).slice(0, 10);
+
+  if (!matches.length) {
+    resultsEl.innerHTML = '<div style="padding:12px 14px;color:var(--gray2);font-size:13px">Sin resultados</div>';
+    resultsEl.style.display = 'block'; return;
+  }
+  resultsEl.innerHTML = matches.map(c => {
+    const myOpps = opps.filter(o => o.contactId === c.id);
+    const matchOpp = myOpps.find(o => (o.prop||'').toLowerCase().includes(q2));
+    const sub = matchOpp ? `<div style="font-size:11px;color:var(--gray)">🏠 ${esc(matchOpp.prop)} · ${matchOpp.etapa}</div>`
+      : `<div style="font-size:11px;color:var(--gray);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(c.desc||'')}</div>`;
+    const badgeCls = c.interesEn === 'Compra' ? 'badge-compra' : c.interesEn === 'Venta' ? 'badge-venta' : c.interesEn === 'Alquiler' ? 'badge-alquiler' : c.interesEn === 'Inmobiliaria' ? 'badge-inmobiliaria' : 'badge-empty';
+    return `<div style="padding:9px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:background .1s" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''" onclick="document.getElementById('pipePropResults').style.display='none';document.getElementById('pipePropSearch').value='';openContactSide('${c.id}')">
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
+          <span style="font-size:13px;font-weight:600">${esc(c.nombre)}</span>
+          <span class="ci-badge ${badgeCls}" style="font-size:10px">${c.interesEn||'—'}</span>
+        </div>
+        ${sub}
+      </div>
+    </div>`;
+  }).join('');
+  resultsEl.style.display = 'block';
+  // Cerrar al hacer click afuera
+  const close = e => { if(!resultsEl.contains(e.target) && e.target.id !== 'pipePropSearch') { resultsEl.style.display='none'; document.removeEventListener('click',close); } };
+  setTimeout(() => document.addEventListener('click', close), 100);
+}
+
 // ─── ETIQUETAS ────────────────────────────────────────────────────────────────
+
+// ─── AGENDA SEMANAL ──────────────────────────────────────────────────────────
+function renderWeekAgenda() {
+  const now = new Date();
+  // Lunes de la semana actual
+  const dayOfWeek = now.getDay(); // 0=Dom, 1=Lun...
+  const diffToMon = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  const monday = new Date(now); monday.setDate(now.getDate() + diffToMon);
+
+  const days = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday); d.setDate(monday.getDate() + i);
+    const key = d.toISOString().split('T')[0];
+    const dayNames = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+    const dayNum  = d.getDate();
+    const name    = dayNames[d.getDay()];
+    const isToday = key === TODAY;
+    const isPast  = key < TODAY;
+    const items   = contacts.filter(c => c.nextAction && c.nextActionDate === key && !c.archived);
+    days.push({ key, name, dayNum, isToday, isPast, items });
+  }
+
+  const totalWeek = days.reduce((s,d) => s + d.items.length, 0);
+  if (!totalWeek && days.every(d => !d.isToday)) {
+    // Si no hay nada esta semana, no mostrar el card
+    return '';
+  }
+
+  const dayCols = days.map(d => {
+    const bg = d.isToday ? 'background:rgba(200,16,46,.06);border:1px solid rgba(200,16,46,.2)' : 'background:var(--bg3);border:1px solid var(--border)';
+    const nameColor = d.isToday ? 'color:var(--red);font-weight:700' : d.isPast ? 'color:var(--gray2)' : 'color:var(--white)';
+    const itemsHtml = d.items.length
+      ? d.items.map(c => `<div style="font-size:11px;padding:3px 0;border-bottom:1px solid var(--border);cursor:pointer;line-height:1.3" onclick="tryShowTab('pipeline');setTimeout(()=>openContactSide('${c.id}'),300)" title="${esc(c.nextAction||'')}">
+          <span style="font-weight:600">${esc(c.nombre.split(' ')[0])}</span>
+          <span style="color:var(--gray);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:10px">${esc(c.nextAction||'')}</span>
+        </div>`).join('')
+      : `<div style="color:var(--gray2);font-size:10px;padding:4px 0">—</div>`;
+    return `<div style="flex:1;min-width:0;border-radius:6px;padding:6px 7px;${bg}">
+      <div style="font-size:10px;text-align:center;margin-bottom:4px;${nameColor}">${d.name}<br><span style="font-size:13px;font-weight:700">${d.dayNum}</span></div>
+      ${itemsHtml}
+    </div>`;
+  }).join('');
+
+  return `<div class="dash-card" style="margin-bottom:20px">
+    <div class="dash-card-title">📅 Agenda de la semana${totalWeek ? ` · ${totalWeek} seguimiento${totalWeek===1?'':'s'}` : ''}</div>
+    <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px">${dayCols}</div>
+  </div>`;
+}
 
 function renderDashboard() {
   const el = document.getElementById('dashboardContent');
@@ -2955,6 +3243,9 @@ function renderDashboard() {
           </div>`).join('') : '<div style="color:var(--gray2);font-size:13px;padding:8px 0">Sin interacciones recientes</div>'}
       </div>
     </div>
+
+    <!-- AGENDA SEMANAL -->
+    ${renderWeekAgenda()}
 
     <!-- PIPELINE POR ETAPA -->
     <div class="dash-card" style="margin-bottom:20px">
