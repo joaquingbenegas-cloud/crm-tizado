@@ -120,6 +120,18 @@
   .badge-venta { background: rgba(200,16,46,0.1); color: #C8102E; }
   .badge-alquiler { background: rgba(126,34,206,0.1); color: #7c3aed; }
   .badge-inmobiliaria { background: rgba(234,88,12,0.12); color: #c2410c; }
+  .interaction-type-btn {
+    padding: 4px 10px; border-radius: 20px; border: 1px solid var(--border);
+    background: transparent; color: var(--gray); font-size: 11px; cursor: pointer;
+    font-family: 'Inter', sans-serif; transition: all 0.15s;
+  }
+  .interaction-type-btn:hover { border-color: var(--gray2); color: var(--white); }
+  .interaction-type-btn.active { background: var(--red-dim); border-color: var(--red); color: var(--white); }
+  .note-tipo-badge { font-size: 10px; color: var(--gray); background: var(--bg3); border-radius: 3px; padding: 1px 5px; }
+  .followup-banner { background: rgba(202,138,4,0.12); border: 1px solid rgba(202,138,4,0.3); border-radius: 8px; padding: 10px 14px; margin: 12px 16px 0; display:flex; align-items:flex-start; gap:10px; }
+  .followup-banner-title { font-weight: 600; font-size: 12px; color: #a16207; margin-bottom: 4px; }
+  .followup-banner-item { font-size: 12px; color: var(--white); cursor: pointer; padding: 2px 0; }
+  .followup-banner-item:hover { color: var(--red); }
   .badge-empty { background: var(--bg3); color: var(--gray); }
 
   .ci-desc { color: var(--gray); font-size: 11px; line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -708,6 +720,7 @@
         <span class="count-badge" id="countBadge"></span>
       </div>
     </div>
+    <div id="followUpBanner"></div>
     <div class="contact-list" id="contactList"></div>
   </div>
 
@@ -1781,6 +1794,7 @@ function init() {
     save();
   }
   renderList();
+  renderFollowUpBanner();
 
   // Intentar cargar desde Sheets en segundo plano
   loadFromSheets();
@@ -2012,7 +2026,7 @@ function renderDetail() {
 
     <!-- PRÓXIMA ACCIÓN -->
     <div class="section">
-      <div class="section-title">Próxima Acción</div>
+      <div class="section-title">Próximo Seguimiento</div>
       <div class="next-action-row">
         <div class="field">
           <label>Acción</label>
@@ -2025,16 +2039,26 @@ function renderDetail() {
         <button class="btn btn-ghost btn-sm" style="margin-bottom:0;align-self:flex-end" onclick="saveNextAction('${c.id}')">Guardar</button>
       </div>
       ${c.nextAction ? `
-      <div class="next-action-display">
-        <span>→ ${esc(c.nextAction)}</span>
-        ${c.nextActionDate ? `<span class="nad">📅 ${formatDate(c.nextActionDate)}</span>` : ''}
+      <div class="next-action-display" style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+        <div>
+          <span>→ ${esc(c.nextAction)}</span>
+          ${c.nextActionDate ? `<span class="nad">📅 ${formatDate(c.nextActionDate)}</span>` : ''}
+        </div>
+        <button class="btn btn-green btn-sm" onclick="completeFollowUp('${c.id}')">✓ Cumplido</button>
       </div>` : ''}
     </div>
 
-    <!-- NOTAS -->
+    <!-- HISTORIAL DE INTERACCIONES -->
     <div class="section">
-      <div class="section-title">Historial de Notas</div>
+      <div class="section-title">Historial de Interacciones</div>
       <div class="note-input-area">
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">
+          <button class="interaction-type-btn active" data-tipo="📝 Nota" onclick="selectInteractionType(this)">📝 Nota</button>
+          <button class="interaction-type-btn" data-tipo="📞 Llamada" onclick="selectInteractionType(this)">📞 Llamada</button>
+          <button class="interaction-type-btn" data-tipo="💬 WhatsApp" onclick="selectInteractionType(this)">💬 WhatsApp</button>
+          <button class="interaction-type-btn" data-tipo="🏠 Visita" onclick="selectInteractionType(this)">🏠 Visita</button>
+          <button class="interaction-type-btn" data-tipo="🤝 Reunión" onclick="selectInteractionType(this)">🤝 Reunión</button>
+        </div>
         <textarea id="newNoteText" placeholder="Escribí una nota sobre este contacto..."></textarea>
         <button class="btn btn-ghost btn-sm" style="align-self:flex-end" onclick="addNote('${c.id}')">+ Agregar</button>
       </div>
@@ -2154,6 +2178,39 @@ function toggleNotable(id) {
   renderDetail();
 }
 
+function selectInteractionType(btn) {
+  document.querySelectorAll('.interaction-type-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function getSelectedInteractionType() {
+  const btn = document.querySelector('.interaction-type-btn.active');
+  return btn ? btn.dataset.tipo : '📝 Nota';
+}
+
+function completeFollowUp(id) {
+  const c = getContact(id);
+  if (!c) return;
+  if (!c.notes) c.notes = [];
+  const now = new Date();
+  // Registrar como interacción cumplida
+  c.notes.push({
+    id: uid(),
+    tipo: '✅ Seguimiento',
+    text: c.nextAction,
+    date: now.toLocaleDateString('es-AR'),
+    time: now.toLocaleTimeString('es-AR', { hour:'2-digit', minute:'2-digit' })
+  });
+  // Limpiar el seguimiento
+  c.nextAction = '';
+  c.nextActionDate = '';
+  save();
+  renderList();
+  renderDetail();
+  renderFollowUpBanner();
+  toast('Seguimiento completado ✓', 'success');
+}
+
 function saveNextAction(id) {
   const c = getContact(id);
   if (!c) return;
@@ -2162,7 +2219,25 @@ function saveNextAction(id) {
   save();
   renderList();
   renderDetail();
-  toast('Próxima acción guardada', 'success');
+  renderFollowUpBanner();
+  toast('Seguimiento guardado', 'success');
+}
+
+function renderFollowUpBanner() {
+  const container = document.getElementById('followUpBanner');
+  if (!container) return;
+  const due = contacts.filter(c => c.nextAction && c.nextActionDate && c.nextActionDate <= TODAY)
+    .sort((a,b) => (a.nextActionDate||'').localeCompare(b.nextActionDate||''));
+  if (!due.length) { container.innerHTML = ''; return; }
+  container.innerHTML = `<div class="followup-banner">
+    <div style="flex:1">
+      <div class="followup-banner-title">🔔 Seguimientos pendientes (${due.length})</div>
+      ${due.map(c => `<div class="followup-banner-item" onclick="selectContact('${c.id}')">
+        ${c.nextActionDate < TODAY ? '⚠️' : '📌'} <strong>${esc(c.nombre)}</strong> — ${esc(c.nextAction)}
+        <span style="color:var(--gray);font-size:11px"> (${formatDate(c.nextActionDate)})</span>
+      </div>`).join('')}
+    </div>
+  </div>`;
 }
 
 function addNote(id) {
@@ -2172,15 +2247,16 @@ function addNote(id) {
   if (!text) return;
   if (!c.notes) c.notes = [];
   const now = new Date();
+  const tipo = getSelectedInteractionType();
   c.notes.push({
-    id: uid(), text,
+    id: uid(), tipo, text,
     date: now.toLocaleDateString('es-AR'),
     time: now.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
   });
   save();
   document.getElementById('newNoteText').value = '';
   renderNotesList(c);
-  toast('Nota agregada', 'success');
+  toast('Interacción registrada ✓', 'success');
 }
 
 // ─── NOTES CRUD ──────────────────────────────────────────────────────────────
@@ -2204,7 +2280,10 @@ function renderNotesList(c) {
     }
     return `<div class="note-item">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-        <span class="note-date">${n.date} · ${n.time}</span>
+        <div style="display:flex;align-items:center;gap:6px">
+          ${n.tipo ? `<span class="note-tipo-badge">${n.tipo}</span>` : ''}
+          <span class="note-date">${n.date} · ${n.time}</span>
+        </div>
         <div style="display:flex;gap:3px">
           <button class="btn btn-ghost btn-sm" style="padding:2px 7px;font-size:11px" title="Editar" onclick="startEditNote('${c.id}','${n.id}')">✏️</button>
           <button class="btn btn-ghost btn-sm" style="padding:2px 7px;font-size:11px;color:var(--red)" title="Borrar" onclick="deleteNote('${c.id}','${n.id}')">🗑</button>
