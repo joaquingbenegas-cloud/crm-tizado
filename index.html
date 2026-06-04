@@ -1277,8 +1277,10 @@ function renderPipeline() {
 
   board.innerHTML = contactsCol + stageCols;
   if (wasSearchFocused) {
-    const el = document.getElementById('pipeContactSearch');
-    if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); }
+    requestAnimationFrame(() => {
+      const el = document.getElementById('pipeContactSearch');
+      if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); }
+    });
   }
 }
 
