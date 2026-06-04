@@ -1205,6 +1205,7 @@ function initIngresos() {
 // ─── PIPELINE RENDER ─────────────────────────────────────────────────────────
 function renderPipeline() {
   const board = document.getElementById('pipelineBoard');
+  const wasSearchFocused = document.activeElement && document.activeElement.id === 'pipeContactSearch';
   const totalVal = opps.filter(o => !['Perdida','Negociación Caída'].includes(o.etapa)).reduce((s,o) => s + (parseFloat(o.valor)||0), 0);
   const active = opps.filter(o => !['Perdida','Negociación Caída','Cierre'].includes(o.etapa)).length;
   document.getElementById('pipelineSummary').textContent = `${contacts.length} contactos · ${active} oportunidades activas · ${fmtUSD(totalVal)}`;
@@ -1275,6 +1276,10 @@ function renderPipeline() {
   }).join('');
 
   board.innerHTML = contactsCol + stageCols;
+  if (wasSearchFocused) {
+    const el = document.getElementById('pipeContactSearch');
+    if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); }
+  }
 }
 
 function openContactSide(contactId) {
