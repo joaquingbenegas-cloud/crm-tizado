@@ -662,6 +662,7 @@
       <div class="sync-dot" id="syncDot"></div>
       <span id="syncLabel">Sin sincronizar</span>
     </div>
+    <button class="btn btn-ghost btn-sm" onclick="tryShowTab('contactos')" title="Ver directorio de contactos">👥 Contactos</button>
     <button class="btn btn-ghost btn-sm" onclick="syncToSheets()">↑ Sheets</button>
     <button class="btn btn-ghost btn-sm" onclick="exportContacts()" title="Descargar backup JSON">⬇ Backup</button>
     <label class="btn btn-ghost btn-sm" style="cursor:pointer" title="Restaurar desde backup JSON">⬆ Restaurar<input type="file" id="importInput" accept=".json" style="display:none" onchange="importContacts(event)"></label>
@@ -670,7 +671,7 @@
 </header>
 
 <div class="tab-nav">
-  <button class="tab-btn active" id="tab-contactos" onclick="tryShowTab('contactos')">🔒 Contactos</button>
+  <button class="tab-btn active" id="tab-contactos" onclick="tryShowTab('contactos')" style="display:none">🔒 Contactos</button>
   <button class="tab-btn" id="tab-propiedades" onclick="tryShowTab('propiedades')">🏠 Propiedades</button>
   <button class="tab-btn locked" id="tab-stats" onclick="tryShowTab('stats')">📊 Stats</button>
   <button class="tab-btn locked" id="tab-pipeline" onclick="tryShowTab('pipeline')">🏗 Pipeline</button>
@@ -3464,7 +3465,7 @@ function submitPin() {
       if (el) el.classList.remove('locked');
     });
     document.querySelector('.main').style.display = 'flex';
-    showTab('contactos');
+    showTab('pipeline');
   } else {
     const inp = document.getElementById('pinInput');
     inp.classList.remove('shake');
@@ -3488,11 +3489,11 @@ applyUrlParams();
 // On load: if unlocked show contacts, else show propiedades
 if (isUnlocked()) {
   document.querySelector('.main').style.display = 'flex';
-  document.getElementById('tab-contactos').innerHTML = '👥 Contactos' + overdueHtml();
   ['tab-stats','tab-pipeline','tab-kpis','tab-ingresos'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.remove('locked');
   });
+  showTab('pipeline');
 } else {
   showTab('propiedades');
   document.getElementById('tab-propiedades').classList.add('active');
