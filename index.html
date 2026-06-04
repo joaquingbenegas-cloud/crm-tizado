@@ -1408,12 +1408,11 @@ function openOppWA() {
 
 // ─── KPIs RENDER ─────────────────────────────────────────────────────────────
 function renderKPIs() {
-  // Funnel:
-  // Consultas = todos los contactos del CRM
-  // Visitas, Conversaciones, Reservas = opps en esas etapas o más avanzadas
-  // Cierres = opps en Cierre + operaciones en Ingresos
+  // Funnel basado 100% en oportunidades del pipeline
+  // Consultas = total de opps ingresadas (todas las etapas, incluso caídas)
+  // Cada etapa siguiente = opps que llegaron a esa etapa o más avanzada (sin caídas)
   const stageOrder = STAGES;
-  const nConsultas = contacts.length;
+  const nConsultas = opps.length; // todas las oportunidades que alguna vez entraron
   const nVisitas = opps.filter(o => stageOrder.indexOf(o.etapa) >= stageOrder.indexOf('Visita') && o.etapa !== 'Negociación Caída').length;
   const nConversaciones = opps.filter(o => stageOrder.indexOf(o.etapa) >= stageOrder.indexOf('Conversación') && o.etapa !== 'Negociación Caída').length;
   const nReservas = opps.filter(o => stageOrder.indexOf(o.etapa) >= stageOrder.indexOf('Reserva') && o.etapa !== 'Negociación Caída').length;
@@ -1443,10 +1442,10 @@ function renderKPIs() {
   const ingresosTotal = ingresos.reduce((s,i) => s+(parseFloat(i.comision)||0), 0);
   const convRate = nVisitas > 0 ? Math.round(nCierres / nVisitas * 100) : 0;
   document.getElementById('kpiCards').innerHTML = [
-    { label: 'Contactos en CRM', num: contacts.length, sub: 'total de leads', cls: '' },
-    { label: 'Oportunidades activas', num: active, sub: 'en pipeline', cls: active > 0 ? 'green' : '' },
-    { label: 'Cierres totales', num: nCierres, sub: 'operaciones ganadas', cls: nCierres > 0 ? 'green' : '' },
-    { label: 'Conversión consulta→cierre', num: nConsultas > 0 ? Math.round(nCierres/nConsultas*100)+'%' : '0%', sub: 'tasa general', cls: nCierres > 0 ? 'green' : '' },
+    { label: 'Consultas en pipeline', num: nConsultas, sub: 'oportunidades ingresadas', cls: '' },
+    { label: 'Oportunidades activas', num: active, sub: 'sin cerrar ni caer', cls: active > 0 ? 'green' : '' },
+    { label: 'Cierres', num: nCierres, sub: 'operaciones ganadas', cls: nCierres > 0 ? 'green' : '' },
+    { label: 'Conversión consulta→cierre', num: nConsultas > 0 ? Math.round(nCierres/nConsultas*100)+'%' : '0%', sub: 'tasa del pipeline', cls: nCierres > 0 ? 'green' : '' },
   ].map(c => `<div class="stat-card ${c.cls}">
     <div class="stat-card-label">${c.label}</div>
     <div class="stat-card-num">${c.num}</div>
