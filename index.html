@@ -574,7 +574,6 @@
   .col-onhold .pipeline-col-header { border-top: 3px solid #94a3b8; }
   .col-caida .pipeline-col-header { border-top: 3px solid #f43f5e; }
   .col-cierre .pipeline-col-header { border-top: 3px solid #10b981; }
-  .col-perdida .pipeline-col-header { border-top: 3px solid #6b7280; }
 
   /* OPP DETAIL SIDE PANEL */
   .opp-side-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 150; }
@@ -987,7 +986,6 @@
           <option value="On Hold">On Hold</option>
           <option value="Negociación Caída">Negociación Caída</option>
           <option value="Cierre">Cierre</option>
-          <option value="Perdida">Perdida</option>
         </select>
       </div>
       <div class="field">
@@ -1144,8 +1142,8 @@ const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbzb7MYnH34TTOfs6Uy9Z
 const TODAY = new Date().toISOString().split('T')[0];
 
 // ─── PIPELINE STAGES ─────────────────────────────────────────────────────────
-const STAGES = ['Consulta','Visita','Conversación','Reserva','Negociación','On Hold','Negociación Caída','Cierre','Perdida'];
-const STAGE_KEY = { 'Consulta':'consulta','Visita':'visita','Conversación':'conversacion','Reserva':'reserva','Negociación':'negociacion','On Hold':'onhold','Negociación Caída':'caida','Cierre':'cierre','Perdida':'perdida' };
+const STAGES = ['Consulta','Visita','Conversación','Reserva','Negociación','On Hold','Negociación Caída','Cierre'];
+const STAGE_KEY = { 'Consulta':'consulta','Visita':'visita','Conversación':'conversacion','Reserva':'reserva','Negociación':'negociacion','On Hold':'onhold','Negociación Caída':'caida','Cierre':'cierre' };
 
 // oportunidades: [{id, contactId, prop, tipo, etapa, urgencia, valor, nota, createdAt}]
 let opps = [];
