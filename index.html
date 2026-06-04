@@ -1261,11 +1261,12 @@ function renderPipeline() {
 
   // Columna 0: todos los contactos del CRM
   const pipeSearch = (document.getElementById('pipeContactSearch') || {value:''}).value.toLowerCase();
-  const pipeTagActive = (document.getElementById('pipeTagFilter') || {value:''}).value;
+  const activeTagEls = document.querySelectorAll('.pipe-tag-chip.active');
+  const pipeTagsActive = [...activeTagEls].map(el => el.dataset.tag);
   const filteredContacts = [...contacts]
     .filter(c => !c.archived
       && (!pipeSearch || (c.nombre||'').toLowerCase().includes(pipeSearch))
-      && (!pipeTagActive || (c.tags||[]).includes(pipeTagActive)))
+      && (!pipeTagsActive.length || pipeTagsActive.every(t => (c.tags||[]).includes(t))))
     .sort((a,b) => (a.nombre||'').localeCompare(b.nombre||''));
   const allTagsList = getAllTags();
 
@@ -1278,10 +1279,9 @@ function renderPipeline() {
       <input id="pipeContactSearch" type="text" placeholder="Buscar..." value="${pipeSearch}"
         oninput="renderPipeline()"
         style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:5px 8px;font-size:12px;color:var(--white);font-family:'Inter',sans-serif;outline:none">
-      ${allTagsList.length ? `<select id="pipeTagFilter" onchange="renderPipeline()" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:4px 8px;font-size:11px;color:var(--gray);font-family:'Inter',sans-serif;outline:none">
-        <option value="">Todas las etiquetas</option>
-        ${allTagsList.map(t => `<option value="${esc(t)}" ${pipeTagActive===t?'selected':''}>${esc(t)}</option>`).join('')}
-      </select>` : ''}
+      ${allTagsList.length ? `<div style="display:flex;gap:4px;flex-wrap:wrap">
+        ${allTagsList.map(t => `<span class="pipe-tag-chip tag-badge${pipeTagsActive.includes(t)?' active':''}" data-tag="${esc(t)}" onclick="togglePipeTag(this)" style="${pipeTagsActive.includes(t)?'opacity:1':'opacity:.55'}">${esc(t)}</span>`).join('')}
+      </div>` : ''}
     </div>
     <div class="pipeline-col-body" style="gap:4px">
       ${filteredContacts.map(c => {
@@ -2829,6 +2829,12 @@ function addTagToContact(contactId, tag) {
   if (!c || !tag) return;
   if (!c.tags) c.tags = [];
   if (!c.tags.includes(tag)) { c.tags.push(tag); save(); renderOppSide(contactId); renderPipeline(); }
+}
+
+function togglePipeTag(el) {
+  el.classList.toggle('active');
+  el.style.opacity = el.classList.contains('active') ? '1' : '.55';
+  renderPipeline();
 }
 
 function removeTagFromContact(contactId, tag) {
