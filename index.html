@@ -593,7 +593,7 @@
   .opp-side-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 150; }
   .opp-side-overlay.open { display: block; }
   .opp-side-panel {
-    position: fixed; right: 0; top: 0; bottom: 0; width: 420px; max-width: 100vw;
+    position: fixed; right: 0; top: 0; bottom: 0; width: 480px; max-width: 100vw;
     background: var(--bg2); border-left: 1px solid var(--border); z-index: 151;
     display: flex; flex-direction: column; transform: translateX(100%); transition: transform .25s;
     overflow: hidden;
@@ -964,7 +964,6 @@
   <div class="opp-side-actions">
     <button class="btn btn-ghost btn-sm" onclick="openOppModal(oppSideContactId)">+ Nueva oportunidad</button>
     <button class="btn btn-wa btn-sm" id="oppSideWA" onclick="openOppWA()">💬 WhatsApp</button>
-    <button class="btn btn-ghost btn-sm" onclick="closeOppSide();tryShowTab('contactos');selectContact(oppSideContactId)">Ver contacto</button>
   </div>
 </div>
 
@@ -1439,35 +1438,150 @@ function openOppSide(oppId) {
 
 function renderOppSide(contactId) {
   const c = contacts.find(x => x.id === contactId);
-  const nombre = c ? c.nombre : '?';
-  document.getElementById('oppSideName').textContent = nombre;
-  const tel = c && c.tel ? c.tel.replace(/\D/g,'') : '';
+  if (!c) return;
+  document.getElementById('oppSideName').textContent = c.nombre;
+  const tel = c.tel ? c.tel.replace(/\D/g,'') : '';
   document.getElementById('oppSideWA').style.display = tel ? 'inline-flex' : 'none';
 
   const myOpps = opps.filter(o => o.contactId === contactId)
     .sort((a,b) => (b.createdAt||'').localeCompare(a.createdAt||''));
+  const badgeClass = c.interesEn === 'Compra' ? 'badge-compra' : c.interesEn === 'Venta' ? 'badge-venta' : c.interesEn === 'Alquiler' ? 'badge-alquiler' : c.interesEn === 'Inmobiliaria' ? 'badge-inmobiliaria' : 'badge-empty';
+  const isOverdue = c.nextAction && c.nextActionDate && c.nextActionDate < TODAY;
+  const isDueToday = c.nextAction && c.nextActionDate && c.nextActionDate === TODAY;
+  const notes = [...(c.notes||[])].reverse();
 
   const body = document.getElementById('oppSideBody');
-  if (!myOpps.length) {
-    body.innerHTML = '<div style="color:var(--gray2);font-size:13px;padding:20px 0">Sin oportunidades aún</div>';
-    return;
-  }
-  body.innerHTML = myOpps.map(o => {
-    const isActive = !['Perdida','Negociación Caída'].includes(o.etapa);
-    return `<div class="opp-history-item" style="${isActive?'border-left:3px solid var(--red)':'opacity:.6'}">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-        <span class="opp-history-stage">${o.etapa}</span>
-        <div style="display:flex;gap:4px">
-          <button class="btn btn-ghost btn-sm" style="padding:2px 7px;font-size:11px" onclick="openOppEditModal('${o.id}')">✏️</button>
+  body.innerHTML = `
+    <!-- INFO -->
+    <div class="section" style="padding:0 0 16px;margin-bottom:16px;border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <span class="ci-badge ${badgeClass}">${c.interesEn||'Sin categoría'}</span>
+        ${c.urgencia ? `<span style="font-size:12px;color:${c.urgencia==='ALTA'?'var(--red)':c.urgencia==='MEDIA'?'var(--yellow)':'var(--gray2)'}">● ${c.urgencia}</span>` : ''}
+      </div>
+      <div class="field-grid" style="grid-template-columns:1fr 1fr;gap:10px">
+        <div class="field">
+          <label>Teléfono</label>
+          <input type="text" value="${esc(c.tel||'')}" placeholder="549111234567" onchange="updateField('${c.id}','tel',this.value);renderOppSide('${c.id}')">
+        </div>
+        <div class="field">
+          <label>Presupuesto</label>
+          <input type="text" value="${esc(c.presupuesto||'')}" placeholder="$300.000" onchange="updateField('${c.id}','presupuesto',this.value)">
+        </div>
+        <div class="field" style="grid-column:1/-1">
+          <label>Descripción</label>
+          <textarea style="min-height:52px" onchange="updateField('${c.id}','desc',this.value)">${esc(c.desc||'')}</textarea>
         </div>
       </div>
-      ${o.prop ? `<div class="opp-history-prop">${esc(o.prop)}</div>` : ''}
-      <div class="opp-history-meta">
-        ${o.tipo||''} ${o.valor ? '· '+fmtUSD(o.valor) : ''} ${o.urgencia ? '· '+o.urgencia : ''} ${o.createdAt ? '· '+formatDate(o.createdAt) : ''}
+    </div>
+
+    <!-- SEGUIMIENTO -->
+    <div class="section" style="padding:0 0 16px;margin-bottom:16px;border-bottom:1px solid var(--border)">
+      <div class="section-title" style="font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--gray);margin-bottom:10px">Próximo Seguimiento</div>
+      <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap">
+        <div class="field" style="flex:1;min-width:140px;margin:0">
+          <input type="text" id="side_naText" value="${esc(c.nextAction||'')}" placeholder="Ej: Llamar el lunes">
+        </div>
+        <div class="field" style="width:140px;margin:0">
+          <input type="date" id="side_naDate" value="${c.nextActionDate||''}">
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="saveSideNextAction('${c.id}')">Guardar</button>
       </div>
-      ${o.nota ? `<div style="font-size:12px;color:var(--gray);margin-top:4px">${esc(o.nota)}</div>` : ''}
-    </div>`;
-  }).join('');
+      ${c.nextAction ? `<div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;padding:8px 10px;background:${isOverdue?'rgba(200,16,46,.07)':isDueToday?'rgba(202,138,4,.08)':'var(--bg3)'};border-radius:6px">
+        <div>
+          <span style="font-size:12px">${isOverdue?'⚠️':'📌'} ${esc(c.nextAction)}</span>
+          ${c.nextActionDate ? `<span style="font-size:11px;color:var(--gray);margin-left:6px">📅 ${formatDate(c.nextActionDate)}</span>` : ''}
+        </div>
+        <button class="btn btn-green btn-sm" onclick="completeSideFollowUp('${c.id}')">✓ Cumplido</button>
+      </div>` : ''}
+    </div>
+
+    <!-- INTERACCIONES -->
+    <div class="section" style="padding:0 0 16px;margin-bottom:16px;border-bottom:1px solid var(--border)">
+      <div class="section-title" style="font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--gray);margin-bottom:10px">Historial de Interacciones</div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px">
+        <button class="interaction-type-btn active" data-tipo="📝 Nota" onclick="selectInteractionType(this)">📝 Nota</button>
+        <button class="interaction-type-btn" data-tipo="📞 Llamada" onclick="selectInteractionType(this)">📞 Llamada</button>
+        <button class="interaction-type-btn" data-tipo="💬 WhatsApp" onclick="selectInteractionType(this)">💬 WhatsApp</button>
+        <button class="interaction-type-btn" data-tipo="🏠 Visita" onclick="selectInteractionType(this)">🏠 Visita</button>
+        <button class="interaction-type-btn" data-tipo="🤝 Reunión" onclick="selectInteractionType(this)">🤝 Reunión</button>
+      </div>
+      <div style="display:flex;gap:6px;align-items:flex-end">
+        <textarea id="side_noteText" placeholder="Escribí una nota..." style="flex:1;min-height:52px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:8px;font-family:Inter,sans-serif;font-size:13px;color:var(--white);resize:vertical;outline:none"></textarea>
+        <button class="btn btn-ghost btn-sm" onclick="addSideNote('${c.id}')">+ Agregar</button>
+      </div>
+      <div style="margin-top:10px;display:flex;flex-direction:column;gap:6px">
+        ${notes.length ? notes.map(n => `<div class="note-item">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
+            ${n.tipo ? `<span class="note-tipo-badge">${n.tipo}</span>` : ''}
+            <span class="note-date">${n.date} · ${n.time}</span>
+            <button class="btn btn-ghost btn-sm" style="padding:1px 5px;font-size:10px;margin-left:auto;color:var(--red)" onclick="deleteSideNote('${c.id}','${n.id}')">🗑</button>
+          </div>
+          <div class="note-text">${esc(n.text)}</div>
+        </div>`).join('') : '<div style="color:var(--gray2);font-size:12px">Sin interacciones aún</div>'}
+      </div>
+    </div>
+
+    <!-- OPORTUNIDADES -->
+    <div class="section" style="padding:0">
+      <div class="section-title" style="font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--gray);margin-bottom:10px">Oportunidades (${myOpps.length})</div>
+      ${myOpps.length ? myOpps.map(o => {
+        const isActive = !['Negociación Caída','Cierre'].includes(o.etapa);
+        return `<div class="opp-history-item" style="${isActive?'border-left:3px solid var(--red)':'opacity:.6'}">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+            <span class="opp-history-stage">${o.etapa}</span>
+            <button class="btn btn-ghost btn-sm" style="padding:2px 7px;font-size:11px" onclick="openOppEditModal('${o.id}')">✏️</button>
+          </div>
+          ${o.prop ? `<div class="opp-history-prop">${esc(o.prop)}</div>` : ''}
+          <div class="opp-history-meta">${o.tipo||''} ${o.valor?'· '+fmtUSD(o.valor):''} ${o.urgencia?'· '+o.urgencia:''} ${o.createdAt?'· '+formatDate(o.createdAt):''}</div>
+          ${o.nota ? `<div style="font-size:12px;color:var(--gray);margin-top:4px">${esc(o.nota)}</div>` : ''}
+        </div>`;
+      }).join('') : '<div style="color:var(--gray2);font-size:12px">Sin oportunidades aún</div>'}
+    </div>
+  `;
+}
+
+function saveSideNextAction(id) {
+  const c = getContact(id);
+  if (!c) return;
+  c.nextAction = document.getElementById('side_naText').value.trim();
+  c.nextActionDate = document.getElementById('side_naDate').value;
+  save(); renderList(); renderOppSide(id); renderFollowUpBanner();
+  toast('Seguimiento guardado', 'success');
+}
+
+function completeSideFollowUp(id) {
+  const c = getContact(id);
+  if (!c) return;
+  if (!c.notes) c.notes = [];
+  const now = new Date();
+  c.notes.push({ id: uid(), tipo: '✅ Seguimiento', text: c.nextAction,
+    date: now.toLocaleDateString('es-AR'), time: now.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}) });
+  c.nextAction = ''; c.nextActionDate = '';
+  save(); renderList(); renderOppSide(id); renderFollowUpBanner();
+  toast('Seguimiento completado ✓', 'success');
+}
+
+function addSideNote(id) {
+  const c = getContact(id);
+  if (!c) return;
+  const text = document.getElementById('side_noteText').value.trim();
+  if (!text) return;
+  if (!c.notes) c.notes = [];
+  const now = new Date();
+  const tipo = getSelectedInteractionType();
+  c.notes.push({ id: uid(), tipo, text,
+    date: now.toLocaleDateString('es-AR'), time: now.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}) });
+  save();
+  document.getElementById('side_noteText').value = '';
+  renderOppSide(id);
+  toast('Interacción registrada ✓', 'success');
+}
+
+function deleteSideNote(contactId, noteId) {
+  const c = getContact(contactId);
+  if (!c) return;
+  c.notes = (c.notes||[]).filter(n => n.id !== noteId);
+  save(); renderOppSide(contactId);
 }
 
 function closeOppSide() {
