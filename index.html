@@ -515,6 +515,113 @@
     border-radius: 4px; padding: 2px 6px; font-size: 11px; font-family: 'Inter', sans-serif;
     cursor: pointer; margin-left: 4px;
   }
+
+  /* ══════════════════ PIPELINE ══════════════════ */
+  .pipeline-panel { display: none; flex-direction: column; overflow: hidden; height: calc(100vh - 100px); background: var(--bg); }
+  .pipeline-panel.visible { display: flex; }
+  .pipeline-header { padding: 16px 24px; background: var(--bg2); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+  .pipeline-header h2 { font-family: 'Playfair Display', serif; font-size: 18px; flex: 1; }
+  .pipeline-scroll { flex: 1; overflow-x: auto; overflow-y: hidden; padding: 20px; display: flex; gap: 12px; align-items: flex-start; }
+  .pipeline-col {
+    flex-shrink: 0; width: 220px; background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius); display: flex; flex-direction: column; max-height: 100%;
+  }
+  .pipeline-col-header {
+    padding: 10px 12px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    border-radius: var(--radius) var(--radius) 0 0; flex-shrink: 0;
+  }
+  .pipeline-col-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; }
+  .pipeline-col-count { font-size: 11px; color: var(--gray2); background: var(--bg3); padding: 1px 7px; border-radius: 10px; }
+  .pipeline-col-body { flex: 1; overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 6px; min-height: 60px; }
+  .pipeline-col-body.drag-over { background: var(--red-dim); border-radius: 0 0 var(--radius) var(--radius); }
+  .pipeline-col-add { padding: 6px 8px; border-top: 1px solid var(--border); flex-shrink: 0; }
+  .pipeline-col-add button { width: 100%; background: none; border: 1px dashed var(--border); border-radius: 5px; color: var(--gray); font-size: 11px; padding: 5px; cursor: pointer; font-family: 'Inter', sans-serif; transition: all .12s; }
+  .pipeline-col-add button:hover { border-color: var(--red); color: var(--red); }
+  .opp-card {
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 6px;
+    padding: 10px 11px; cursor: grab; transition: box-shadow .15s, border-color .15s;
+    user-select: none;
+  }
+  .opp-card:hover { border-color: var(--gray2); box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+  .opp-card.dragging { opacity: .4; cursor: grabbing; }
+  .opp-card-name { font-weight: 600; font-size: 12px; margin-bottom: 3px; }
+  .opp-card-prop { font-size: 11px; color: var(--gray); margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .opp-card-bottom { display: flex; align-items: center; gap: 5px; }
+  .opp-card-val { font-size: 11px; font-weight: 700; color: var(--green); flex: 1; }
+  .opp-card-tipo { font-size: 10px; padding: 1px 6px; border-radius: 3px; font-weight: 600; }
+  .opp-card-tipo.compra { background: rgba(59,130,246,.12); color: #1d4ed8; }
+  .opp-card-tipo.venta { background: rgba(200,16,46,.1); color: var(--red); }
+  .opp-card-tipo.alquiler { background: rgba(126,34,206,.1); color: #7c3aed; }
+  .opp-urg { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+  /* col headers by stage */
+  .col-consulta .pipeline-col-header { border-top: 3px solid #60a5fa; }
+  .col-visita .pipeline-col-header { border-top: 3px solid #34d399; }
+  .col-conversacion .pipeline-col-header { border-top: 3px solid #a78bfa; }
+  .col-reserva .pipeline-col-header { border-top: 3px solid #f59e0b; }
+  .col-negociacion .pipeline-col-header { border-top: 3px solid #f97316; }
+  .col-onhold .pipeline-col-header { border-top: 3px solid #94a3b8; }
+  .col-caida .pipeline-col-header { border-top: 3px solid #f43f5e; }
+  .col-cierre .pipeline-col-header { border-top: 3px solid #10b981; }
+  .col-perdida .pipeline-col-header { border-top: 3px solid #6b7280; }
+
+  /* OPP DETAIL SIDE PANEL */
+  .opp-side-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 150; }
+  .opp-side-overlay.open { display: block; }
+  .opp-side-panel {
+    position: fixed; right: 0; top: 0; bottom: 0; width: 420px; max-width: 100vw;
+    background: var(--bg2); border-left: 1px solid var(--border); z-index: 151;
+    display: flex; flex-direction: column; transform: translateX(100%); transition: transform .25s;
+    overflow: hidden;
+  }
+  .opp-side-panel.open { transform: translateX(0); }
+  .opp-side-header { padding: 18px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .opp-side-header h3 { font-family: 'Playfair Display', serif; font-size: 17px; flex: 1; }
+  .opp-side-close { background: none; border: none; color: var(--gray); cursor: pointer; font-size: 20px; }
+  .opp-side-body { flex: 1; overflow-y: auto; padding: 18px 20px; }
+  .opp-history-item { background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; margin-bottom: 8px; }
+  .opp-history-stage { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--gray); }
+  .opp-history-prop { font-size: 12px; font-weight: 600; margin: 2px 0; }
+  .opp-history-meta { font-size: 11px; color: var(--gray2); }
+  .opp-side-actions { padding: 14px 20px; border-top: 1px solid var(--border); display: flex; gap: 8px; flex-shrink: 0; }
+
+  /* ══════════════════ KPIs ══════════════════ */
+  .kpis-panel { display: none; overflow-y: auto; padding: 28px; background: var(--bg); }
+  .kpis-panel.visible { display: block; }
+  .funnel-row { display: flex; gap: 0; margin-bottom: 24px; overflow-x: auto; }
+  .funnel-step {
+    flex: 1; min-width: 100px; text-align: center; padding: 20px 10px;
+    background: var(--bg2); border: 1px solid var(--border); position: relative;
+  }
+  .funnel-step:first-child { border-radius: var(--radius) 0 0 var(--radius); }
+  .funnel-step:last-child { border-radius: 0 var(--radius) var(--radius) 0; }
+  .funnel-step + .funnel-step { border-left: none; }
+  .funnel-step-num { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; }
+  .funnel-step-label { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--gray); margin-top: 4px; }
+  .funnel-step-pct { font-size: 11px; color: var(--green); font-weight: 600; margin-top: 2px; }
+  .funnel-arrow { align-self: center; color: var(--gray2); font-size: 16px; flex-shrink: 0; margin: 0 -1px; z-index: 1; }
+  .kpi-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .kpi-table th { text-align: left; padding: 8px 12px; font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--gray); border-bottom: 1px solid var(--border); }
+  .kpi-table td { padding: 9px 12px; border-bottom: 1px solid var(--border); }
+  .kpi-table tr:last-child td { border-bottom: none; }
+
+  /* ══════════════════ INGRESOS ══════════════════ */
+  .ingresos-panel { display: none; overflow-y: auto; padding: 28px; background: var(--bg); }
+  .ingresos-panel.visible { display: block; }
+  .bar-chart { display: flex; align-items: flex-end; gap: 8px; height: 140px; padding: 0 4px; }
+  .bar-month { display: flex; flex-direction: column; align-items: center; gap: 3px; flex: 1; }
+  .bar-wrap { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; width: 100%; position: relative; min-height: 0; }
+  .bar-fill { width: 100%; border-radius: 3px 3px 0 0; background: var(--red); transition: height .4s; min-height: 3px; position: relative; }
+  .bar-fill.objetivo { background: var(--border); position: absolute; bottom: 0; left: 0; right: 0; z-index: 0; }
+  .bar-fill.real { position: relative; z-index: 1; }
+  .bar-month-label { font-size: 10px; color: var(--gray2); }
+  .bar-month-val { font-size: 10px; color: var(--green); font-weight: 600; }
+  .ingresos-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .ingresos-table th { text-align: left; padding: 8px 12px; font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--gray); border-bottom: 1px solid var(--border); background: var(--bg2); }
+  .ingresos-table td { padding: 9px 12px; border-bottom: 1px solid var(--border); background: var(--bg2); }
+  .ingresos-table tr:last-child td { border-bottom: none; }
+  .ingresos-table tr:hover td { background: var(--bg3); }
 </style>
 </head>
 <body>
@@ -543,6 +650,9 @@
   <button class="tab-btn active" id="tab-contactos" onclick="tryShowTab('contactos')">🔒 Contactos</button>
   <button class="tab-btn" id="tab-propiedades" onclick="tryShowTab('propiedades')">🏠 Propiedades</button>
   <button class="tab-btn locked" id="tab-stats" onclick="tryShowTab('stats')">📊 Stats</button>
+  <button class="tab-btn locked" id="tab-pipeline" onclick="tryShowTab('pipeline')">🏗 Pipeline</button>
+  <button class="tab-btn locked" id="tab-kpis" onclick="tryShowTab('kpis')">📈 KPIs</button>
+  <button class="tab-btn locked" id="tab-ingresos" onclick="tryShowTab('ingresos')">💰 Ingresos</button>
 </div>
 
 <div class="main">
@@ -807,6 +917,183 @@
 </div>
 
 
+<!-- ══════════════════ PIPELINE PANEL ══════════════════ -->
+<div class="pipeline-panel" id="pipelinePanel">
+  <div class="pipeline-header">
+    <h2>Pipeline</h2>
+    <span id="pipelineSummary" style="font-size:12px;color:var(--gray)"></span>
+    <button class="btn btn-primary btn-sm" onclick="openOppModal(null)">+ Nueva oportunidad</button>
+  </div>
+  <div class="pipeline-scroll" id="pipelineBoard"></div>
+</div>
+
+<!-- OPP DETAIL PANEL -->
+<div class="opp-side-overlay" id="oppSideOverlay" onclick="closeOppSide()"></div>
+<div class="opp-side-panel" id="oppSidePanel">
+  <div class="opp-side-header">
+    <h3 id="oppSideName">Contacto</h3>
+    <button class="opp-side-close" onclick="closeOppSide()">×</button>
+  </div>
+  <div class="opp-side-body" id="oppSideBody"></div>
+  <div class="opp-side-actions">
+    <button class="btn btn-ghost btn-sm" onclick="openOppModal(oppSideContactId)">+ Nueva oportunidad</button>
+    <button class="btn btn-wa btn-sm" id="oppSideWA" onclick="openOppWA()">💬 WhatsApp</button>
+    <button class="btn btn-ghost btn-sm" onclick="closeOppSide();tryShowTab('contactos');selectContact(oppSideContactId)">Ver contacto</button>
+  </div>
+</div>
+
+<!-- OPP MODAL -->
+<div class="modal-overlay" id="oppModal">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <h2 id="oppModalTitle">Nueva oportunidad</h2>
+      <button class="modal-close" onclick="closeOppModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Contacto *</label>
+        <select id="opp_contactId"></select>
+      </div>
+      <div class="field">
+        <label>Propiedad / descripción</label>
+        <input type="text" id="opp_prop" placeholder="Ej: Irusta 3300 o Lote Village Joven">
+      </div>
+      <div class="field">
+        <label>Tipo</label>
+        <select id="opp_tipo">
+          <option value="Compra">Compra</option>
+          <option value="Venta">Venta</option>
+          <option value="Alquiler">Alquiler</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Etapa</label>
+        <select id="opp_etapa">
+          <option value="Consulta">Consulta</option>
+          <option value="Visita">Visita</option>
+          <option value="Conversación">Conversación</option>
+          <option value="Reserva">Reserva</option>
+          <option value="Negociación">Negociación</option>
+          <option value="On Hold">On Hold</option>
+          <option value="Negociación Caída">Negociación Caída</option>
+          <option value="Cierre">Cierre</option>
+          <option value="Perdida">Perdida</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Urgencia</label>
+        <select id="opp_urgencia">
+          <option value="">Sin asignar</option>
+          <option value="ALTA">🔴 Alta</option>
+          <option value="MEDIA">🟡 Media</option>
+          <option value="BAJA">⚫ Baja</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Valor estimado (USD)</label>
+        <input type="number" id="opp_valor" placeholder="0">
+      </div>
+      <div class="field">
+        <label>Nota</label>
+        <textarea id="opp_nota" placeholder="Observaciones..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" id="oppDeleteBtn" style="margin-right:auto;color:var(--red);display:none" onclick="deleteOpp()">Eliminar</button>
+      <button class="btn btn-ghost" onclick="closeOppModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveOpp()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ KPIs PANEL ══════════════════ -->
+<div class="kpis-panel" id="kpisPanel">
+  <div style="max-width:900px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <h2 style="font-family:'Playfair Display',serif;font-size:22px">KPIs del Pipeline</h2>
+    </div>
+    <div class="stats-section" style="margin-bottom:20px">
+      <h3>Funnel de conversión</h3>
+      <div class="funnel-row" id="kpiFunnel"></div>
+    </div>
+    <div class="stats-grid" id="kpiCards" style="margin-bottom:20px"></div>
+    <div class="stats-section">
+      <h3>Resultados por tipo</h3>
+      <table class="kpi-table" id="kpiTable">
+        <thead><tr><th>Tipo</th><th>Consultas</th><th>Visitas</th><th>Cierres</th><th>Conversión</th><th>Pipeline USD</th></tr></thead>
+        <tbody id="kpiTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ INGRESOS PANEL ══════════════════ -->
+<div class="ingresos-panel" id="ingresosPanel">
+  <div style="max-width:900px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
+      <h2 style="font-family:'Playfair Display',serif;font-size:22px">Ingresos</h2>
+      <button class="btn btn-primary btn-sm" onclick="openIngresosModal()">+ Operación cerrada</button>
+    </div>
+    <div class="stats-grid" id="ingresosCards" style="margin-bottom:20px"></div>
+    <div class="stats-section" style="margin-bottom:20px">
+      <h3>Ingreso mensual vs objetivo ($2.500/mes)</h3>
+      <div id="ingresosChart" style="margin-top:10px"></div>
+    </div>
+    <div class="stats-section">
+      <h3>Operaciones cerradas</h3>
+      <table class="ingresos-table" id="ingresosTable">
+        <thead><tr><th>Fecha</th><th>Contacto</th><th>Propiedad</th><th>Valor venta</th><th>% Tizado</th><th>% Personal</th><th>Comisión USD</th><th></th></tr></thead>
+        <tbody id="ingresosTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- INGRESOS MODAL -->
+<div class="modal-overlay" id="ingresosModal">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <h2 id="ingresosModalTitle">Nueva operación cerrada</h2>
+      <button class="modal-close" onclick="closeIngresosModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Fecha</label>
+        <input type="date" id="ing_fecha">
+      </div>
+      <div class="field">
+        <label>Contacto</label>
+        <input type="text" id="ing_contacto" placeholder="Nombre del cliente">
+      </div>
+      <div class="field">
+        <label>Propiedad</label>
+        <input type="text" id="ing_propiedad" placeholder="Ej: Lote 61 Pueblo Nuevo">
+      </div>
+      <div class="field">
+        <label>Valor de venta (USD)</label>
+        <input type="number" id="ing_valor" placeholder="0" oninput="calcIngreso()">
+      </div>
+      <div class="field">
+        <label>% Comisión Tizado</label>
+        <input type="number" id="ing_pctTizado" placeholder="4" step="0.1" oninput="calcIngreso()">
+      </div>
+      <div class="field">
+        <label>% Comisión personal</label>
+        <input type="number" id="ing_pctPersonal" placeholder="35" step="1" oninput="calcIngreso()">
+      </div>
+      <div class="field" style="background:var(--bg3);border-radius:6px;padding:10px">
+        <label>Comisión estimada</label>
+        <span id="ing_calc" style="font-size:16px;font-weight:700;color:var(--green)">$0</span>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" id="ingDeleteBtn" style="margin-right:auto;color:var(--red);display:none" onclick="deleteIngreso()">Eliminar</button>
+      <button class="btn btn-ghost" onclick="closeIngresosModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveIngreso()">Guardar</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <!-- MODAL REGISTRAR CONTACTO -->
@@ -845,6 +1132,415 @@ const BASE=[{nombre:"Dengue",interesEn:"Compra",desc:"Casa chica, lote 600m2 o t
 
 const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbzb7MYnH34TTOfs6Uy9ZBg3KM32p4_1m2e6ggHV1ZtVhNwGRjpkhNeTlg-5Yxw9D9AWOA/exec';
 const TODAY = new Date().toISOString().split('T')[0];
+
+// ─── PIPELINE STAGES ─────────────────────────────────────────────────────────
+const STAGES = ['Consulta','Visita','Conversación','Reserva','Negociación','On Hold','Negociación Caída','Cierre','Perdida'];
+const STAGE_KEY = { 'Consulta':'consulta','Visita':'visita','Conversación':'conversacion','Reserva':'reserva','Negociación':'negociacion','On Hold':'onhold','Negociación Caída':'caida','Cierre':'cierre','Perdida':'perdida' };
+
+// oportunidades: [{id, contactId, prop, tipo, etapa, urgencia, valor, nota, createdAt}]
+let opps = [];
+let editingOppId = null;
+let oppSideContactId = null;
+
+// ingresos: [{id, fecha, contacto, propiedad, valor, pctTizado, pctPersonal, comision}]
+const BASE_INGRESOS = [
+  {id:'ing1',fecha:'2026-03-25',contacto:'Martina G Benegas',propiedad:'Lote 61 Pueblo Nuevo',valor:68000,pctTizado:4,pctPersonal:35,comision:952},
+  {id:'ing2',fecha:'2026-04-10',contacto:'Juan Cañellas',propiedad:'Aora UF 35',valor:136025,pctTizado:5.5,pctPersonal:35,comision:2620},
+  {id:'ing3',fecha:'2026-05-26',contacto:'Cesar Mendez',propiedad:'Lote 190 Village Joven',valor:78000,pctTizado:3,pctPersonal:35,comision:820},
+];
+let ingresos = [];
+let editingIngId = null;
+
+function saveOpps() { localStorage.setItem('crm_opps', JSON.stringify(opps)); }
+function saveIngresos() { localStorage.setItem('crm_ingresos', JSON.stringify(ingresos)); }
+
+function initPipeline() {
+  const saved = localStorage.getItem('crm_opps');
+  opps = saved ? JSON.parse(saved) : [];
+}
+function initIngresos() {
+  const saved = localStorage.getItem('crm_ingresos');
+  ingresos = saved ? JSON.parse(saved) : [...BASE_INGRESOS];
+  if (!saved) saveIngresos();
+}
+
+// ─── PIPELINE RENDER ─────────────────────────────────────────────────────────
+function renderPipeline() {
+  const board = document.getElementById('pipelineBoard');
+  const totalVal = opps.filter(o => !['Perdida','Negociación Caída'].includes(o.etapa)).reduce((s,o) => s + (parseFloat(o.valor)||0), 0);
+  const active = opps.filter(o => !['Perdida','Negociación Caída','Cierre'].includes(o.etapa)).length;
+  document.getElementById('pipelineSummary').textContent = `${active} activas · pipeline USD ${fmtUSD(totalVal)}`;
+
+  board.innerHTML = STAGES.map(stage => {
+    const key = STAGE_KEY[stage];
+    const col = opps.filter(o => o.etapa === stage);
+    const colVal = col.reduce((s,o) => s + (parseFloat(o.valor)||0), 0);
+    return `<div class="pipeline-col col-${key}" id="col-${key}"
+        ondragover="event.preventDefault();this.querySelector('.pipeline-col-body').classList.add('drag-over')"
+        ondragleave="this.querySelector('.pipeline-col-body').classList.remove('drag-over')"
+        ondrop="dropOpp(event,'${stage}')">
+      <div class="pipeline-col-header">
+        <span class="pipeline-col-title">${stage}</span>
+        <span class="pipeline-col-count">${col.length}</span>
+      </div>
+      <div class="pipeline-col-body" id="body-${key}">
+        ${col.map(o => renderOppCard(o)).join('')}
+        ${colVal > 0 ? `<div style="font-size:10px;color:var(--green);font-weight:600;padding:4px 2px;text-align:right">${fmtUSD(colVal)}</div>` : ''}
+      </div>
+      <div class="pipeline-col-add">
+        <button onclick="openOppModal(null,'${stage}')">+ Agregar</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderOppCard(o) {
+  const c = contacts.find(c => c.id === o.contactId);
+  const nombre = c ? c.nombre : (o.contactNombre || '?');
+  const urgDot = o.urgencia === 'ALTA' ? 'urgency-alta' : o.urgencia === 'MEDIA' ? 'urgency-media' : o.urgencia === 'BAJA' ? 'urgency-baja' : '';
+  const tipoClass = (o.tipo||'').toLowerCase();
+  return `<div class="opp-card" draggable="true"
+      ondragstart="dragOpp(event,'${o.id}')"
+      ondragend="document.querySelectorAll('.pipeline-col-body').forEach(b=>b.classList.remove('drag-over'))"
+      onclick="openOppSide('${o.id}')">
+    <div class="opp-card-name">${esc(nombre)}</div>
+    ${o.prop ? `<div class="opp-card-prop">${esc(o.prop)}</div>` : ''}
+    <div class="opp-card-bottom">
+      ${o.valor ? `<span class="opp-card-val">${fmtUSD(o.valor)}</span>` : '<span class="opp-card-val" style="color:var(--gray2)">—</span>'}
+      <span class="opp-card-tipo ${tipoClass}">${o.tipo||''}</span>
+      ${urgDot ? `<span class="opp-urg ${urgDot}"></span>` : ''}
+    </div>
+  </div>`;
+}
+
+let dragOppId = null;
+function dragOpp(e, id) { dragOppId = id; e.dataTransfer.effectAllowed = 'move'; }
+function dropOpp(e, stage) {
+  e.preventDefault();
+  document.querySelectorAll('.pipeline-col-body').forEach(b => b.classList.remove('drag-over'));
+  if (!dragOppId) return;
+  const o = opps.find(x => x.id === dragOppId);
+  if (o) { o.etapa = stage; saveOpps(); renderPipeline(); }
+  dragOppId = null;
+}
+
+// ─── OPP MODAL ───────────────────────────────────────────────────────────────
+function openOppModal(contactId, defaultStage) {
+  editingOppId = null;
+  document.getElementById('oppModalTitle').textContent = 'Nueva oportunidad';
+  document.getElementById('oppDeleteBtn').style.display = 'none';
+  // Populate contact select
+  const sel = document.getElementById('opp_contactId');
+  sel.innerHTML = contacts.map(c => `<option value="${c.id}">${esc(c.nombre)}</option>`).join('');
+  if (contactId) sel.value = contactId;
+  document.getElementById('opp_prop').value = '';
+  document.getElementById('opp_tipo').value = 'Compra';
+  document.getElementById('opp_etapa').value = defaultStage || 'Consulta';
+  document.getElementById('opp_urgencia').value = '';
+  document.getElementById('opp_valor').value = '';
+  document.getElementById('opp_nota').value = '';
+  document.getElementById('oppModal').classList.add('open');
+}
+
+function openOppEditModal(oppId) {
+  const o = opps.find(x => x.id === oppId);
+  if (!o) return;
+  editingOppId = oppId;
+  document.getElementById('oppModalTitle').textContent = 'Editar oportunidad';
+  document.getElementById('oppDeleteBtn').style.display = 'inline-flex';
+  const sel = document.getElementById('opp_contactId');
+  sel.innerHTML = contacts.map(c => `<option value="${c.id}">${esc(c.nombre)}</option>`).join('');
+  sel.value = o.contactId;
+  document.getElementById('opp_prop').value = o.prop || '';
+  document.getElementById('opp_tipo').value = o.tipo || 'Compra';
+  document.getElementById('opp_etapa').value = o.etapa || 'Consulta';
+  document.getElementById('opp_urgencia').value = o.urgencia || '';
+  document.getElementById('opp_valor').value = o.valor || '';
+  document.getElementById('opp_nota').value = o.nota || '';
+  document.getElementById('oppModal').classList.add('open');
+}
+
+function closeOppModal() { document.getElementById('oppModal').classList.remove('open'); }
+
+function saveOpp() {
+  const contactId = document.getElementById('opp_contactId').value;
+  if (!contactId) { toast('Seleccioná un contacto', 'error'); return; }
+  const data = {
+    contactId,
+    prop: document.getElementById('opp_prop').value.trim(),
+    tipo: document.getElementById('opp_tipo').value,
+    etapa: document.getElementById('opp_etapa').value,
+    urgencia: document.getElementById('opp_urgencia').value,
+    valor: parseFloat(document.getElementById('opp_valor').value) || 0,
+    nota: document.getElementById('opp_nota').value.trim(),
+  };
+  if (editingOppId) {
+    const o = opps.find(x => x.id === editingOppId);
+    if (o) Object.assign(o, data);
+  } else {
+    opps.push({ id: uid(), createdAt: TODAY, ...data });
+  }
+  saveOpps();
+  closeOppModal();
+  renderPipeline();
+  if (oppSideContactId) renderOppSide(oppSideContactId);
+  toast('Oportunidad guardada ✓', 'success');
+}
+
+function deleteOpp() {
+  if (!editingOppId) return;
+  if (!confirm('¿Eliminar esta oportunidad?')) return;
+  opps = opps.filter(x => x.id !== editingOppId);
+  saveOpps();
+  closeOppModal();
+  renderPipeline();
+  if (oppSideContactId) renderOppSide(oppSideContactId);
+  toast('Eliminada', 'success');
+}
+
+// ─── OPP SIDE PANEL ──────────────────────────────────────────────────────────
+function openOppSide(oppId) {
+  const o = opps.find(x => x.id === oppId);
+  if (!o) return;
+  oppSideContactId = o.contactId;
+  renderOppSide(o.contactId);
+  document.getElementById('oppSideOverlay').classList.add('open');
+  document.getElementById('oppSidePanel').classList.add('open');
+}
+
+function renderOppSide(contactId) {
+  const c = contacts.find(x => x.id === contactId);
+  const nombre = c ? c.nombre : '?';
+  document.getElementById('oppSideName').textContent = nombre;
+  const tel = c && c.tel ? c.tel.replace(/\D/g,'') : '';
+  document.getElementById('oppSideWA').style.display = tel ? 'inline-flex' : 'none';
+
+  const myOpps = opps.filter(o => o.contactId === contactId)
+    .sort((a,b) => (b.createdAt||'').localeCompare(a.createdAt||''));
+
+  const body = document.getElementById('oppSideBody');
+  if (!myOpps.length) {
+    body.innerHTML = '<div style="color:var(--gray2);font-size:13px;padding:20px 0">Sin oportunidades aún</div>';
+    return;
+  }
+  body.innerHTML = myOpps.map(o => {
+    const isActive = !['Perdida','Negociación Caída'].includes(o.etapa);
+    return `<div class="opp-history-item" style="${isActive?'border-left:3px solid var(--red)':'opacity:.6'}">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+        <span class="opp-history-stage">${o.etapa}</span>
+        <div style="display:flex;gap:4px">
+          <button class="btn btn-ghost btn-sm" style="padding:2px 7px;font-size:11px" onclick="openOppEditModal('${o.id}')">✏️</button>
+        </div>
+      </div>
+      ${o.prop ? `<div class="opp-history-prop">${esc(o.prop)}</div>` : ''}
+      <div class="opp-history-meta">
+        ${o.tipo||''} ${o.valor ? '· '+fmtUSD(o.valor) : ''} ${o.urgencia ? '· '+o.urgencia : ''} ${o.createdAt ? '· '+formatDate(o.createdAt) : ''}
+      </div>
+      ${o.nota ? `<div style="font-size:12px;color:var(--gray);margin-top:4px">${esc(o.nota)}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function closeOppSide() {
+  document.getElementById('oppSideOverlay').classList.remove('open');
+  document.getElementById('oppSidePanel').classList.remove('open');
+}
+
+function openOppWA() {
+  const c = contacts.find(x => x.id === oppSideContactId);
+  if (c && c.tel) window.open(`https://wa.me/${c.tel.replace(/\D/g,'')}`, '_blank');
+}
+
+// ─── KPIs RENDER ─────────────────────────────────────────────────────────────
+function renderKPIs() {
+  const funnelStages = ['Consulta','Visita','Conversación','Reserva','Cierre'];
+  const counts = funnelStages.map(s => opps.filter(o => o.etapa === s || (s === 'Cierre' && o.etapa === 'Cierre')).length);
+  // Acumulado: todos los que llegaron a esa etapa o más avanzada
+  const stageOrder = STAGES;
+  const cumulative = funnelStages.map(s => {
+    const idx = stageOrder.indexOf(s);
+    return opps.filter(o => stageOrder.indexOf(o.etapa) >= idx && !['Perdida','Negociación Caída'].includes(o.etapa)).length;
+  });
+  const funnel = document.getElementById('kpiFunnel');
+  funnel.innerHTML = funnelStages.map((s, i) => {
+    const pct = i > 0 && cumulative[0] > 0 ? Math.round(cumulative[i]/cumulative[0]*100) : 100;
+    return `<div class="funnel-step">
+      <div class="funnel-step-num">${cumulative[i]}</div>
+      <div class="funnel-step-label">${s}</div>
+      ${i > 0 ? `<div class="funnel-step-pct">${pct}%</div>` : ''}
+    </div>${i < funnelStages.length-1 ? '<div class="funnel-arrow">›</div>' : ''}`;
+  }).join('');
+
+  // KPI cards
+  const active = opps.filter(o => !['Perdida','Negociación Caída','Cierre'].includes(o.etapa)).length;
+  const pipeline = opps.filter(o => !['Perdida','Negociación Caída'].includes(o.etapa)).reduce((s,o) => s+(parseFloat(o.valor)||0), 0);
+  const cierres = opps.filter(o => o.etapa === 'Cierre').length;
+  const visitas = opps.filter(o => ['Visita','Conversación','Reserva','Negociación','Cierre'].includes(o.etapa)).length;
+  const convRate = visitas > 0 ? Math.round(cierres/visitas*100) : 0;
+  document.getElementById('kpiCards').innerHTML = [
+    {label:'Oportunidades activas', num: active, sub:'en pipeline', cls:''},
+    {label:'Pipeline estimado', num:'U$S '+fmtUSD(pipeline).replace('USD ',''), sub:'valor total', cls: pipeline>0?'green':''},
+    {label:'Cierres', num: cierres, sub:'operaciones ganadas', cls: cierres>0?'green':''},
+    {label:'Conversión visita→cierre', num: convRate+'%', sub:'tasa de éxito', cls: convRate>=20?'green':convRate>0?'yellow':''},
+  ].map(c => `<div class="stat-card ${c.cls}">
+    <div class="stat-card-label">${c.label}</div>
+    <div class="stat-card-num">${c.num}</div>
+    <div class="stat-card-sub">${c.sub}</div>
+  </div>`).join('');
+
+  // Table by tipo
+  const tipos = ['Compra','Venta','Alquiler'];
+  document.getElementById('kpiTableBody').innerHTML = tipos.map(t => {
+    const tOpps = opps.filter(o => o.tipo === t);
+    const tConsultas = tOpps.filter(o => o.etapa === 'Consulta').length;
+    const tVisitas = tOpps.filter(o => ['Visita','Conversación','Reserva','Negociación','Cierre'].includes(o.etapa)).length;
+    const tCierres = tOpps.filter(o => o.etapa === 'Cierre').length;
+    const tConv = tVisitas > 0 ? Math.round(tCierres/tVisitas*100)+'%' : '—';
+    const tPipe = tOpps.filter(o => !['Perdida','Negociación Caída'].includes(o.etapa)).reduce((s,o) => s+(parseFloat(o.valor)||0), 0);
+    return `<tr><td>${t}</td><td>${tConsultas}</td><td>${tVisitas}</td><td>${tCierres}</td><td>${tConv}</td><td>${tPipe>0?fmtUSD(tPipe):'—'}</td></tr>`;
+  }).join('');
+}
+
+// ─── INGRESOS RENDER ─────────────────────────────────────────────────────────
+const OBJ_MENSUAL = 2500;
+const OBJ_ANUAL = 25000;
+
+function fmtUSD(n) {
+  n = parseFloat(n)||0;
+  return 'USD ' + n.toLocaleString('es-AR', {minimumFractionDigits:0, maximumFractionDigits:0});
+}
+
+function renderIngresos() {
+  const year = new Date().getFullYear();
+  const ytd = ingresos.filter(i => i.fecha && i.fecha.startsWith(String(year))).reduce((s,i) => s+(parseFloat(i.comision)||0), 0);
+  const avance = Math.min(Math.round(ytd/OBJ_ANUAL*100), 999);
+  const diff = ytd - OBJ_ANUAL;
+  document.getElementById('ingresosCards').innerHTML = [
+    {label:'Ingreso YTD '+year, num:'$'+Math.round(ytd).toLocaleString('es-AR'), sub:'comisión acumulada', cls: ytd>0?'green':''},
+    {label:'Objetivo anual', num:'$'+OBJ_ANUAL.toLocaleString('es-AR'), sub:'meta personal', cls:''},
+    {label:'Avance', num: avance+'%', sub:'del objetivo', cls: avance>=100?'green':avance>=50?'yellow':'red'},
+    {label:'Diferencia', num:'$'+Math.abs(Math.round(diff)).toLocaleString('es-AR'), sub: diff>=0?'por encima':'por debajo del objetivo', cls: diff>=0?'green':'red'},
+  ].map(c => `<div class="stat-card ${c.cls}">
+    <div class="stat-card-label">${c.label}</div>
+    <div class="stat-card-num">${c.num}</div>
+    <div class="stat-card-sub">${c.sub}</div>
+  </div>`).join('');
+
+  // Bar chart — últimos 6 meses + meses futuros hasta completar año
+  const months = [];
+  for (let m = 0; m < 12; m++) {
+    const d = new Date(year, m, 1);
+    months.push({ label: d.toLocaleString('es-AR',{month:'short'}), key: `${year}-${String(m+1).padStart(2,'0')}` });
+  }
+  const maxVal = Math.max(OBJ_MENSUAL, ...months.map(m => ingresos.filter(i => (i.fecha||'').startsWith(m.key)).reduce((s,i)=>s+(parseFloat(i.comision)||0),0))) * 1.2;
+  document.getElementById('ingresosChart').innerHTML = `
+    <div style="display:flex;align-items:flex-end;gap:0;height:140px;background:var(--bg3);border-radius:6px;padding:10px 8px 0;overflow:hidden">
+      ${months.map(m => {
+        const real = ingresos.filter(i => (i.fecha||'').startsWith(m.key)).reduce((s,i)=>s+(parseFloat(i.comision)||0),0);
+        const hReal = real > 0 ? Math.max(4, Math.round(real/maxVal*110)) : 0;
+        const hObj = Math.round(OBJ_MENSUAL/maxVal*110);
+        return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;position:relative;height:100%">
+          <div style="flex:1;width:100%;display:flex;align-items:flex-end;position:relative">
+            <div style="position:absolute;bottom:0;left:2px;right:2px;height:${hObj}px;background:var(--border);border-radius:3px 3px 0 0;z-index:0"></div>
+            ${real > 0 ? `<div style="position:relative;z-index:1;width:100%;height:${hReal}px;background:var(--red);border-radius:3px 3px 0 0;opacity:.85"></div>` : ''}
+          </div>
+          <div style="font-size:9px;color:var(--gray2);padding-bottom:4px">${m.label}</div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div style="display:flex;gap:14px;margin-top:8px;font-size:11px;color:var(--gray)">
+      <span><span style="display:inline-block;width:10px;height:10px;background:var(--red);border-radius:2px;margin-right:4px;opacity:.85"></span>Real</span>
+      <span><span style="display:inline-block;width:10px;height:10px;background:var(--border);border-radius:2px;margin-right:4px"></span>Objetivo $${OBJ_MENSUAL.toLocaleString()}/mes</span>
+    </div>`;
+
+  // Table
+  const sorted = [...ingresos].sort((a,b) => (b.fecha||'').localeCompare(a.fecha||''));
+  document.getElementById('ingresosTableBody').innerHTML = sorted.map(i =>
+    `<tr>
+      <td>${i.fecha ? formatDate(i.fecha) : '—'}</td>
+      <td>${esc(i.contacto||'')}</td>
+      <td>${esc(i.propiedad||'')}</td>
+      <td>${i.valor ? fmtUSD(i.valor) : '—'}</td>
+      <td>${i.pctTizado||0}%</td>
+      <td>${i.pctPersonal||0}%</td>
+      <td style="font-weight:700;color:var(--green)">$${Math.round(i.comision||0).toLocaleString('es-AR')}</td>
+      <td><button class="btn btn-ghost btn-sm" style="padding:2px 7px;font-size:11px" onclick="openIngresosEditModal('${i.id}')">✏️</button></td>
+    </tr>`
+  ).join('');
+}
+
+// ─── INGRESOS MODAL ───────────────────────────────────────────────────────────
+function openIngresosModal() {
+  editingIngId = null;
+  document.getElementById('ingresosModalTitle').textContent = 'Nueva operación cerrada';
+  document.getElementById('ingDeleteBtn').style.display = 'none';
+  document.getElementById('ing_fecha').value = TODAY;
+  document.getElementById('ing_contacto').value = '';
+  document.getElementById('ing_propiedad').value = '';
+  document.getElementById('ing_valor').value = '';
+  document.getElementById('ing_pctTizado').value = '';
+  document.getElementById('ing_pctPersonal').value = '35';
+  document.getElementById('ing_calc').textContent = '$0';
+  document.getElementById('ingresosModal').classList.add('open');
+}
+
+function openIngresosEditModal(id) {
+  const i = ingresos.find(x => x.id === id);
+  if (!i) return;
+  editingIngId = id;
+  document.getElementById('ingresosModalTitle').textContent = 'Editar operación';
+  document.getElementById('ingDeleteBtn').style.display = 'inline-flex';
+  document.getElementById('ing_fecha').value = i.fecha || '';
+  document.getElementById('ing_contacto').value = i.contacto || '';
+  document.getElementById('ing_propiedad').value = i.propiedad || '';
+  document.getElementById('ing_valor').value = i.valor || '';
+  document.getElementById('ing_pctTizado').value = i.pctTizado || '';
+  document.getElementById('ing_pctPersonal').value = i.pctPersonal || '';
+  calcIngreso();
+  document.getElementById('ingresosModal').classList.add('open');
+}
+
+function closeIngresosModal() { document.getElementById('ingresosModal').classList.remove('open'); }
+
+function calcIngreso() {
+  const val = parseFloat(document.getElementById('ing_valor').value)||0;
+  const pt = parseFloat(document.getElementById('ing_pctTizado').value)||0;
+  const pp = parseFloat(document.getElementById('ing_pctPersonal').value)||0;
+  const com = Math.round(val * (pt/100) * (pp/100));
+  document.getElementById('ing_calc').textContent = '$' + com.toLocaleString('es-AR');
+  return com;
+}
+
+function saveIngreso() {
+  const fecha = document.getElementById('ing_fecha').value;
+  const contacto = document.getElementById('ing_contacto').value.trim();
+  const propiedad = document.getElementById('ing_propiedad').value.trim();
+  const valor = parseFloat(document.getElementById('ing_valor').value)||0;
+  const pctTizado = parseFloat(document.getElementById('ing_pctTizado').value)||0;
+  const pctPersonal = parseFloat(document.getElementById('ing_pctPersonal').value)||0;
+  const comision = calcIngreso();
+  const data = { fecha, contacto, propiedad, valor, pctTizado, pctPersonal, comision };
+  if (editingIngId) {
+    const i = ingresos.find(x => x.id === editingIngId);
+    if (i) Object.assign(i, data);
+  } else {
+    ingresos.push({ id: uid(), ...data });
+  }
+  saveIngresos();
+  closeIngresosModal();
+  renderIngresos();
+  toast('Operación guardada ✓', 'success');
+}
+
+function deleteIngreso() {
+  if (!editingIngId) return;
+  if (!confirm('¿Eliminar esta operación?')) return;
+  ingresos = ingresos.filter(x => x.id !== editingIngId);
+  saveIngresos();
+  closeIngresosModal();
+  renderIngresos();
+  toast('Eliminada', 'success');
+}
 
 // ─── PROPIEDADES EMBEBIDAS (extraídas de ZonaProp el 2026-06-03) ──────────────
 // Para actualizar: correr el snippet en la consola de ZonaProp y reemplazar este array
@@ -1592,21 +2288,31 @@ function showTab(tab) {
   const isProps = tab === 'propiedades';
   const isStats = tab === 'stats';
   const isContactos = tab === 'contactos';
-  const btnC = document.getElementById('tab-contactos');
-  const btnP = document.getElementById('tab-propiedades');
-  const btnS = document.getElementById('tab-stats');
-  btnC.classList.toggle('active', isContactos);
-  btnP.classList.toggle('active', isProps);
-  if (btnS) btnS.classList.toggle('active', isStats);
+  const isPipeline = tab === 'pipeline';
+  const isKPIs = tab === 'kpis';
+  const isIngresos = tab === 'ingresos';
+  ['tab-contactos','tab-propiedades','tab-stats','tab-pipeline','tab-kpis','tab-ingresos'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('active');
+  });
+  const activeTab = document.getElementById('tab-' + tab);
+  if (activeTab) activeTab.classList.add('active');
   if (isContactos) {
+    const btnC = document.getElementById('tab-contactos');
     btnC.innerHTML = '👥 Contactos' + overdueHtml();
     btnC.classList.remove('locked');
   }
   document.querySelector('.main').style.display = isContactos ? (isUnlocked() ? 'flex' : 'none') : 'none';
   document.getElementById('propsPanel').classList.toggle('visible', isProps);
   document.getElementById('statsPanel').classList.toggle('visible', isStats);
+  document.getElementById('pipelinePanel').classList.toggle('visible', isPipeline);
+  document.getElementById('kpisPanel').classList.toggle('visible', isKPIs);
+  document.getElementById('ingresosPanel').classList.toggle('visible', isIngresos);
   if (isProps && properties.length === 0) fetchProperties();
   if (isStats) renderStats();
+  if (isPipeline) renderPipeline();
+  if (isKPIs) renderKPIs();
+  if (isIngresos) renderIngresos();
 }
 
 function overdueHtml() {
@@ -2390,7 +3096,10 @@ function submitPin() {
   if (val === PIN_CODE) {
     localStorage.setItem(PIN_KEY, 'yes');
     document.getElementById('pinOverlay').classList.remove('visible');
-    document.getElementById('tab-stats').classList.remove('locked');
+    ['tab-stats','tab-pipeline','tab-kpis','tab-ingresos'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.classList.remove('locked');
+    });
     document.querySelector('.main').style.display = 'flex';
     showTab('contactos');
   } else {
@@ -2410,12 +3119,17 @@ function cancelPin() {
 
 // ─── START ───────────────────────────────────────────────────────────────────
 init();
+initPipeline();
+initIngresos();
 applyUrlParams();
 // On load: if unlocked show contacts, else show propiedades
 if (isUnlocked()) {
   document.querySelector('.main').style.display = 'flex';
   document.getElementById('tab-contactos').innerHTML = '👥 Contactos' + overdueHtml();
-  document.getElementById('tab-stats').classList.remove('locked');
+  ['tab-stats','tab-pipeline','tab-kpis','tab-ingresos'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('locked');
+  });
 } else {
   showTab('propiedades');
   document.getElementById('tab-propiedades').classList.add('active');
