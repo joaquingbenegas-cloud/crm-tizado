@@ -632,6 +632,22 @@
   /* ══════════════════ INGRESOS ══════════════════ */
   .ingresos-panel { display: none; overflow-y: auto; padding: 28px; background: var(--bg); }
   .ingresos-panel.visible { display: block; }
+  .dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+  .dash-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+  .dash-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; }
+  .dash-card-title { font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: var(--gray); margin-bottom: 14px; font-weight: 600; }
+  .dash-followup-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 6px; cursor: pointer; transition: background .12s; margin-bottom: 4px; }
+  .dash-followup-item:hover { background: var(--bg3); }
+  .dash-followup-name { font-size: 13px; font-weight: 600; flex: 1; }
+  .dash-followup-action { font-size: 11px; color: var(--gray); }
+  .dash-followup-date { font-size: 11px; color: var(--gray2); white-space: nowrap; }
+  .dash-interaction-item { display: flex; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--border); }
+  .dash-interaction-item:last-child { border-bottom: none; }
+  .dash-stage-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .dash-stage-name { font-size: 12px; width: 130px; flex-shrink: 0; }
+  .dash-stage-bar { flex: 1; height: 6px; background: var(--bg3); border-radius: 3px; overflow: hidden; }
+  .dash-stage-fill { height: 100%; border-radius: 3px; background: var(--red); transition: width .4s; }
+  .dash-stage-count { font-size: 12px; color: var(--gray); width: 20px; text-align: right; }
   .bar-chart { display: flex; align-items: flex-end; gap: 8px; height: 140px; padding: 0 4px; }
   .bar-month { display: flex; flex-direction: column; align-items: center; gap: 3px; flex: 1; }
   .bar-wrap { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; width: 100%; position: relative; min-height: 0; }
@@ -672,6 +688,7 @@
 
 <div class="tab-nav">
   <button class="tab-btn active" id="tab-contactos" onclick="tryShowTab('contactos')" style="display:none">🔒 Contactos</button>
+  <button class="tab-btn locked" id="tab-dashboard" onclick="tryShowTab('dashboard')">⚡ Home</button>
   <button class="tab-btn" id="tab-propiedades" onclick="tryShowTab('propiedades')">🏠 Propiedades</button>
   <button class="tab-btn locked" id="tab-stats" onclick="tryShowTab('stats')">📊 Stats</button>
   <button class="tab-btn locked" id="tab-pipeline" onclick="tryShowTab('pipeline')">🏗 Pipeline</button>
@@ -912,6 +929,11 @@
       <button class="btn btn-primary" onclick="saveNewContact()">Crear contacto</button>
     </div>
   </div>
+</div>
+
+<!-- DASHBOARD PANEL -->
+<div class="stats-panel" id="dashboardPanel">
+  <div style="max-width:960px;margin:0 auto" id="dashboardContent"></div>
 </div>
 
 <!-- STATS PANEL -->
@@ -2680,7 +2702,8 @@ function showTab(tab) {
   const isPipeline = tab === 'pipeline';
   const isKPIs = tab === 'kpis';
   const isIngresos = tab === 'ingresos';
-  ['tab-contactos','tab-propiedades','tab-stats','tab-pipeline','tab-kpis','tab-ingresos'].forEach(id => {
+  const isDashboard = tab === 'dashboard';
+  ['tab-contactos','tab-propiedades','tab-stats','tab-pipeline','tab-kpis','tab-ingresos','tab-dashboard'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.remove('active');
   });
@@ -2697,11 +2720,121 @@ function showTab(tab) {
   document.getElementById('pipelinePanel').classList.toggle('visible', isPipeline);
   document.getElementById('kpisPanel').classList.toggle('visible', isKPIs);
   document.getElementById('ingresosPanel').classList.toggle('visible', isIngresos);
+  document.getElementById('dashboardPanel').classList.toggle('visible', isDashboard);
   if (isProps && properties.length === 0) fetchProperties();
   if (isStats) renderStats();
   if (isPipeline) renderPipeline();
   if (isKPIs) renderKPIs();
   if (isIngresos) renderIngresos();
+  if (isDashboard) renderDashboard();
+}
+
+function renderDashboard() {
+  const el = document.getElementById('dashboardContent');
+  if (!el) return;
+
+  // Seguimientos
+  const due = contacts.filter(c => c.nextAction && c.nextActionDate && c.nextActionDate <= TODAY && !c.archived)
+    .sort((a,b) => (a.nextActionDate||'').localeCompare(b.nextActionDate||''));
+  const overdue = due.filter(c => c.nextActionDate < TODAY);
+  const today = due.filter(c => c.nextActionDate === TODAY);
+
+  // Últimas interacciones (todas las notas de todos los contactos, ordenadas por fecha)
+  const allInteractions = [];
+  contacts.forEach(c => {
+    (c.notes||[]).forEach(n => allInteractions.push({...n, contactId: c.id, contactNombre: c.nombre}));
+  });
+  allInteractions.sort((a,b) => (b.date+b.time).localeCompare(a.date+a.time));
+  const recentInteractions = allInteractions.slice(0, 6);
+
+  // Pipeline por etapa
+  const stageData = STAGES.filter(s => s !== 'Negociación Caída').map(s => ({
+    stage: s, count: opps.filter(o => o.etapa === s).length
+  })).filter(s => s.count > 0);
+  const maxStage = Math.max(...stageData.map(s => s.count), 1);
+
+  // Ingresos del mes
+  const now = new Date();
+  const mesKey = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const mesNombre = now.toLocaleString('es-AR', {month:'long', year:'numeric'});
+  const ingMes = ingresos.filter(i => (i.fecha||'').startsWith(mesKey)).reduce((s,i) => s+(parseFloat(i.comision)||0), 0);
+  const ingTotal = ingresos.reduce((s,i) => s+(parseFloat(i.comision)||0), 0);
+  const pctMes = Math.round(ingMes / OBJ_MENSUAL * 100);
+  const activeOpps = opps.filter(o => !['Negociación Caída','Cierre'].includes(o.etapa)).length;
+  const pipeVal = opps.filter(o => !['Negociación Caída'].includes(o.etapa)).reduce((s,o) => s+(parseFloat(o.valor)||0), 0);
+
+  el.innerHTML = `
+    <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:24px">
+      <h2 style="font-family:'Playfair Display',serif;font-size:22px">Buenos días ☀️</h2>
+      <span style="font-size:12px;color:var(--gray)">${new Date().toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'})}</span>
+    </div>
+
+    <!-- MÉTRICAS RÁPIDAS -->
+    <div class="dash-grid-3" style="margin-bottom:20px">
+      <div class="dash-card" style="text-align:center">
+        <div class="dash-card-title">Seguimientos hoy</div>
+        <div style="font-size:32px;font-weight:700;color:${due.length>0?'var(--red)':'var(--green)'}">${due.length}</div>
+        <div style="font-size:11px;color:var(--gray)">${overdue.length > 0 ? `${overdue.length} vencidos · ` : ''}${today.length} de hoy</div>
+      </div>
+      <div class="dash-card" style="text-align:center">
+        <div class="dash-card-title">Opps activas</div>
+        <div style="font-size:32px;font-weight:700;color:var(--white)">${activeOpps}</div>
+        <div style="font-size:11px;color:var(--gray)">${fmtUSD(pipeVal)} en pipeline</div>
+      </div>
+      <div class="dash-card" style="text-align:center">
+        <div class="dash-card-title">Ingresos ${mesNombre}</div>
+        <div style="font-size:28px;font-weight:700;color:${ingMes>0?'var(--green)':'var(--gray2)'}">${ingMes > 0 ? '$'+Math.round(ingMes).toLocaleString('es-AR') : '—'}</div>
+        <div style="font-size:11px;color:var(--gray)">${pctMes}% del objetivo mensual</div>
+      </div>
+    </div>
+
+    <div class="dash-grid">
+      <!-- SEGUIMIENTOS -->
+      <div class="dash-card">
+        <div class="dash-card-title">🔔 Seguimientos pendientes${due.length ? ` (${due.length})` : ''}</div>
+        ${due.length ? due.slice(0,6).map(c => {
+          const isOv = c.nextActionDate < TODAY;
+          return `<div class="dash-followup-item" onclick="tryShowTab('pipeline');setTimeout(()=>openContactSide('${c.id}'),300)">
+            <span style="font-size:14px">${isOv?'⚠️':'📌'}</span>
+            <div style="flex:1;min-width:0">
+              <div class="dash-followup-name">${esc(c.nombre)}</div>
+              <div class="dash-followup-action">${esc(c.nextAction)}</div>
+            </div>
+            <div class="dash-followup-date" style="color:${isOv?'var(--red)':'var(--gray2)'}">${formatDate(c.nextActionDate)}</div>
+          </div>`;
+        }).join('') : '<div style="color:var(--gray2);font-size:13px;padding:8px 0">✅ Sin seguimientos pendientes</div>'}
+        ${due.length > 6 ? `<div style="font-size:11px;color:var(--gray);padding-top:4px">+${due.length-6} más</div>` : ''}
+      </div>
+
+      <!-- ÚLTIMAS INTERACCIONES -->
+      <div class="dash-card">
+        <div class="dash-card-title">💬 Últimas interacciones</div>
+        ${recentInteractions.length ? recentInteractions.map(n => `
+          <div class="dash-interaction-item" style="cursor:pointer" onclick="tryShowTab('pipeline');setTimeout(()=>openContactSide('${n.contactId}'),300)">
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
+                ${n.tipo ? `<span style="font-size:10px;background:var(--bg3);border-radius:3px;padding:1px 5px;color:var(--gray)">${n.tipo}</span>` : ''}
+                <span style="font-size:12px;font-weight:600">${esc(n.contactNombre)}</span>
+              </div>
+              <div style="font-size:11px;color:var(--gray);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(n.text)}</div>
+            </div>
+            <div style="font-size:10px;color:var(--gray2);white-space:nowrap;margin-left:8px">${n.date}</div>
+          </div>`).join('') : '<div style="color:var(--gray2);font-size:13px;padding:8px 0">Sin interacciones recientes</div>'}
+      </div>
+    </div>
+
+    <!-- PIPELINE POR ETAPA -->
+    <div class="dash-card" style="margin-bottom:20px">
+      <div class="dash-card-title">🏗 Estado del pipeline</div>
+      ${stageData.length ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 24px">
+        ${stageData.map(s => `<div class="dash-stage-row">
+          <span class="dash-stage-name">${s.stage}</span>
+          <div class="dash-stage-bar"><div class="dash-stage-fill" style="width:${Math.round(s.count/maxStage*100)}%"></div></div>
+          <span class="dash-stage-count">${s.count}</span>
+        </div>`).join('')}
+      </div>` : '<div style="color:var(--gray2);font-size:13px">Sin oportunidades en pipeline</div>'}
+    </div>
+  `;
 }
 
 function showFollowUpModal() {
@@ -3505,12 +3638,12 @@ function submitPin() {
   if (val === PIN_CODE) {
     localStorage.setItem(PIN_KEY, 'yes');
     document.getElementById('pinOverlay').classList.remove('visible');
-    ['tab-stats','tab-pipeline','tab-kpis','tab-ingresos'].forEach(id => {
+    ['tab-dashboard','tab-stats','tab-pipeline','tab-kpis','tab-ingresos'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.classList.remove('locked');
     });
     document.querySelector('.main').style.display = 'flex';
-    showTab('pipeline');
+    showTab('dashboard');
   } else {
     const inp = document.getElementById('pinInput');
     inp.classList.remove('shake');
