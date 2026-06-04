@@ -456,7 +456,19 @@
     .global-search-input { width: 130px; }
     .global-search-input:focus { width: 160px; }
     .pipeline-panel { height: auto; min-height: calc(100vh - 110px); }
-    .opp-side-panel { width: 100vw; }
+    .opp-side-panel {
+      width: 100vw; right: 0; left: 0;
+      top: auto; bottom: 0; height: 88vh;
+      border-left: none; border-top: 1px solid var(--border);
+      border-radius: 18px 18px 0 0;
+      transform: translateY(100%);
+    }
+    .opp-side-panel.open { transform: translateY(0); }
+    .opp-side-panel::before {
+      content: ''; display: block; width: 40px; height: 4px;
+      background: var(--border); border-radius: 2px; margin: 10px auto 4px;
+      flex-shrink: 0;
+    }
     .dash-grid { grid-template-columns: 1fr; }
     .dash-grid-3 { grid-template-columns: 1fr; }
     .modal { margin: 10px; max-width: calc(100vw - 20px) !important; }
@@ -469,6 +481,22 @@
     width: 16px; height: 16px; font-size: 10px; font-weight: 700;
     margin-left: 5px; vertical-align: middle;
   }
+
+  /* CIERRES PANEL */
+  .cierres-panel { display: none; overflow-y: auto; padding: 28px; background: var(--bg); }
+  .cierres-panel.visible { display: block; }
+  .cierre-card {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 16px 20px; margin-bottom: 12px; cursor: pointer;
+    transition: border-color .15s; border-left: 3px solid var(--green);
+  }
+  .cierre-card:hover { border-color: var(--green); box-shadow: 0 2px 8px rgba(0,0,0,.07); }
+  .cierre-card-top { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+  .cierre-card-name { font-family: 'Playfair Display',serif; font-size: 16px; font-weight: 600; flex: 1; }
+  .cierre-card-val { font-size: 15px; font-weight: 700; color: var(--green); }
+  .cierre-card-meta { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 12px; color: var(--gray); }
+  .cierre-card-prop { font-size: 13px; color: var(--white); margin-bottom: 4px; font-weight: 500; }
+  .cierre-card-nota { font-size: 12px; color: var(--gray); margin-top: 6px; font-style: italic; }
 
   /* MATCHING SECTION */
   .match-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -729,6 +757,7 @@
   <button class="tab-btn locked" id="tab-pipeline" onclick="tryShowTab('pipeline')">🏗 Pipeline</button>
   <button class="tab-btn locked" id="tab-kpis" onclick="tryShowTab('kpis')">📈 KPIs</button>
   <button class="tab-btn locked" id="tab-ingresos" onclick="tryShowTab('ingresos')">💰 Ingresos</button>
+  <button class="tab-btn locked" id="tab-cierres" onclick="tryShowTab('cierres')">🎉 Cierres</button>
 </div>
 
 <div class="main">
@@ -1190,6 +1219,17 @@
   </div>
 </div>
 
+<!-- ══════════════════ CIERRES PANEL ══════════════════ -->
+<div class="cierres-panel" id="cierresPanel">
+  <div style="max-width:900px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
+      <h2 style="font-family:'Playfair Display',serif;font-size:22px">🎉 Historial de Cierres</h2>
+      <span id="cierresSummary" style="font-size:13px;color:var(--gray)"></span>
+    </div>
+    <div id="cierresList"></div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <!-- MODAL REGISTRAR CONTACTO -->
@@ -1625,7 +1665,7 @@ function saveSideNextAction(id) {
   if (!c) return;
   c.nextAction = document.getElementById('side_naText').value.trim();
   c.nextActionDate = document.getElementById('side_naDate').value;
-  save(); renderList(); renderOppSide(id); renderFollowUpBanner();
+  save(); renderList(); renderOppSide(id); renderFollowUpBanner(); updateTabBadges();
   toast('Seguimiento guardado', 'success');
 }
 
@@ -1637,7 +1677,7 @@ function completeSideFollowUp(id) {
   c.notes.push({ id: uid(), tipo: '✅ Seguimiento', text: c.nextAction,
     date: now.toLocaleDateString('es-AR'), time: now.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}) });
   c.nextAction = ''; c.nextActionDate = '';
-  save(); renderList(); renderOppSide(id); renderFollowUpBanner();
+  save(); renderList(); renderOppSide(id); renderFollowUpBanner(); updateTabBadges();
   toast('Seguimiento completado ✓', 'success');
 }
 
@@ -2433,16 +2473,30 @@ function renderFollowUpBanner() {
   if (!container) return;
   const due = contacts.filter(c => c.nextAction && c.nextActionDate && c.nextActionDate <= TODAY)
     .sort((a,b) => (a.nextActionDate||'').localeCompare(b.nextActionDate||''));
-  if (!due.length) { container.innerHTML = ''; return; }
+  if (!due.length) { container.innerHTML = ''; updateTabBadges(); return; }
   container.innerHTML = `<div class="followup-banner">
     <div style="flex:1">
       <div class="followup-banner-title">🔔 Seguimientos pendientes (${due.length})</div>
-      ${due.map(c => `<div class="followup-banner-item" onclick="selectContact('${c.id}')">
-        ${c.nextActionDate < TODAY ? '⚠️' : '📌'} <strong>${esc(c.nombre)}</strong> — ${esc(c.nextAction)}
-        <span style="color:var(--gray);font-size:11px"> (${formatDate(c.nextActionDate)})</span>
-      </div>`).join('')}
+      ${due.map(c => {
+        const isOv = c.nextActionDate < TODAY;
+        const daysOv = isOv ? Math.floor((new Date(TODAY) - new Date(c.nextActionDate)) / 86400000) : 0;
+        const daysLabel = isOv ? `<span style="color:var(--red);font-size:10px;font-weight:700;margin-left:4px">${daysOv === 0 ? 'hoy' : `hace ${daysOv}d`}</span>` : '';
+        return `<div class="followup-banner-item" onclick="selectContact('${c.id}')">
+          ${isOv ? '⚠️' : '📌'} <strong>${esc(c.nombre)}</strong> — ${esc(c.nextAction)}
+          <span style="color:var(--gray);font-size:11px"> (${formatDate(c.nextActionDate)})</span>${daysLabel}
+        </div>`;
+      }).join('')}
     </div>
   </div>`;
+  updateTabBadges();
+}
+
+function updateTabBadges() {
+  const overdue = contacts.filter(c => c.nextAction && c.nextActionDate && c.nextActionDate < TODAY && !c.archived).length;
+  const pipeTab = document.getElementById('tab-pipeline');
+  if (pipeTab && isUnlocked()) {
+    pipeTab.innerHTML = '🏗 Pipeline' + (overdue > 0 ? `<span class="tab-badge">${overdue}</span>` : '');
+  }
 }
 
 function addNote(id) {
@@ -2746,7 +2800,8 @@ function showTab(tab) {
   const isKPIs = tab === 'kpis';
   const isIngresos = tab === 'ingresos';
   const isDashboard = tab === 'dashboard';
-  ['tab-contactos','tab-propiedades','tab-stats','tab-pipeline','tab-kpis','tab-ingresos','tab-dashboard'].forEach(id => {
+  const isCierres = tab === 'cierres';
+  ['tab-contactos','tab-propiedades','tab-stats','tab-pipeline','tab-kpis','tab-ingresos','tab-dashboard','tab-cierres'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.remove('active');
   });
@@ -2764,12 +2819,14 @@ function showTab(tab) {
   document.getElementById('kpisPanel').classList.toggle('visible', isKPIs);
   document.getElementById('ingresosPanel').classList.toggle('visible', isIngresos);
   document.getElementById('dashboardPanel').classList.toggle('visible', isDashboard);
+  document.getElementById('cierresPanel').classList.toggle('visible', isCierres);
   if (isProps && properties.length === 0) fetchProperties();
   if (isStats) renderStats();
   if (isPipeline) renderPipeline();
   if (isKPIs) renderKPIs();
   if (isIngresos) renderIngresos();
   if (isDashboard) renderDashboard();
+  if (isCierres) renderCierres();
 }
 
 // ─── BÚSQUEDA GLOBAL ─────────────────────────────────────────────────────────
@@ -2911,6 +2968,48 @@ function renderDashboard() {
       </div>` : '<div style="color:var(--gray2);font-size:13px">Sin oportunidades en pipeline</div>'}
     </div>
   `;
+}
+
+// ─── CIERRES ─────────────────────────────────────────────────────────────────
+function renderCierres() {
+  const closed = opps.filter(o => o.etapa === 'Cierre')
+    .sort((a,b) => (b.etapaChangedAt||b.createdAt||'').localeCompare(a.etapaChangedAt||a.createdAt||''));
+  const totalVal = closed.reduce((s,o) => s+(parseFloat(o.valor)||0), 0);
+  const summaryEl = document.getElementById('cierresSummary');
+  if (summaryEl) summaryEl.textContent = `${closed.length} operaci${closed.length===1?'ón':'ones'} cerrada${closed.length===1?'':'s'} · ${fmtUSD(totalVal)} en valor`;
+
+  const listEl = document.getElementById('cierresList');
+  if (!listEl) return;
+  if (!closed.length) {
+    listEl.innerHTML = `<div style="text-align:center;padding:60px 20px;color:var(--gray2)">
+      <div style="font-size:48px;margin-bottom:12px">🎉</div>
+      <p style="font-size:16px;font-family:'Playfair Display',serif">Todavía no hay cierres registrados</p>
+      <p style="font-size:13px;margin-top:6px">Cuando movás una oportunidad a <strong>Cierre</strong> en el pipeline va a aparecer acá</p>
+    </div>`;
+    return;
+  }
+  listEl.innerHTML = closed.map(o => {
+    const c = contacts.find(x => x.id === o.contactId);
+    const nombre = c ? c.nombre : (o.contactNombre || '?');
+    const fecha = o.etapaChangedAt || o.createdAt || '';
+    const tipoClass = (o.tipo||'').toLowerCase();
+    const ingreso = ingresos.find(i => i.contacto && nombre && i.contacto.toLowerCase().includes(nombre.toLowerCase().split(' ')[0]) && i.propiedad && o.prop && i.propiedad.toLowerCase().includes(o.prop.toLowerCase().split(' ')[0]));
+    const comision = ingreso ? `<span style="font-size:12px;background:rgba(22,163,74,.1);color:var(--green);border-radius:4px;padding:2px 7px;font-weight:600">💰 Comisión: $${Math.round(ingreso.comision).toLocaleString('es-AR')}</span>` : '';
+    return `<div class="cierre-card" onclick="tryShowTab('pipeline');setTimeout(()=>openContactSide('${o.contactId}'),300)">
+      <div class="cierre-card-top">
+        <div class="cierre-card-name">${esc(nombre)}</div>
+        ${o.valor ? `<div class="cierre-card-val">${fmtUSD(o.valor)}</div>` : ''}
+      </div>
+      ${o.prop ? `<div class="cierre-card-prop">🏠 ${esc(o.prop)}</div>` : ''}
+      <div class="cierre-card-meta">
+        <span class="opp-card-tipo ${tipoClass}" style="font-size:11px;padding:2px 7px;border-radius:3px;font-weight:600">${o.tipo||''}</span>
+        ${o.compartida ? `<span class="opp-card-compartida">Compartida</span>` : ''}
+        ${fecha ? `<span>📅 ${formatDate(fecha)}</span>` : ''}
+        ${comision}
+      </div>
+      ${o.nota ? `<div class="cierre-card-nota">"${esc(o.nota)}"</div>` : ''}
+    </div>`;
+  }).join('');
 }
 
 function showFollowUpModal() {
@@ -3714,13 +3813,14 @@ function submitPin() {
   if (val === PIN_CODE) {
     localStorage.setItem(PIN_KEY, 'yes');
     document.getElementById('pinOverlay').classList.remove('visible');
-    ['tab-dashboard','tab-stats','tab-pipeline','tab-kpis','tab-ingresos'].forEach(id => {
+    ['tab-dashboard','tab-stats','tab-pipeline','tab-kpis','tab-ingresos','tab-cierres'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.classList.remove('locked');
     });
     document.querySelector('.main').style.display = 'flex';
     document.getElementById('globalSearchWrap').style.display = 'flex';
     showTab('dashboard');
+    updateTabBadges();
   } else {
     const inp = document.getElementById('pinInput');
     inp.classList.remove('shake');
@@ -3750,6 +3850,7 @@ if (isUnlocked()) {
     if (el) el.classList.remove('locked');
   });
   showTab('dashboard');
+  updateTabBadges();
   showFollowUpModal();
 } else {
   showTab('propiedades');
