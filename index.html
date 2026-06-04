@@ -553,6 +553,7 @@
   .opp-card-tipo.compra { background: rgba(59,130,246,.12); color: #1d4ed8; }
   .opp-card-tipo.venta { background: rgba(200,16,46,.1); color: var(--red); }
   .opp-card-tipo.alquiler { background: rgba(126,34,206,.1); color: #7c3aed; }
+  .opp-card-compartida { font-size: 10px; padding: 1px 6px; border-radius: 3px; font-weight: 600; background: rgba(234,179,8,.15); color: #a16207; }
   .opp-urg { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
 
   /* col headers by stage */
@@ -1001,6 +1002,10 @@
         <label>Valor estimado (USD)</label>
         <input type="number" id="opp_valor" placeholder="0">
       </div>
+      <div class="field" style="flex-direction:row;align-items:center;gap:10px">
+        <input type="checkbox" id="opp_compartida" style="width:16px;height:16px;cursor:pointer;accent-color:var(--red)">
+        <label for="opp_compartida" style="cursor:pointer;margin:0">Operación compartida con otra inmobiliaria</label>
+      </div>
       <div class="field">
         <label>Nota</label>
         <textarea id="opp_nota" placeholder="Observaciones..."></textarea>
@@ -1088,6 +1093,15 @@
       <div class="field">
         <label>% Comisión personal</label>
         <input type="number" id="ing_pctPersonal" placeholder="35" step="1" oninput="calcIngreso()">
+      </div>
+      <div class="field" style="flex-direction:row;align-items:center;gap:10px">
+        <input type="checkbox" id="ing_compartida" style="width:16px;height:16px;cursor:pointer;accent-color:var(--red)" oninput="toggleIngCompartida()" onchange="toggleIngCompartida()">
+        <label for="ing_compartida" style="cursor:pointer;margin:0">Operación compartida con otra inmobiliaria</label>
+      </div>
+      <div id="ing_compartida_field" class="field" style="display:none">
+        <label>% que te corresponde de la comisión compartida</label>
+        <input type="number" id="ing_pctCompartida" placeholder="50" step="1" oninput="calcIngreso()" value="50">
+        <span style="font-size:11px;color:var(--gray)">Ej: 50 si es mitad y mitad con la otra inmobiliaria</span>
       </div>
       <div class="field" style="background:var(--bg3);border-radius:6px;padding:10px">
         <label>Comisión estimada</label>
@@ -1267,7 +1281,7 @@ function renderOppCard(o) {
     ${o.prop ? `<div class="opp-card-prop">${esc(o.prop)}</div>` : ''}
     <div class="opp-card-bottom">
       ${o.valor ? `<span class="opp-card-val">${fmtUSD(o.valor)}</span>` : '<span class="opp-card-val" style="color:var(--gray2)">—</span>'}
-      <span class="opp-card-tipo ${tipoClass}">${o.tipo||''}</span>
+      ${o.compartida ? `<span class="opp-card-compartida">Compartida</span>` : `<span class="opp-card-tipo ${tipoClass}">${o.tipo||''}</span>`}
       ${urgDot ? `<span class="opp-urg ${urgDot}"></span>` : ''}
     </div>
   </div>`;
@@ -1289,7 +1303,7 @@ function dropOpp(e, stage) {
       renderPipeline();
       if (stage === 'Cierre') {
         const c = contacts.find(x => x.id === o.contactId);
-        openIngresosModalForOpp(c ? c.nombre : '', o.prop || '');
+        openIngresosModalForOpp(c ? c.nombre : '', o.prop || '', o.compartida);
       }
     }
     dragOppId = null;
@@ -1306,7 +1320,7 @@ function dropOpp(e, stage) {
       saveOpps();
       renderPipeline();
       if (stage === 'Cierre') {
-        openIngresosModalForOpp(c.nombre, '');
+        openIngresosModalForOpp(c.nombre, '', false);
       } else {
         toast(`${c.nombre} agregado a ${stage} ✓`, 'success');
       }
@@ -1330,6 +1344,7 @@ function openOppModal(contactId, defaultStage) {
   document.getElementById('opp_urgencia').value = '';
   document.getElementById('opp_valor').value = '';
   document.getElementById('opp_nota').value = '';
+  document.getElementById('opp_compartida').checked = false;
   document.getElementById('oppModal').classList.add('open');
 }
 
@@ -1348,6 +1363,7 @@ function openOppEditModal(oppId) {
   document.getElementById('opp_urgencia').value = o.urgencia || '';
   document.getElementById('opp_valor').value = o.valor || '';
   document.getElementById('opp_nota').value = o.nota || '';
+  document.getElementById('opp_compartida').checked = o.compartida || false;
   document.getElementById('oppModal').classList.add('open');
 }
 
@@ -1364,6 +1380,7 @@ function saveOpp() {
     urgencia: document.getElementById('opp_urgencia').value,
     valor: parseFloat(document.getElementById('opp_valor').value) || 0,
     nota: document.getElementById('opp_nota').value.trim(),
+    compartida: document.getElementById('opp_compartida').checked,
   };
   if (editingOppId) {
     const o = opps.find(x => x.id === editingOppId);
@@ -1377,7 +1394,7 @@ function saveOpp() {
   if (oppSideContactId) renderOppSide(oppSideContactId);
   if (data.etapa === 'Cierre') {
     const c = contacts.find(x => x.id === data.contactId);
-    openIngresosModalForOpp(c ? c.nombre : '', data.prop || '');
+    openIngresosModalForOpp(c ? c.nombre : '', data.prop || '', data.compartida);
   } else {
     toast('Oportunidad guardada ✓', 'success');
   }
@@ -1577,6 +1594,13 @@ function renderIngresos() {
 }
 
 // ─── INGRESOS MODAL ───────────────────────────────────────────────────────────
+function resetIngModal() {
+  document.getElementById('ing_compartida').checked = false;
+  document.getElementById('ing_compartida_field').style.display = 'none';
+  document.getElementById('ing_pctCompartida').value = '50';
+  document.getElementById('ing_calc').textContent = '$0';
+}
+
 function openIngresosModal() {
   editingIngId = null;
   document.getElementById('ingresosModalTitle').textContent = 'Nueva operación cerrada';
@@ -1587,11 +1611,11 @@ function openIngresosModal() {
   document.getElementById('ing_valor').value = '';
   document.getElementById('ing_pctTizado').value = '';
   document.getElementById('ing_pctPersonal').value = '35';
-  document.getElementById('ing_calc').textContent = '$0';
+  resetIngModal();
   document.getElementById('ingresosModal').classList.add('open');
 }
 
-function openIngresosModalForOpp(contactoNombre, propiedad) {
+function openIngresosModalForOpp(contactoNombre, propiedad, compartida) {
   editingIngId = null;
   document.getElementById('ingresosModalTitle').textContent = '🎉 ¡Cierre! Registrar ingreso';
   document.getElementById('ingDeleteBtn').style.display = 'none';
@@ -1601,7 +1625,11 @@ function openIngresosModalForOpp(contactoNombre, propiedad) {
   document.getElementById('ing_valor').value = '';
   document.getElementById('ing_pctTizado').value = '';
   document.getElementById('ing_pctPersonal').value = '35';
-  document.getElementById('ing_calc').textContent = '$0';
+  resetIngModal();
+  if (compartida) {
+    document.getElementById('ing_compartida').checked = true;
+    document.getElementById('ing_compartida_field').style.display = 'flex';
+  }
   document.getElementById('ingresosModal').classList.add('open');
 }
 
@@ -1617,17 +1645,28 @@ function openIngresosEditModal(id) {
   document.getElementById('ing_valor').value = i.valor || '';
   document.getElementById('ing_pctTizado').value = i.pctTizado || '';
   document.getElementById('ing_pctPersonal').value = i.pctPersonal || '';
+  document.getElementById('ing_compartida').checked = i.compartida || false;
+  document.getElementById('ing_pctCompartida').value = i.pctCompartida || 50;
+  document.getElementById('ing_compartida_field').style.display = i.compartida ? 'flex' : 'none';
   calcIngreso();
   document.getElementById('ingresosModal').classList.add('open');
 }
 
 function closeIngresosModal() { document.getElementById('ingresosModal').classList.remove('open'); }
 
+function toggleIngCompartida() {
+  const checked = document.getElementById('ing_compartida').checked;
+  document.getElementById('ing_compartida_field').style.display = checked ? 'flex' : 'none';
+  calcIngreso();
+}
+
 function calcIngreso() {
   const val = parseFloat(document.getElementById('ing_valor').value)||0;
   const pt = parseFloat(document.getElementById('ing_pctTizado').value)||0;
   const pp = parseFloat(document.getElementById('ing_pctPersonal').value)||0;
-  const com = Math.round(val * (pt/100) * (pp/100));
+  const compartida = document.getElementById('ing_compartida').checked;
+  const pc = compartida ? (parseFloat(document.getElementById('ing_pctCompartida').value)||50) : 100;
+  const com = Math.round(val * (pt/100) * (pp/100) * (pc/100));
   document.getElementById('ing_calc').textContent = '$' + com.toLocaleString('es-AR');
   return com;
 }
@@ -1639,8 +1678,10 @@ function saveIngreso() {
   const valor = parseFloat(document.getElementById('ing_valor').value)||0;
   const pctTizado = parseFloat(document.getElementById('ing_pctTizado').value)||0;
   const pctPersonal = parseFloat(document.getElementById('ing_pctPersonal').value)||0;
+  const compartida = document.getElementById('ing_compartida').checked;
+  const pctCompartida = compartida ? (parseFloat(document.getElementById('ing_pctCompartida').value)||50) : 100;
   const comision = calcIngreso();
-  const data = { fecha, contacto, propiedad, valor, pctTizado, pctPersonal, comision };
+  const data = { fecha, contacto, propiedad, valor, pctTizado, pctPersonal, compartida, pctCompartida, comision };
   if (editingIngId) {
     const i = ingresos.find(x => x.id === editingIngId);
     if (i) Object.assign(i, data);
