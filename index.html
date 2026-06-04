@@ -1315,14 +1315,21 @@ function initIngresos() {
 function renderPipeline() {
   const board = document.getElementById('pipelineBoard');
   const wasSearchFocused = document.activeElement && document.activeElement.id === 'pipeContactSearch';
+  const pipeFilterNoOppPrev = document.getElementById('pipeFilterNoOpp')?.checked || false;
   const totalVal = opps.filter(o => !['Perdida','Negociación Caída'].includes(o.etapa)).reduce((s,o) => s + (parseFloat(o.valor)||0), 0);
   const active = opps.filter(o => !['Perdida','Negociación Caída','Cierre'].includes(o.etapa)).length;
   document.getElementById('pipelineSummary').textContent = `${contacts.length} contactos · ${active} oportunidades activas · ${fmtUSD(totalVal)}`;
 
   // Columna 0: todos los contactos del CRM
   const pipeSearch = (document.getElementById('pipeContactSearch') || {value:''}).value.toLowerCase();
+  const pipeFilterNoOpp = pipeFilterNoOppPrev;
   const filteredContacts = [...contacts]
-    .filter(c => !c.archived && (!pipeSearch || (c.nombre||'').toLowerCase().includes(pipeSearch)))
+    .filter(c => {
+      if (c.archived) return false;
+      if (pipeSearch && !(c.nombre||'').toLowerCase().includes(pipeSearch)) return false;
+      if (pipeFilterNoOpp && opps.some(o => o.contactId === c.id)) return false;
+      return true;
+    })
     .sort((a,b) => (a.nombre||'').localeCompare(b.nombre||''));
 
   const contactsCol = `<div class="pipeline-col col-contactos" style="width:210px">
@@ -1330,10 +1337,14 @@ function renderPipeline() {
       <span class="pipeline-col-title">Contactos</span>
       <span class="pipeline-col-count">${filteredContacts.length}${pipeSearch ? '/'+contacts.filter(c=>!c.archived).length : ''}${contacts.filter(c=>c.archived).length ? ` <span style="color:var(--gray2);font-size:9px">(${contacts.filter(c=>c.archived).length} arch.)</span>` : ''}</span>
     </div>
-    <div style="padding:6px 8px;border-bottom:1px solid var(--border);flex-shrink:0;display:flex;flex-direction:column;gap:4px">
+    <div style="padding:6px 8px;border-bottom:1px solid var(--border);flex-shrink:0;display:flex;flex-direction:column;gap:5px">
       <input id="pipeContactSearch" type="text" placeholder="Buscar..." value="${pipeSearch}"
         oninput="renderPipeline()"
         style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:5px 8px;font-size:12px;color:var(--white);font-family:'Inter',sans-serif;outline:none">
+      <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--gray);cursor:pointer;padding:2px 0">
+        <input type="checkbox" id="pipeFilterNoOpp" ${pipeFilterNoOpp?'checked':''} onchange="renderPipeline()" style="accent-color:var(--red);cursor:pointer">
+        Sin oportunidad
+      </label>
     </div>
     <div class="pipeline-col-body" style="gap:4px">
       ${filteredContacts.map(c => {
@@ -1385,12 +1396,16 @@ function renderPipeline() {
   }).join('');
 
   board.innerHTML = contactsCol + stageCols;
-  if (wasSearchFocused) {
-    requestAnimationFrame(() => {
+  requestAnimationFrame(() => {
+    if (wasSearchFocused) {
       const el = document.getElementById('pipeContactSearch');
       if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); }
-    });
-  }
+    }
+    if (pipeFilterNoOppPrev) {
+      const cb = document.getElementById('pipeFilterNoOpp');
+      if (cb) cb.checked = true;
+    }
+  });
 }
 
 function openContactSide(contactId) {
@@ -1622,7 +1637,10 @@ function renderOppSide(contactId) {
           <span style="font-size:12px">${isOverdue?'⚠️':'📌'} ${esc(c.nextAction)}</span>
           ${c.nextActionDate ? `<span style="font-size:11px;color:var(--gray);margin-left:6px">📅 ${formatDate(c.nextActionDate)}</span>` : ''}
         </div>
-        <button class="btn btn-green btn-sm" onclick="completeSideFollowUp('${c.id}')">✓ Cumplido</button>
+        <div style="display:flex;gap:6px">
+          ${tel ? `<button class="btn btn-wa btn-sm" onclick="sendFollowUpWA('${c.id}')">💬 WA</button>` : ''}
+          <button class="btn btn-green btn-sm" onclick="completeSideFollowUp('${c.id}')">✓ Cumplido</button>
+        </div>
       </div>` : ''}
     </div>
 
@@ -1654,7 +1672,10 @@ function renderOppSide(contactId) {
 
     <!-- OPORTUNIDADES -->
     <div class="section" style="padding:0">
-      <div class="section-title" style="font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--gray);margin-bottom:10px">Oportunidades (${myOpps.length})</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div class="section-title" style="font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--gray);margin:0">Oportunidades (${myOpps.length})</div>
+        <button class="btn btn-primary btn-sm" style="font-size:11px;padding:4px 10px" onclick="openOppModal('${c.id}')">+ Agregar al pipeline</button>
+      </div>
       ${myOpps.length ? myOpps.map(o => {
         const isActive = !['Negociación Caída','Cierre'].includes(o.etapa);
         return `<div class="opp-history-item" style="${isActive?'border-left:3px solid var(--red)':'opacity:.6'}">
@@ -1736,6 +1757,15 @@ function openOppWA() {
   if (c && c.tel) window.open(`https://wa.me/${c.tel.replace(/\D/g,'')}`, '_blank');
 }
 
+function sendFollowUpWA(contactId) {
+  const c = getContact(contactId);
+  if (!c || !c.tel) { toast('El contacto no tiene teléfono', 'error'); return; }
+  const nombre = (c.nombre||'').split(' ')[0];
+  const accion = c.nextAction || 'seguimiento';
+  const msg = `Hola ${nombre}! Te escribo de Tizado Bella Vista. ${accion}. Quedamos en contacto, saludos 🏠`;
+  window.open(`https://wa.me/${c.tel.replace(/\D/g,'')}?text=${encodeURIComponent(msg)}`, '_blank');
+}
+
 // ─── KPIs RENDER ─────────────────────────────────────────────────────────────
 function renderKPIs() {
   // Funnel basado 100% en oportunidades del pipeline
@@ -1782,7 +1812,7 @@ function renderKPIs() {
     <div class="stat-card-sub">${c.sub}</div>
   </div>`).join('');
 
-  // Table by tipo — combina opps + ingresos
+  // Table by tipo
   const tipos = ['Compra','Venta','Alquiler'];
   document.getElementById('kpiTableBody').innerHTML = tipos.map(t => {
     const tOpps = opps.filter(o => o.tipo === t);
@@ -1793,6 +1823,88 @@ function renderKPIs() {
     const tPipe = tOpps.filter(o => o.etapa !== 'Negociación Caída').reduce((s,o) => s+(parseFloat(o.valor)||0), 0);
     return `<tr><td>${t}</td><td>${tContactos}</td><td>${tVisitas}</td><td>${tCierres}</td><td>${tConv}</td><td>${tPipe>0?fmtUSD(tPipe):'—'}</td></tr>`;
   }).join('');
+
+  // ── Tiempo promedio en cerrar ──
+  const closedWithDates = opps.filter(o => o.etapa === 'Cierre' && o.createdAt && o.etapaChangedAt);
+  let avgTimeHtml = '<div style="color:var(--gray2);font-size:13px">Necesitás al menos un cierre con fecha de inicio para calcular el promedio.</div>';
+  if (closedWithDates.length) {
+    const byTipo = {};
+    closedWithDates.forEach(o => {
+      const days = Math.floor((new Date(o.etapaChangedAt) - new Date(o.createdAt)) / 86400000);
+      if (!byTipo[o.tipo]) byTipo[o.tipo] = [];
+      byTipo[o.tipo].push(days);
+    });
+    const totalDays = closedWithDates.map(o => Math.floor((new Date(o.etapaChangedAt) - new Date(o.createdAt)) / 86400000));
+    const globalAvg = Math.round(totalDays.reduce((s,d) => s+d, 0) / totalDays.length);
+    avgTimeHtml = `<div style="margin-bottom:10px">
+      <span style="font-size:28px;font-weight:700;font-family:'Playfair Display',serif">${globalAvg}</span>
+      <span style="font-size:13px;color:var(--gray);margin-left:4px">días promedio (todas las operaciones)</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      ${Object.entries(byTipo).map(([tipo, days]) => {
+        const avg = Math.round(days.reduce((s,d)=>s+d,0)/days.length);
+        const maxD = Math.max(...Object.values(byTipo).map(d => Math.round(d.reduce((s,x)=>s+x,0)/d.length)), 1);
+        return `<div style="display:flex;align-items:center;gap:10px">
+          <span style="width:70px;font-size:12px">${tipo}</span>
+          <div style="flex:1;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden">
+            <div style="height:100%;border-radius:3px;background:var(--red);width:${Math.round(avg/maxD*100)}%"></div>
+          </div>
+          <span style="font-size:12px;color:var(--gray);width:60px;text-align:right">${avg}d (${days.length})</span>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }
+
+  // ── Tasa de conversión por mes ──
+  const year = new Date().getFullYear();
+  const months = [];
+  for (let m = 0; m < 12; m++) {
+    const key = `${year}-${String(m+1).padStart(2,'0')}`;
+    const label = new Date(year, m, 1).toLocaleString('es-AR', {month:'short'});
+    const mOpps = opps.filter(o => (o.createdAt||'').startsWith(key));
+    const mCierres = opps.filter(o => o.etapa === 'Cierre' && (o.etapaChangedAt||o.createdAt||'').startsWith(key));
+    months.push({ label, consultas: mOpps.length, cierres: mCierres.length });
+  }
+  const hasData = months.some(m => m.consultas > 0 || m.cierres > 0);
+  const maxC = Math.max(...months.map(m => m.consultas), 1);
+  const convByMonthHtml = hasData ? `
+    <div style="display:flex;align-items:flex-end;gap:4px;height:100px;margin-bottom:6px">
+      ${months.map(m => {
+        const hC = m.consultas > 0 ? Math.max(4, Math.round(m.consultas/maxC*90)) : 0;
+        const hCi = m.cierres > 0 ? Math.max(4, Math.round(m.cierres/maxC*90)) : 0;
+        const pct = m.consultas > 0 ? Math.round(m.cierres/m.consultas*100) : 0;
+        return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;height:100%">
+          ${pct > 0 ? `<div style="font-size:9px;color:var(--green);font-weight:700">${pct}%</div>` : '<div style="font-size:9px"> </div>'}
+          <div style="flex:1;width:100%;display:flex;align-items:flex-end;gap:1px;justify-content:center">
+            ${m.consultas > 0 ? `<div title="${m.consultas} consultas" style="width:45%;height:${hC}px;background:var(--border);border-radius:2px 2px 0 0"></div>` : '<div style="width:45%"></div>'}
+            ${m.cierres > 0 ? `<div title="${m.cierres} cierres" style="width:45%;height:${hCi}px;background:var(--green);border-radius:2px 2px 0 0;opacity:.85"></div>` : '<div style="width:45%"></div>'}
+          </div>
+          <div style="font-size:9px;color:var(--gray2)">${m.label}</div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div style="display:flex;gap:14px;font-size:11px;color:var(--gray)">
+      <span><span style="display:inline-block;width:10px;height:10px;background:var(--border);border-radius:2px;margin-right:4px"></span>Consultas</span>
+      <span><span style="display:inline-block;width:10px;height:10px;background:var(--green);border-radius:2px;margin-right:4px;opacity:.85"></span>Cierres</span>
+    </div>` : '<div style="color:var(--gray2);font-size:13px">Sin datos suficientes este año.</div>';
+
+  // Inyectar secciones nuevas al panel KPIs
+  const kpisEl = document.getElementById('kpisPanel').querySelector('div');
+  let extraEl = document.getElementById('kpiExtra');
+  if (!extraEl) {
+    extraEl = document.createElement('div');
+    extraEl.id = 'kpiExtra';
+    kpisEl.appendChild(extraEl);
+  }
+  extraEl.innerHTML = `
+    <div class="stats-section" style="margin-top:20px">
+      <h3>⏱ Tiempo promedio hasta el cierre</h3>
+      <div style="padding-top:8px">${avgTimeHtml}</div>
+    </div>
+    <div class="stats-section" style="margin-top:16px">
+      <h3>📈 Tasa de conversión por mes (${year})</h3>
+      <div style="padding-top:8px">${convByMonthHtml}</div>
+    </div>`;
 }
 
 // ─── INGRESOS RENDER ─────────────────────────────────────────────────────────
@@ -2636,10 +2748,12 @@ function renderFollowUpBanner() {
       ${due.map(c => {
         const isOv = c.nextActionDate < TODAY;
         const daysOv = isOv ? Math.floor((new Date(TODAY) - new Date(c.nextActionDate)) / 86400000) : 0;
-        const daysLabel = isOv ? `<span style="color:var(--red);font-size:10px;font-weight:700;margin-left:4px">${daysOv === 0 ? 'hoy' : `hace ${daysOv}d`}</span>` : '';
-        return `<div class="followup-banner-item" onclick="selectContact('${c.id}')">
-          ${isOv ? '⚠️' : '📌'} <strong>${esc(c.nombre)}</strong> — ${esc(c.nextAction)}
-          <span style="color:var(--gray);font-size:11px"> (${formatDate(c.nextActionDate)})</span>${daysLabel}
+        const daysLabel = isOv ? `<span style="color:var(--red);font-size:10px;font-weight:700;margin-left:4px">hace ${daysOv === 0 ? 'hoy' : daysOv+'d'}</span>` : '';
+        const waBtn = c.tel ? `<button class="btn btn-wa btn-sm" style="padding:2px 8px;font-size:11px;margin-left:6px;flex-shrink:0" onclick="event.stopPropagation();sendFollowUpWA('${c.id}')">💬 WA</button>` : '';
+        return `<div class="followup-banner-item" style="display:flex;align-items:center;gap:4px" onclick="openContactSide('${c.id}');tryShowTab('pipeline')">
+          <span>${isOv ? '⚠️' : '📌'}</span>
+          <span style="flex:1"><strong>${esc(c.nombre)}</strong> — ${esc(c.nextAction)}<span style="color:var(--gray);font-size:11px"> (${formatDate(c.nextActionDate)})</span>${daysLabel}</span>
+          ${waBtn}
         </div>`;
       }).join('')}
     </div>
