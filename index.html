@@ -661,9 +661,6 @@
   .global-result-name { font-size: 13px; font-weight: 600; flex: 1; }
   .global-result-sub { font-size: 11px; color: var(--gray); }
   /* ETIQUETAS */
-  .tag-badge { font-size: 10px; padding: 1px 7px; border-radius: 20px; background: rgba(99,102,241,.12); color: #4f46e5; border: 1px solid rgba(99,102,241,.2); white-space: nowrap; cursor: pointer; }
-  .tag-badge:hover { background: rgba(99,102,241,.2); }
-  .tag-input-wrap { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
   /* DÍAS EN ETAPA */
   .opp-days { font-size: 10px; padding: 1px 5px; border-radius: 3px; font-weight: 600; }
   .opp-days-ok { background: rgba(22,163,74,.1); color: var(--green); }
@@ -1261,14 +1258,9 @@ function renderPipeline() {
 
   // Columna 0: todos los contactos del CRM
   const pipeSearch = (document.getElementById('pipeContactSearch') || {value:''}).value.toLowerCase();
-  const activeTagEls = document.querySelectorAll('.pipe-tag-chip.active');
-  const pipeTagsActive = [...activeTagEls].map(el => el.dataset.tag);
   const filteredContacts = [...contacts]
-    .filter(c => !c.archived
-      && (!pipeSearch || (c.nombre||'').toLowerCase().includes(pipeSearch))
-      && (!pipeTagsActive.length || pipeTagsActive.every(t => (c.tags||[]).includes(t))))
+    .filter(c => !c.archived && (!pipeSearch || (c.nombre||'').toLowerCase().includes(pipeSearch)))
     .sort((a,b) => (a.nombre||'').localeCompare(b.nombre||''));
-  const allTagsList = getAllTags();
 
   const contactsCol = `<div class="pipeline-col col-contactos" style="width:210px">
     <div class="pipeline-col-header">
@@ -1279,9 +1271,6 @@ function renderPipeline() {
       <input id="pipeContactSearch" type="text" placeholder="Buscar..." value="${pipeSearch}"
         oninput="renderPipeline()"
         style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:5px 8px;font-size:12px;color:var(--white);font-family:'Inter',sans-serif;outline:none">
-      ${allTagsList.length ? `<div style="display:flex;gap:4px;flex-wrap:wrap">
-        ${allTagsList.map(t => `<span class="pipe-tag-chip tag-badge${pipeTagsActive.includes(t)?' active':''}" data-tag="${esc(t)}" onclick="togglePipeTag(this)" style="${pipeTagsActive.includes(t)?'opacity:1':'opacity:.55'}">${esc(t)}</span>`).join('')}
-      </div>` : ''}
     </div>
     <div class="pipeline-col-body" style="gap:4px">
       ${filteredContacts.map(c => {
@@ -1301,7 +1290,6 @@ function renderPipeline() {
           <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
             <span class="ci-badge ${badgeCls}" style="font-size:9px">${c.interesEn||'—'}</span>
             ${myOpps.length ? `<span style="font-size:10px;color:var(--red);font-weight:600">${myOpps.length} opp</span>` : ''}
-            ${(c.tags||[]).slice(0,2).map(t=>`<span class="tag-badge" style="font-size:9px;padding:0 5px">${esc(t)}</span>`).join('')}
           </div>
         </div>`;
       }).join('')}
@@ -1550,18 +1538,6 @@ function renderOppSide(contactId) {
         <div class="field" style="grid-column:1/-1">
           <label>Descripción</label>
           <textarea style="min-height:52px" onchange="updateField('${c.id}','desc',this.value)">${esc(c.desc||'')}</textarea>
-        </div>
-        <div class="field" style="grid-column:1/-1">
-          <label>Etiquetas</label>
-          <div class="tag-input-wrap" style="margin-bottom:6px">
-            ${(c.tags||[]).map(t => `<span class="tag-badge" onclick="removeTagFromContact('${c.id}','${t}')" title="Clic para eliminar">${esc(t)} ×</span>`).join('')}
-          </div>
-          <div style="display:flex;gap:6px">
-            <input type="text" id="side_tagInput" placeholder="Nueva etiqueta..." style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:5px 8px;font-size:12px;color:var(--white);font-family:'Inter',sans-serif;outline:none"
-              onkeydown="if(event.key==='Enter'){addTagToContact('${c.id}',this.value.trim());this.value='';event.preventDefault()}">
-            <button class="btn btn-ghost btn-sm" onclick="addTagToContact('${c.id}',document.getElementById('side_tagInput').value.trim());document.getElementById('side_tagInput').value=''">+ Tag</button>
-          </div>
-          ${getAllTags().filter(t => !(c.tags||[]).includes(t)).length ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px">${getAllTags().filter(t=>!(c.tags||[]).includes(t)).map(t=>`<span class="tag-badge" style="opacity:.6;cursor:pointer" onclick="addTagToContact('${c.id}','${t}')">${esc(t)}</span>`).join('')}</div>` : ''}
         </div>
       </div>
     </div>
@@ -2816,33 +2792,6 @@ function closeGlobalSearch() {
 }
 
 // ─── ETIQUETAS ────────────────────────────────────────────────────────────────
-let allTags = [];
-
-function getAllTags() {
-  const set = new Set();
-  contacts.forEach(c => (c.tags||[]).forEach(t => set.add(t)));
-  return [...set].sort();
-}
-
-function addTagToContact(contactId, tag) {
-  const c = getContact(contactId);
-  if (!c || !tag) return;
-  if (!c.tags) c.tags = [];
-  if (!c.tags.includes(tag)) { c.tags.push(tag); save(); renderOppSide(contactId); renderPipeline(); }
-}
-
-function togglePipeTag(el) {
-  el.classList.toggle('active');
-  el.style.opacity = el.classList.contains('active') ? '1' : '.55';
-  renderPipeline();
-}
-
-function removeTagFromContact(contactId, tag) {
-  const c = getContact(contactId);
-  if (!c) return;
-  c.tags = (c.tags||[]).filter(t => t !== tag);
-  save(); renderOppSide(contactId); renderPipeline();
-}
 
 function renderDashboard() {
   const el = document.getElementById('dashboardContent');
