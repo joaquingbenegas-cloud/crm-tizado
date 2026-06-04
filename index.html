@@ -1180,13 +1180,23 @@ function renderPipeline() {
   document.getElementById('pipelineSummary').textContent = `${contacts.length} contactos · ${active} oportunidades activas · ${fmtUSD(totalVal)}`;
 
   // Columna 0: todos los contactos del CRM
-  const contactsCol = `<div class="pipeline-col col-contactos" style="width:200px">
+  const pipeSearch = (document.getElementById('pipeContactSearch') || {value:''}).value.toLowerCase();
+  const filteredContacts = [...contacts]
+    .filter(c => !pipeSearch || (c.nombre||'').toLowerCase().includes(pipeSearch))
+    .sort((a,b) => (a.nombre||'').localeCompare(b.nombre||''));
+
+  const contactsCol = `<div class="pipeline-col col-contactos" style="width:210px">
     <div class="pipeline-col-header">
       <span class="pipeline-col-title">Contactos</span>
-      <span class="pipeline-col-count">${contacts.length}</span>
+      <span class="pipeline-col-count">${filteredContacts.length}${pipeSearch ? '/'+contacts.length : ''}</span>
+    </div>
+    <div style="padding:6px 8px;border-bottom:1px solid var(--border);flex-shrink:0">
+      <input id="pipeContactSearch" type="text" placeholder="Buscar..." value="${pipeSearch}"
+        oninput="renderPipeline()"
+        style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:5px 8px;font-size:12px;color:var(--white);font-family:'Inter',sans-serif;outline:none">
     </div>
     <div class="pipeline-col-body" style="gap:4px">
-      ${[...contacts].sort((a,b) => (a.nombre||'').localeCompare(b.nombre||'')).map(c => {
+      ${filteredContacts.map(c => {
         const urgDot = c.urgencia === 'ALTA' ? 'urgency-alta' : c.urgencia === 'MEDIA' ? 'urgency-media' : c.urgencia === 'BAJA' ? 'urgency-baja' : '';
         const badgeCls = c.interesEn === 'Compra' ? 'badge-compra' : c.interesEn === 'Venta' ? 'badge-venta' : c.interesEn === 'Alquiler' ? 'badge-alquiler' : 'badge-empty';
         const myOpps = opps.filter(o => o.contactId === c.id && !['Perdida','Negociación Caída','Cierre'].includes(o.etapa));
