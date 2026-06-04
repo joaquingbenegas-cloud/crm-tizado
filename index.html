@@ -556,6 +556,16 @@
   .opp-urg { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
 
   /* col headers by stage */
+  .col-contactos .pipeline-col-header { border-top: 3px solid #c8102e; }
+  .col-contactos { background: rgba(200,16,46,0.03); }
+  .contact-opp-card {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 6px;
+    padding: 9px 11px; cursor: pointer; transition: border-color .15s;
+    user-select: none;
+  }
+  .contact-opp-card:hover { border-color: var(--red); }
+  .contact-opp-card .opp-card-name { font-size: 12px; font-weight: 600; margin-bottom: 2px; }
+  .contact-opp-card .opp-card-prop { font-size: 11px; color: var(--gray); }
   .col-consulta .pipeline-col-header { border-top: 3px solid #60a5fa; }
   .col-visita .pipeline-col-header { border-top: 3px solid #34d399; }
   .col-conversacion .pipeline-col-header { border-top: 3px solid #a78bfa; }
@@ -1169,9 +1179,37 @@ function renderPipeline() {
   const board = document.getElementById('pipelineBoard');
   const totalVal = opps.filter(o => !['Perdida','Negociación Caída'].includes(o.etapa)).reduce((s,o) => s + (parseFloat(o.valor)||0), 0);
   const active = opps.filter(o => !['Perdida','Negociación Caída','Cierre'].includes(o.etapa)).length;
-  document.getElementById('pipelineSummary').textContent = `${active} activas · pipeline USD ${fmtUSD(totalVal)}`;
+  document.getElementById('pipelineSummary').textContent = `${contacts.length} contactos · ${active} oportunidades activas · ${fmtUSD(totalVal)}`;
 
-  board.innerHTML = STAGES.map(stage => {
+  // Columna 0: todos los contactos del CRM
+  const contactsCol = `<div class="pipeline-col col-contactos" style="width:200px">
+    <div class="pipeline-col-header">
+      <span class="pipeline-col-title">Contactos</span>
+      <span class="pipeline-col-count">${contacts.length}</span>
+    </div>
+    <div class="pipeline-col-body" style="gap:4px">
+      ${[...contacts].sort((a,b) => (a.nombre||'').localeCompare(b.nombre||'')).map(c => {
+        const urgDot = c.urgencia === 'ALTA' ? 'urgency-alta' : c.urgencia === 'MEDIA' ? 'urgency-media' : c.urgencia === 'BAJA' ? 'urgency-baja' : '';
+        const badgeCls = c.interesEn === 'Compra' ? 'badge-compra' : c.interesEn === 'Venta' ? 'badge-venta' : c.interesEn === 'Alquiler' ? 'badge-alquiler' : 'badge-empty';
+        const myOpps = opps.filter(o => o.contactId === c.id && !['Perdida','Negociación Caída','Cierre'].includes(o.etapa));
+        return `<div class="contact-opp-card" onclick="openContactSide('${c.id}')">
+          <div style="display:flex;align-items:center;gap:5px;margin-bottom:2px">
+            ${urgDot ? `<span class="opp-urg ${urgDot}"></span>` : ''}
+            <span class="opp-card-name" style="flex:1">${esc(c.nombre)}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:5px">
+            <span class="ci-badge ${badgeCls}" style="font-size:9px">${c.interesEn||'—'}</span>
+            ${myOpps.length ? `<span style="font-size:10px;color:var(--red);font-weight:600">${myOpps.length} opp</span>` : ''}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div class="pipeline-col-add">
+      <button onclick="openOppModal(null,'Consulta')">+ Nueva oportunidad</button>
+    </div>
+  </div>`;
+
+  const stageCols = STAGES.map(stage => {
     const key = STAGE_KEY[stage];
     const col = opps.filter(o => o.etapa === stage);
     const colVal = col.reduce((s,o) => s + (parseFloat(o.valor)||0), 0);
@@ -1192,6 +1230,15 @@ function renderPipeline() {
       </div>
     </div>`;
   }).join('');
+
+  board.innerHTML = contactsCol + stageCols;
+}
+
+function openContactSide(contactId) {
+  oppSideContactId = contactId;
+  renderOppSide(contactId);
+  document.getElementById('oppSideOverlay').classList.add('open');
+  document.getElementById('oppSidePanel').classList.add('open');
 }
 
 function renderOppCard(o) {
