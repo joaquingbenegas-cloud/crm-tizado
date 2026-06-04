@@ -1398,51 +1398,63 @@ function openOppWA() {
 
 // ─── KPIs RENDER ─────────────────────────────────────────────────────────────
 function renderKPIs() {
-  const funnelStages = ['Consulta','Visita','Conversación','Reserva','Cierre'];
-  const counts = funnelStages.map(s => opps.filter(o => o.etapa === s || (s === 'Cierre' && o.etapa === 'Cierre')).length);
-  // Acumulado: todos los que llegaron a esa etapa o más avanzada
+  // Funnel:
+  // Consultas = todos los contactos del CRM
+  // Visitas, Conversaciones, Reservas = opps en esas etapas o más avanzadas
+  // Cierres = opps en Cierre + operaciones en Ingresos
   const stageOrder = STAGES;
-  const cumulative = funnelStages.map(s => {
-    const idx = stageOrder.indexOf(s);
-    return opps.filter(o => stageOrder.indexOf(o.etapa) >= idx && !['Perdida','Negociación Caída'].includes(o.etapa)).length;
-  });
+  const nConsultas = contacts.length;
+  const nVisitas = opps.filter(o => stageOrder.indexOf(o.etapa) >= stageOrder.indexOf('Visita') && o.etapa !== 'Negociación Caída').length;
+  const nConversaciones = opps.filter(o => stageOrder.indexOf(o.etapa) >= stageOrder.indexOf('Conversación') && o.etapa !== 'Negociación Caída').length;
+  const nReservas = opps.filter(o => stageOrder.indexOf(o.etapa) >= stageOrder.indexOf('Reserva') && o.etapa !== 'Negociación Caída').length;
+  const nCierresOpps = opps.filter(o => o.etapa === 'Cierre').length;
+  const nCierresIngresos = ingresos.length;
+  const nCierres = nCierresOpps + nCierresIngresos;
+
+  const funnelData = [
+    { label: 'Consultas', n: nConsultas },
+    { label: 'Visitas', n: nVisitas },
+    { label: 'Conversaciones', n: nConversaciones },
+    { label: 'Reservas', n: nReservas },
+    { label: 'Cierres', n: nCierres },
+  ];
+
   const funnel = document.getElementById('kpiFunnel');
-  funnel.innerHTML = funnelStages.map((s, i) => {
-    const pct = i > 0 && cumulative[0] > 0 ? Math.round(cumulative[i]/cumulative[0]*100) : 100;
+  funnel.innerHTML = funnelData.map((s, i) => {
+    const pct = i > 0 && funnelData[0].n > 0 ? Math.round(s.n / funnelData[0].n * 100) : 100;
     return `<div class="funnel-step">
-      <div class="funnel-step-num">${cumulative[i]}</div>
-      <div class="funnel-step-label">${s}</div>
+      <div class="funnel-step-num">${s.n}</div>
+      <div class="funnel-step-label">${s.label}</div>
       ${i > 0 ? `<div class="funnel-step-pct">${pct}%</div>` : ''}
-    </div>${i < funnelStages.length-1 ? '<div class="funnel-arrow">›</div>' : ''}`;
+    </div>${i < funnelData.length - 1 ? '<div class="funnel-arrow">›</div>' : ''}`;
   }).join('');
 
   // KPI cards
-  const active = opps.filter(o => !['Perdida','Negociación Caída','Cierre'].includes(o.etapa)).length;
-  const pipeline = opps.filter(o => !['Perdida','Negociación Caída'].includes(o.etapa)).reduce((s,o) => s+(parseFloat(o.valor)||0), 0);
-  const cierres = opps.filter(o => o.etapa === 'Cierre').length;
-  const visitas = opps.filter(o => ['Visita','Conversación','Reserva','Negociación','Cierre'].includes(o.etapa)).length;
-  const convRate = visitas > 0 ? Math.round(cierres/visitas*100) : 0;
+  const active = opps.filter(o => !['Negociación Caída','Cierre'].includes(o.etapa)).length;
+  const pipeline = opps.filter(o => o.etapa !== 'Negociación Caída').reduce((s,o) => s+(parseFloat(o.valor)||0), 0);
+  const ingresosTotal = ingresos.reduce((s,i) => s+(parseFloat(i.comision)||0), 0);
+  const convRate = nVisitas > 0 ? Math.round(nCierres / nVisitas * 100) : 0;
   document.getElementById('kpiCards').innerHTML = [
-    {label:'Oportunidades activas', num: active, sub:'en pipeline', cls:''},
-    {label:'Pipeline estimado', num:'U$S '+fmtUSD(pipeline).replace('USD ',''), sub:'valor total', cls: pipeline>0?'green':''},
-    {label:'Cierres', num: cierres, sub:'operaciones ganadas', cls: cierres>0?'green':''},
-    {label:'Conversión visita→cierre', num: convRate+'%', sub:'tasa de éxito', cls: convRate>=20?'green':convRate>0?'yellow':''},
+    { label: 'Contactos en CRM', num: contacts.length, sub: 'total de leads', cls: '' },
+    { label: 'Oportunidades activas', num: active, sub: 'en pipeline', cls: active > 0 ? 'green' : '' },
+    { label: 'Cierres totales', num: nCierres, sub: `${nCierresOpps} pipeline + ${nCierresIngresos} ingresos`, cls: nCierres > 0 ? 'green' : '' },
+    { label: 'Conversión consulta→cierre', num: nConsultas > 0 ? Math.round(nCierres/nConsultas*100)+'%' : '0%', sub: 'tasa general', cls: nCierres > 0 ? 'green' : '' },
   ].map(c => `<div class="stat-card ${c.cls}">
     <div class="stat-card-label">${c.label}</div>
     <div class="stat-card-num">${c.num}</div>
     <div class="stat-card-sub">${c.sub}</div>
   </div>`).join('');
 
-  // Table by tipo
+  // Table by tipo — combina opps + ingresos
   const tipos = ['Compra','Venta','Alquiler'];
   document.getElementById('kpiTableBody').innerHTML = tipos.map(t => {
     const tOpps = opps.filter(o => o.tipo === t);
-    const tConsultas = tOpps.filter(o => o.etapa === 'Consulta').length;
-    const tVisitas = tOpps.filter(o => ['Visita','Conversación','Reserva','Negociación','Cierre'].includes(o.etapa)).length;
+    const tContactos = contacts.filter(c => c.interesEn === t).length;
+    const tVisitas = tOpps.filter(o => stageOrder.indexOf(o.etapa) >= stageOrder.indexOf('Visita') && o.etapa !== 'Negociación Caída').length;
     const tCierres = tOpps.filter(o => o.etapa === 'Cierre').length;
     const tConv = tVisitas > 0 ? Math.round(tCierres/tVisitas*100)+'%' : '—';
-    const tPipe = tOpps.filter(o => !['Perdida','Negociación Caída'].includes(o.etapa)).reduce((s,o) => s+(parseFloat(o.valor)||0), 0);
-    return `<tr><td>${t}</td><td>${tConsultas}</td><td>${tVisitas}</td><td>${tCierres}</td><td>${tConv}</td><td>${tPipe>0?fmtUSD(tPipe):'—'}</td></tr>`;
+    const tPipe = tOpps.filter(o => o.etapa !== 'Negociación Caída').reduce((s,o) => s+(parseFloat(o.valor)||0), 0);
+    return `<tr><td>${t}</td><td>${tContactos}</td><td>${tVisitas}</td><td>${tCierres}</td><td>${tConv}</td><td>${tPipe>0?fmtUSD(tPipe):'—'}</td></tr>`;
   }).join('');
 }
 
