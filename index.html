@@ -965,6 +965,7 @@
   <div class="opp-side-actions">
     <button class="btn btn-ghost btn-sm" onclick="openOppModal(oppSideContactId)">+ Nueva oportunidad</button>
     <button class="btn btn-wa btn-sm" id="oppSideWA" onclick="openOppWA()">💬 WhatsApp</button>
+    <button class="btn btn-ghost btn-sm" id="oppSideArchiveBtn" style="margin-left:auto;color:var(--gray)" onclick="toggleArchiveContact(oppSideContactId)">Archivar</button>
   </div>
 </div>
 
@@ -1213,13 +1214,13 @@ function renderPipeline() {
   // Columna 0: todos los contactos del CRM
   const pipeSearch = (document.getElementById('pipeContactSearch') || {value:''}).value.toLowerCase();
   const filteredContacts = [...contacts]
-    .filter(c => !pipeSearch || (c.nombre||'').toLowerCase().includes(pipeSearch))
+    .filter(c => !c.archived && (!pipeSearch || (c.nombre||'').toLowerCase().includes(pipeSearch)))
     .sort((a,b) => (a.nombre||'').localeCompare(b.nombre||''));
 
   const contactsCol = `<div class="pipeline-col col-contactos" style="width:210px">
     <div class="pipeline-col-header">
       <span class="pipeline-col-title">Contactos</span>
-      <span class="pipeline-col-count">${filteredContacts.length}${pipeSearch ? '/'+contacts.length : ''}</span>
+      <span class="pipeline-col-count">${filteredContacts.length}${pipeSearch ? '/'+contacts.filter(c=>!c.archived).length : ''}${contacts.filter(c=>c.archived).length ? ` <span style="color:var(--gray2);font-size:9px">(${contacts.filter(c=>c.archived).length} arch.)</span>` : ''}</span>
     </div>
     <div style="padding:6px 8px;border-bottom:1px solid var(--border);flex-shrink:0">
       <input id="pipeContactSearch" type="text" placeholder="Buscar..." value="${pipeSearch}"
@@ -1450,6 +1451,8 @@ function renderOppSide(contactId) {
   document.getElementById('oppSideName').textContent = c.nombre;
   const tel = c.tel ? c.tel.replace(/\D/g,'') : '';
   document.getElementById('oppSideWA').style.display = tel ? 'inline-flex' : 'none';
+  const archBtn = document.getElementById('oppSideArchiveBtn');
+  if (archBtn) archBtn.textContent = c.archived ? '↩ Desarchivar' : 'Archivar';
 
   const myOpps = opps.filter(o => o.contactId === contactId)
     .sort((a,b) => (b.createdAt||'').localeCompare(a.createdAt||''));
@@ -1467,6 +1470,10 @@ function renderOppSide(contactId) {
         ${c.urgencia ? `<span style="font-size:12px;color:${c.urgencia==='ALTA'?'var(--red)':c.urgencia==='MEDIA'?'var(--yellow)':'var(--gray2)'}">● ${c.urgencia}</span>` : ''}
       </div>
       <div class="field-grid" style="grid-template-columns:1fr 1fr;gap:10px">
+        <div class="field" style="grid-column:1/-1">
+          <label>Nombre</label>
+          <input type="text" value="${esc(c.nombre||'')}" onchange="updateField('${c.id}','nombre',this.value);document.getElementById('oppSideName').textContent=this.value;renderList()">
+        </div>
         <div class="field">
           <label>Teléfono</label>
           <input type="text" value="${esc(c.tel||'')}" placeholder="549111234567" onchange="updateField('${c.id}','tel',this.value);renderOppSide('${c.id}')">
@@ -1583,6 +1590,17 @@ function addSideNote(id) {
   document.getElementById('side_noteText').value = '';
   renderOppSide(id);
   toast('Interacción registrada ✓', 'success');
+}
+
+function toggleArchiveContact(id) {
+  const c = getContact(id);
+  if (!c) return;
+  c.archived = !c.archived;
+  save();
+  renderList();
+  renderPipeline();
+  renderOppSide(id);
+  toast(c.archived ? 'Contacto archivado' : 'Contacto desarchivado', 'success');
 }
 
 function deleteSideNote(contactId, noteId) {
@@ -2686,6 +2704,26 @@ function showTab(tab) {
   if (isIngresos) renderIngresos();
 }
 
+function showFollowUpModal() {
+  const due = contacts.filter(c => c.nextAction && c.nextActionDate && c.nextActionDate <= TODAY && !c.archived)
+    .sort((a,b) => (a.nextActionDate||'').localeCompare(b.nextActionDate||''));
+  if (!due.length) return;
+  const body = document.getElementById('followUpModalBody');
+  body.innerHTML = due.map(c => {
+    const isOverdue = c.nextActionDate < TODAY;
+    return `<div style="background:var(--bg3);border-radius:8px;padding:10px 14px;cursor:pointer;border:1px solid ${isOverdue?'rgba(200,16,46,.3)':'var(--border)'}"
+      onclick="document.getElementById('followUpModal').classList.remove('open');openContactSide('${c.id}')">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:13px">${isOverdue?'⚠️':'📌'}</span>
+        <strong style="font-size:13px">${esc(c.nombre)}</strong>
+        <span style="font-size:11px;color:var(--gray);margin-left:auto">${formatDate(c.nextActionDate)}</span>
+      </div>
+      <div style="font-size:12px;color:var(--gray);margin-top:3px;padding-left:22px">→ ${esc(c.nextAction)}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('followUpModal').classList.add('open');
+}
+
 function overdueHtml() {
   const n = contacts.filter(c => c.nextActionDate && c.nextActionDate < TODAY && c.nextAction).length;
   return n > 0 ? `<span class="tab-badge">${n}</span>` : '';
@@ -3501,6 +3539,7 @@ if (isUnlocked()) {
     if (el) el.classList.remove('locked');
   });
   showTab('pipeline');
+  showFollowUpModal();
 } else {
   showTab('propiedades');
   document.getElementById('tab-propiedades').classList.add('active');
@@ -3508,6 +3547,20 @@ if (isUnlocked()) {
   document.getElementById('tab-contactos').classList.add('locked');
 }
 </script>
+
+<!-- SEGUIMIENTOS MODAL -->
+<div class="modal-overlay" id="followUpModal">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-header">
+      <h2>🔔 Seguimientos de hoy</h2>
+      <button class="modal-close" onclick="document.getElementById('followUpModal').classList.remove('open')">×</button>
+    </div>
+    <div class="modal-body" id="followUpModalBody" style="gap:8px;max-height:60vh;overflow-y:auto"></div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="document.getElementById('followUpModal').classList.remove('open')">Entendido</button>
+    </div>
+  </div>
+</div>
 
 <!-- PIN MODAL -->
 <div class="pin-overlay" id="pinOverlay">
