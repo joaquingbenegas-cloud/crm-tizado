@@ -119,6 +119,7 @@
   .badge-compra { background: rgba(59,130,246,0.12); color: #1d4ed8; }
   .badge-venta { background: rgba(200,16,46,0.1); color: #C8102E; }
   .badge-alquiler { background: rgba(126,34,206,0.1); color: #7c3aed; }
+  .badge-inmobiliaria { background: rgba(234,88,12,0.12); color: #c2410c; }
   .badge-empty { background: var(--bg3); color: var(--gray); }
 
   .ci-desc { color: var(--gray); font-size: 11px; line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -678,6 +679,7 @@
         <button class="filter-chip" data-filter="Compra" onclick="setFilter(this)">Compra</button>
         <button class="filter-chip" data-filter="Venta" onclick="setFilter(this)">Venta</button>
         <button class="filter-chip" data-filter="Alquiler" onclick="setFilter(this)">Alquiler</button>
+        <button class="filter-chip" data-filter="Inmobiliaria" onclick="setFilter(this)">Inmobiliaria</button>
         <button class="filter-chip" data-filter="ALTA" onclick="setFilter(this)">🔴 Alta</button>
         <button class="filter-chip" data-filter="MEDIA" onclick="setFilter(this)">🟡 Media</button>
         <button class="filter-chip" data-filter="today" onclick="setFilter(this)">Hoy</button>
@@ -870,6 +872,7 @@
           <option value="Compra">Compra</option>
           <option value="Venta">Venta</option>
           <option value="Alquiler">Alquiler</option>
+          <option value="Inmobiliaria">Inmobiliaria</option>
         </select>
       </div>
       <div class="field">
@@ -1212,7 +1215,7 @@ function renderPipeline() {
     <div class="pipeline-col-body" style="gap:4px">
       ${filteredContacts.map(c => {
         const urgDot = c.urgencia === 'ALTA' ? 'urgency-alta' : c.urgencia === 'MEDIA' ? 'urgency-media' : c.urgencia === 'BAJA' ? 'urgency-baja' : '';
-        const badgeCls = c.interesEn === 'Compra' ? 'badge-compra' : c.interesEn === 'Venta' ? 'badge-venta' : c.interesEn === 'Alquiler' ? 'badge-alquiler' : 'badge-empty';
+        const badgeCls = c.interesEn === 'Compra' ? 'badge-compra' : c.interesEn === 'Venta' ? 'badge-venta' : c.interesEn === 'Alquiler' ? 'badge-alquiler' : c.interesEn === 'Inmobiliaria' ? 'badge-inmobiliaria' : 'badge-empty';
         const myOpps = opps.filter(o => o.contactId === c.id && !['Perdida','Negociación Caída','Cierre'].includes(o.etapa));
         return `<div class="contact-opp-card" draggable="true"
           ondragstart="dragContact(event,'${c.id}')"
@@ -1872,7 +1875,7 @@ function renderList() {
   const el = document.getElementById('contactList');
   el.innerHTML = list.map(c => {
     const isToday = c.contactedDates && c.contactedDates.includes(TODAY);
-    const badgeClass = c.interesEn === 'Compra' ? 'badge-compra' : c.interesEn === 'Venta' ? 'badge-venta' : c.interesEn === 'Alquiler' ? 'badge-alquiler' : 'badge-empty';
+    const badgeClass = c.interesEn === 'Compra' ? 'badge-compra' : c.interesEn === 'Venta' ? 'badge-venta' : c.interesEn === 'Alquiler' ? 'badge-alquiler' : c.interesEn === 'Inmobiliaria' ? 'badge-inmobiliaria' : 'badge-empty';
     const urgClass = c.urgencia === 'ALTA' ? 'urgency-alta' : c.urgencia === 'MEDIA' ? 'urgency-media' : c.urgencia === 'BAJA' ? 'urgency-baja' : '';
     const fmtDate = c.ultimo ? formatDate(c.ultimo) : '';
     const isOverdue = c.nextAction && c.nextActionDate && c.nextActionDate < TODAY;
@@ -1935,7 +1938,7 @@ function renderDetail() {
   el.style.display = 'block';
 
   const isToday = c.contactedDates && c.contactedDates.includes(TODAY);
-  const badgeClass = c.interesEn === 'Compra' ? 'badge-compra' : c.interesEn === 'Venta' ? 'badge-venta' : c.interesEn === 'Alquiler' ? 'badge-alquiler' : 'badge-empty';
+  const badgeClass = c.interesEn === 'Compra' ? 'badge-compra' : c.interesEn === 'Venta' ? 'badge-venta' : c.interesEn === 'Alquiler' ? 'badge-alquiler' : c.interesEn === 'Inmobiliaria' ? 'badge-inmobiliaria' : 'badge-empty';
 
   el.innerHTML = `
     <div class="detail-header">
@@ -1978,6 +1981,7 @@ function renderDetail() {
             <option value="Compra" ${c.interesEn==='Compra'?'selected':''}>Compra</option>
             <option value="Venta" ${c.interesEn==='Venta'?'selected':''}>Venta</option>
             <option value="Alquiler" ${c.interesEn==='Alquiler'?'selected':''}>Alquiler</option>
+            <option value="Inmobiliaria" ${c.interesEn==='Inmobiliaria'?'selected':''}>Inmobiliaria</option>
           </select>
         </div>
         <div class="field">
