@@ -1283,7 +1283,15 @@ function dropOpp(e, stage) {
   if (dragOppId) {
     // Mover oportunidad existente
     const o = opps.find(x => x.id === dragOppId);
-    if (o) { o.etapa = stage; saveOpps(); renderPipeline(); }
+    if (o) {
+      o.etapa = stage;
+      saveOpps();
+      renderPipeline();
+      if (stage === 'Cierre') {
+        const c = contacts.find(x => x.id === o.contactId);
+        openIngresosModalForOpp(c ? c.nombre : '', o.prop || '');
+      }
+    }
     dragOppId = null;
   } else if (dragContactId) {
     // Crear nueva oportunidad desde contacto
@@ -1297,7 +1305,11 @@ function dropOpp(e, stage) {
       });
       saveOpps();
       renderPipeline();
-      toast(`${c.nombre} agregado a ${stage} ✓`, 'success');
+      if (stage === 'Cierre') {
+        openIngresosModalForOpp(c.nombre, '');
+      } else {
+        toast(`${c.nombre} agregado a ${stage} ✓`, 'success');
+      }
     }
     dragContactId = null;
   }
@@ -1363,7 +1375,12 @@ function saveOpp() {
   closeOppModal();
   renderPipeline();
   if (oppSideContactId) renderOppSide(oppSideContactId);
-  toast('Oportunidad guardada ✓', 'success');
+  if (data.etapa === 'Cierre') {
+    const c = contacts.find(x => x.id === data.contactId);
+    openIngresosModalForOpp(c ? c.nombre : '', data.prop || '');
+  } else {
+    toast('Oportunidad guardada ✓', 'success');
+  }
 }
 
 function deleteOpp() {
@@ -1565,6 +1582,20 @@ function openIngresosModal() {
   document.getElementById('ing_fecha').value = TODAY;
   document.getElementById('ing_contacto').value = '';
   document.getElementById('ing_propiedad').value = '';
+  document.getElementById('ing_valor').value = '';
+  document.getElementById('ing_pctTizado').value = '';
+  document.getElementById('ing_pctPersonal').value = '35';
+  document.getElementById('ing_calc').textContent = '$0';
+  document.getElementById('ingresosModal').classList.add('open');
+}
+
+function openIngresosModalForOpp(contactoNombre, propiedad) {
+  editingIngId = null;
+  document.getElementById('ingresosModalTitle').textContent = '🎉 ¡Cierre! Registrar ingreso';
+  document.getElementById('ingDeleteBtn').style.display = 'none';
+  document.getElementById('ing_fecha').value = TODAY;
+  document.getElementById('ing_contacto').value = contactoNombre || '';
+  document.getElementById('ing_propiedad').value = propiedad || '';
   document.getElementById('ing_valor').value = '';
   document.getElementById('ing_pctTizado').value = '';
   document.getElementById('ing_pctPersonal').value = '35';
