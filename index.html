@@ -1417,9 +1417,7 @@ function renderKPIs() {
   const nVisitas = opps.filter(o => stageOrder.indexOf(o.etapa) >= stageOrder.indexOf('Visita') && o.etapa !== 'Negociación Caída').length;
   const nConversaciones = opps.filter(o => stageOrder.indexOf(o.etapa) >= stageOrder.indexOf('Conversación') && o.etapa !== 'Negociación Caída').length;
   const nReservas = opps.filter(o => stageOrder.indexOf(o.etapa) >= stageOrder.indexOf('Reserva') && o.etapa !== 'Negociación Caída').length;
-  const nCierresOpps = opps.filter(o => o.etapa === 'Cierre').length;
-  const nCierresIngresos = ingresos.length;
-  const nCierres = nCierresOpps + nCierresIngresos;
+  const nCierres = opps.filter(o => o.etapa === 'Cierre').length;
 
   const funnelData = [
     { label: 'Consultas', n: nConsultas },
@@ -1447,7 +1445,7 @@ function renderKPIs() {
   document.getElementById('kpiCards').innerHTML = [
     { label: 'Contactos en CRM', num: contacts.length, sub: 'total de leads', cls: '' },
     { label: 'Oportunidades activas', num: active, sub: 'en pipeline', cls: active > 0 ? 'green' : '' },
-    { label: 'Cierres totales', num: nCierres, sub: `${nCierresOpps} pipeline + ${nCierresIngresos} ingresos`, cls: nCierres > 0 ? 'green' : '' },
+    { label: 'Cierres totales', num: nCierres, sub: 'operaciones ganadas', cls: nCierres > 0 ? 'green' : '' },
     { label: 'Conversión consulta→cierre', num: nConsultas > 0 ? Math.round(nCierres/nConsultas*100)+'%' : '0%', sub: 'tasa general', cls: nCierres > 0 ? 'green' : '' },
   ].map(c => `<div class="stat-card ${c.cls}">
     <div class="stat-card-label">${c.label}</div>
