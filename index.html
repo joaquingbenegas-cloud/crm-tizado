@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CRM · Tizado Bella Vista</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#C8102E">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="CRM TBV">
+<link rel="apple-touch-icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -130,8 +137,13 @@
   .note-tipo-badge { font-size: 10px; color: var(--gray); background: var(--bg3); border-radius: 3px; padding: 1px 5px; }
   .followup-banner { background: rgba(202,138,4,0.12); border: 1px solid rgba(202,138,4,0.3); border-radius: 8px; padding: 10px 14px; margin: 12px 16px 0; display:flex; align-items:flex-start; gap:10px; }
   .followup-banner-title { font-weight: 600; font-size: 12px; color: #a16207; margin-bottom: 4px; }
-  .followup-banner-item { font-size: 12px; color: var(--white); cursor: pointer; padding: 2px 0; }
+  .followup-banner-item { font-size: 12px; color: var(--white); cursor: pointer; padding: 2px 0; position: relative; overflow: hidden; }
   .followup-banner-item:hover { color: var(--red); }
+  .swipe-complete-hint {
+    position: absolute; right: 0; top: 0; bottom: 0; display: flex; align-items: center;
+    background: var(--green); color: #fff; font-size: 11px; font-weight: 600;
+    padding: 0 12px; border-radius: 4px; opacity: 0; transition: opacity .2s; pointer-events: none;
+  }
   .badge-empty { background: var(--bg3); color: var(--gray); }
 
   .ci-desc { color: var(--gray); font-size: 11px; line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -1120,6 +1132,14 @@
         <label>Nota</label>
         <textarea id="opp_nota" placeholder="Observaciones..."></textarea>
       </div>
+      <div class="field" style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px">
+        <label>Historial de notas</label>
+        <div style="display:flex;gap:6px;margin-bottom:8px">
+          <input type="text" id="opp_newNote" placeholder="Agregar nota rápida..." style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--white);padding:7px 10px;font-family:Inter,sans-serif;font-size:12px;outline:none">
+          <button class="btn btn-ghost btn-sm" onclick="addOppNote()">+ Agregar</button>
+        </div>
+        <div id="opp_notesList" style="max-height:140px;overflow-y:auto;display:flex;flex-direction:column;gap:5px"></div>
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost btn-sm" id="oppDeleteBtn" style="margin-right:auto;color:var(--red);display:none" onclick="deleteOpp()">Eliminar</button>
@@ -1426,12 +1446,15 @@ function renderOppCard(o) {
   const daysCls = daysSince === null ? '' : daysSince <= 7 ? 'opp-days-ok' : daysSince <= 21 ? 'opp-days-warn' : 'opp-days-alert';
   const daysHtml = daysSince !== null && !['Cierre','Negociación Caída'].includes(o.etapa)
     ? `<span class="opp-days ${daysCls}">${daysSince}d</span>` : '';
+  const motivoHtml = o.etapa === 'Negociación Caída' && o.motivoCaida
+    ? `<div style="font-size:10px;color:#f43f5e;margin-top:3px">↳ ${esc(o.motivoCaida)}</div>` : '';
   return `<div class="opp-card" draggable="true"
       ondragstart="dragOpp(event,'${o.id}')"
       ondragend="document.querySelectorAll('.pipeline-col-body').forEach(b=>b.classList.remove('drag-over'))"
       onclick="openOppSide('${o.id}')">
     <div class="opp-card-name">${esc(nombre)}</div>
     ${o.prop ? `<div class="opp-card-prop">${esc(o.prop)}</div>` : ''}
+    ${motivoHtml}
     <div class="opp-card-bottom">
       ${o.valor ? `<span class="opp-card-val">${fmtUSD(o.valor)}</span>` : '<span class="opp-card-val" style="color:var(--gray2)">—</span>'}
       ${o.compartida ? `<span class="opp-card-compartida">Compartida</span>` : `<span class="opp-card-tipo ${tipoClass}">${o.tipo||''}</span>`}
@@ -1449,16 +1472,21 @@ function dropOpp(e, stage) {
   e.preventDefault();
   document.querySelectorAll('.pipeline-col-body').forEach(b => b.classList.remove('drag-over'));
   if (dragOppId) {
-    // Mover oportunidad existente
     const o = opps.find(x => x.id === dragOppId);
     if (o) {
+      const prevStage = o.etapa;
       o.etapa = stage;
       o.etapaChangedAt = TODAY;
+      // Historial de etapas
+      if (!o.stageHistory) o.stageHistory = [];
+      o.stageHistory.push({ from: prevStage, to: stage, date: TODAY });
       saveOpps();
       renderPipeline();
       if (stage === 'Cierre') {
         const c = contacts.find(x => x.id === o.contactId);
         openIngresosModalForOpp(c ? c.nombre : '', o.prop || '', o.compartida);
+      } else if (stage === 'Negociación Caída') {
+        askMotivoCaida(o.id);
       }
     }
     dragOppId = null;
@@ -1520,9 +1548,49 @@ function openOppEditModal(oppId) {
   document.getElementById('opp_nota').value = o.nota || '';
   document.getElementById('opp_compartida').checked = o.compartida || false;
   document.getElementById('oppModal').classList.add('open');
+  renderOppNotesList(o.notes);
 }
 
-function closeOppModal() { document.getElementById('oppModal').classList.remove('open'); }
+function closeOppModal() {
+  document.getElementById('oppModal').classList.remove('open');
+  document.getElementById('opp_notesList').innerHTML = '';
+}
+
+function renderOppNotesList(notes) {
+  const el = document.getElementById('opp_notesList');
+  if (!el) return;
+  if (!notes || !notes.length) { el.innerHTML = '<div style="color:var(--gray2);font-size:12px">Sin notas aún</div>'; return; }
+  el.innerHTML = [...notes].reverse().map(n => `<div style="background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:7px 10px">
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
+      <span style="font-size:10px;color:var(--gray2)">${n.date} · ${n.time||''}</span>
+      <button style="margin-left:auto;background:none;border:none;color:var(--gray);cursor:pointer;font-size:11px;padding:0" onclick="deleteOppNote('${n.id}')">🗑</button>
+    </div>
+    <div style="font-size:12px;line-height:1.4">${esc(n.text)}</div>
+  </div>`).join('');
+}
+
+function addOppNote() {
+  const text = document.getElementById('opp_newNote').value.trim();
+  if (!text || !editingOppId) return;
+  const o = opps.find(x => x.id === editingOppId);
+  if (!o) return;
+  if (!o.notes) o.notes = [];
+  const now = new Date();
+  o.notes.push({ id: uid(), text, date: now.toLocaleDateString('es-AR'), time: now.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}) });
+  saveOpps();
+  document.getElementById('opp_newNote').value = '';
+  renderOppNotesList(o.notes);
+  if (oppSideContactId) renderOppSide(oppSideContactId);
+}
+
+function deleteOppNote(noteId) {
+  if (!editingOppId) return;
+  const o = opps.find(x => x.id === editingOppId);
+  if (!o) return;
+  o.notes = (o.notes||[]).filter(n => n.id !== noteId);
+  saveOpps();
+  renderOppNotesList(o.notes);
+}
 
 function saveOpp() {
   const contactId = document.getElementById('opp_contactId').value;
@@ -1539,9 +1607,16 @@ function saveOpp() {
   };
   if (editingOppId) {
     const o = opps.find(x => x.id === editingOppId);
-    if (o) Object.assign(o, data);
+    if (o) {
+      if (data.etapa !== o.etapa) {
+        if (!o.stageHistory) o.stageHistory = [];
+        o.stageHistory.push({ from: o.etapa, to: data.etapa, date: TODAY });
+        data.etapaChangedAt = TODAY;
+      }
+      Object.assign(o, data);
+    }
   } else {
-    opps.push({ id: uid(), createdAt: TODAY, ...data });
+    opps.push({ id: uid(), createdAt: TODAY, stageHistory: [], ...data });
   }
   saveOpps();
   closeOppModal();
@@ -1550,6 +1625,8 @@ function saveOpp() {
   if (data.etapa === 'Cierre') {
     const c = contacts.find(x => x.id === data.contactId);
     openIngresosModalForOpp(c ? c.nombre : '', data.prop || '', data.compartida);
+  } else if (data.etapa === 'Negociación Caída' && editingOppId) {
+    askMotivoCaida(editingOppId);
   } else {
     toast('Oportunidad guardada ✓', 'success');
   }
@@ -1564,6 +1641,32 @@ function deleteOpp() {
   renderPipeline();
   if (oppSideContactId) renderOppSide(oppSideContactId);
   toast('Eliminada', 'success');
+}
+
+function askMotivoCaida(oppId) {
+  const motivos = ['Precio muy alto','El cliente desistió','Eligió otra propiedad','Eligió otra inmobiliaria','No consiguió financiamiento','Sin respuesta','Otro'];
+  const overlay = document.createElement('div');
+  overlay.id = 'motivoCaidaModal';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px';
+  overlay.innerHTML = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;width:100%;max-width:380px;padding:24px">
+    <h3 style="font-family:'Playfair Display',serif;font-size:17px;margin-bottom:4px">😞 Negociación Caída</h3>
+    <p style="font-size:12px;color:var(--gray);margin-bottom:16px">¿Cuál fue el motivo? (opcional)</p>
+    <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px">
+      ${motivos.map(m => `<button class="btn btn-ghost btn-sm" style="text-align:left;justify-content:flex-start" onclick="saveMotivoAndClose('${oppId}','${m}')">${m}</button>`).join('')}
+    </div>
+    <button class="btn btn-ghost btn-sm" style="width:100%;justify-content:center" onclick="saveMotivoAndClose('${oppId}','')">Omitir</button>
+  </div>`;
+  document.body.appendChild(overlay);
+}
+
+function saveMotivoAndClose(oppId, motivo) {
+  const o = opps.find(x => x.id === oppId);
+  if (o && motivo) o.motivoCaida = motivo;
+  saveOpps();
+  document.getElementById('motivoCaidaModal')?.remove();
+  renderPipeline();
+  if (oppSideContactId) renderOppSide(oppSideContactId);
+  toast('Oportunidad archivada como caída', 'success');
 }
 
 // ─── OPP SIDE PANEL ──────────────────────────────────────────────────────────
@@ -1678,14 +1781,27 @@ function renderOppSide(contactId) {
       </div>
       ${myOpps.length ? myOpps.map(o => {
         const isActive = !['Negociación Caída','Cierre'].includes(o.etapa);
-        return `<div class="opp-history-item" style="${isActive?'border-left:3px solid var(--red)':'opacity:.6'}">
+        const isCaida = o.etapa === 'Negociación Caída';
+        const borderColor = isCaida ? '#f43f5e' : o.etapa === 'Cierre' ? 'var(--green)' : 'var(--red)';
+        // Historial de etapas
+        const history = (o.stageHistory||[]);
+        const historyHtml = history.length > 1 ? `<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
+          <div style="font-size:10px;color:var(--gray);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Recorrido</div>
+          <div style="display:flex;flex-wrap:wrap;gap:3px;align-items:center">
+            ${history.map((h,i) => `<span style="font-size:10px;color:var(--gray2)">${esc(h.from)}</span>${i<history.length-1?'<span style="color:var(--gray2);font-size:10px">›</span>':''}`).join('')}
+            <span style="font-size:10px;color:${isCaida?'#f43f5e':isActive?'var(--red)':'var(--green)'};font-weight:600">${esc(o.etapa)}</span>
+          </div>
+        </div>` : '';
+        return `<div class="opp-history-item" style="border-left:3px solid ${borderColor};${!isActive?'opacity:.65':''}">
           <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-            <span class="opp-history-stage">${o.etapa}</span>
+            <span class="opp-history-stage" style="${isCaida?'color:#f43f5e':''}">${o.etapa}${isCaida&&o.motivoCaida?` · ${esc(o.motivoCaida)}`:''}</span>
             <button class="btn btn-ghost btn-sm" style="padding:2px 7px;font-size:11px" onclick="openOppEditModal('${o.id}')">✏️</button>
           </div>
           ${o.prop ? `<div class="opp-history-prop">${esc(o.prop)}</div>` : ''}
-          <div class="opp-history-meta">${o.tipo||''} ${o.valor?'· '+fmtUSD(o.valor):''} ${o.urgencia?'· '+o.urgencia:''} ${o.createdAt?'· '+formatDate(o.createdAt):''}</div>
+          <div class="opp-history-meta">${o.tipo||''} ${o.valor?'· '+fmtUSD(o.valor):''} ${o.urgencia?'· '+o.urgencia:''} ${o.createdAt?'· '+formatDate(o.createdAt):''}${(o.notes||[]).length?` · 📝 ${o.notes.length} nota${o.notes.length>1?'s':''}`:''}
+          </div>
           ${o.nota ? `<div style="font-size:12px;color:var(--gray);margin-top:4px">${esc(o.nota)}</div>` : ''}
+          ${historyHtml}
         </div>`;
       }).join('') : '<div style="color:var(--gray2);font-size:12px">Sin oportunidades aún</div>'}
     </div>
@@ -2750,15 +2866,40 @@ function renderFollowUpBanner() {
         const daysOv = isOv ? Math.floor((new Date(TODAY) - new Date(c.nextActionDate)) / 86400000) : 0;
         const daysLabel = isOv ? `<span style="color:var(--red);font-size:10px;font-weight:700;margin-left:4px">hace ${daysOv === 0 ? 'hoy' : daysOv+'d'}</span>` : '';
         const waBtn = c.tel ? `<button class="btn btn-wa btn-sm" style="padding:2px 8px;font-size:11px;margin-left:6px;flex-shrink:0" onclick="event.stopPropagation();sendFollowUpWA('${c.id}')">💬 WA</button>` : '';
-        return `<div class="followup-banner-item" style="display:flex;align-items:center;gap:4px" onclick="openContactSide('${c.id}');tryShowTab('pipeline')">
+        return `<div class="followup-banner-item" data-cid="${c.id}" style="display:flex;align-items:center;gap:4px" onclick="openContactSide('${c.id}');tryShowTab('pipeline')">
           <span>${isOv ? '⚠️' : '📌'}</span>
           <span style="flex:1"><strong>${esc(c.nombre)}</strong> — ${esc(c.nextAction)}<span style="color:var(--gray);font-size:11px"> (${formatDate(c.nextActionDate)})</span>${daysLabel}</span>
           ${waBtn}
+          <span class="swipe-complete-hint">✓ Listo</span>
         </div>`;
       }).join('')}
     </div>
   </div>`;
   updateTabBadges();
+  // Swipe para completar en mobile
+  requestAnimationFrame(() => {
+    document.querySelectorAll('.followup-banner-item[data-cid]').forEach(el => {
+      let startX = 0, dx = 0;
+      el.addEventListener('touchstart', e => { startX = e.touches[0].clientX; }, { passive: true });
+      el.addEventListener('touchmove', e => {
+        dx = e.touches[0].clientX - startX;
+        if (dx > 0) { el.style.transform = `translateX(${Math.min(dx, 90)}px)`; }
+        const hint = el.querySelector('.swipe-complete-hint');
+        if (hint) hint.style.opacity = dx > 40 ? '1' : '0';
+      }, { passive: true });
+      el.addEventListener('touchend', () => {
+        if (dx > 70) {
+          const cid = el.dataset.cid;
+          el.style.transition = 'transform .3s'; el.style.transform = 'translateX(110%)';
+          setTimeout(() => { completeSideFollowUp(cid); }, 320);
+        } else {
+          el.style.transition = 'transform .2s'; el.style.transform = '';
+          setTimeout(() => { el.style.transition = ''; }, 220);
+        }
+        dx = 0;
+      });
+    });
+  });
 }
 
 function updateTabBadges() {
@@ -2946,9 +3087,24 @@ function closeNewContact() {
   document.getElementById('nc_interes').value = '';
   document.getElementById('nc_urgencia').value = '';
 }
-function saveNewContact() {
+function similarName(a, b) {
+  // Retorna true si los nombres son parecidos (mismas palabras significativas)
+  const words = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').split(/\s+/).filter(w => w.length > 2);
+  const wa = words(a), wb = words(b);
+  return wa.some(w => wb.includes(w)) && wb.some(w => wa.includes(w));
+}
+
+function saveNewContact(force = false) {
   const nombre = document.getElementById('nc_nombre').value.trim();
   if (!nombre) { toast('El nombre es obligatorio', 'error'); return; }
+  // Chequeo de duplicados
+  if (!force) {
+    const dups = contacts.filter(c => similarName(c.nombre, nombre));
+    if (dups.length) {
+      const list = dups.slice(0,3).map(c => `• ${c.nombre}`).join('\n');
+      if (!confirm(`Ya existe un contacto similar:\n${list}\n\n¿Querés crearlo igual?`)) return;
+    }
+  }
   const c = {
     id: uid(),
     nombre,
