@@ -4788,10 +4788,7 @@ async function loadLotes(force = false) {
     ]);
     const puebloNuevo = parseLotesCSV(text1);
     const villages    = parseVillageCSV(text2);
-    console.log('[Lotes] Pueblo Nuevo:', puebloNuevo.length, 'Villages:', villages.length);
-    console.log('[Lotes] primeros villages:', JSON.stringify(villages.slice(0,2)));
     lotesData = [...villages, ...puebloNuevo];
-    console.log('[Lotes] total:', lotesData.length);
     lotesLoaded = true;
     // Actualizar opciones de barrio dinámicamente
     const barrios = [...new Set(lotesData.map(l => l.barrio))].sort();
