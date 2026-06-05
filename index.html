@@ -731,6 +731,52 @@
   .ingresos-table td { padding: 9px 12px; border-bottom: 1px solid var(--border); background: var(--bg2); }
   .ingresos-table tr:last-child td { border-bottom: none; }
   .ingresos-table tr:hover td { background: var(--bg3); }
+
+  /* ── LOTES PANEL ──────────────────────────────────────────────────────── */
+  .lotes-panel { display: none; flex-direction: column; min-height: calc(100vh - 110px); background: var(--bg); }
+  .lotes-panel.visible { display: flex; }
+  .lotes-header { background: var(--bg2); border-bottom: 1px solid var(--border); padding: 20px 24px 16px; position: sticky; top: 0; z-index: 10; }
+  .lotes-header-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+  .lotes-filters { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .lotes-search-wrap { position: relative; flex: 1; min-width: 180px; }
+  .lotes-select { background: var(--bg3); border: 1px solid var(--border); color: var(--white); border-radius: 8px; padding: 8px 10px; font-size: 13px; cursor: pointer; outline: none; }
+  .lotes-ig-btn { color: var(--gray); display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; background: var(--bg3); border: 1px solid var(--border); text-decoration: none; transition: color .2s, background .2s; }
+  .lotes-ig-btn:hover { color: #bc1888; background: rgba(188,24,136,.08); }
+
+  .lotes-section { margin-bottom: 32px; }
+  .lotes-section-title { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 600; margin: 0 0 14px; padding-bottom: 10px; border-bottom: 2px solid var(--red); display: inline-block; }
+  .lotes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+  .lote-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px; transition: box-shadow .2s, transform .15s; }
+  .lote-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,.1); transform: translateY(-2px); }
+  .lote-card-top { display: flex; justify-content: space-between; align-items: flex-start; }
+  .lote-numero { font-size: 18px; font-weight: 700; color: var(--white); }
+  .lote-badge { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 20px; text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; }
+  .lote-badge-interno { background: rgba(37,99,235,.12); color: #2563eb; }
+  .lote-badge-perimetral { background: rgba(22,163,74,.12); color: #16a34a; }
+  .lote-badge-verde { background: rgba(5,150,105,.12); color: #059669; }
+  .lote-precio { font-size: 22px; font-weight: 700; color: var(--white); }
+  .lote-precio-label { font-size: 11px; color: var(--gray2); margin-bottom: 2px; }
+  .lote-sup { font-size: 13px; color: var(--gray); }
+  .lote-barrio { font-size: 11px; color: var(--gray2); }
+  .btn-wa-lote { display: flex; align-items: center; justify-content: center; gap: 7px; background: #25d366; color: #fff; border: none; border-radius: 8px; padding: 10px; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none; transition: background .2s; }
+  .btn-wa-lote:hover { background: #1ebe5d; }
+  .lotes-empty { text-align: center; padding: 48px 0; color: var(--gray); font-size: 14px; }
+
+  /* Botón flotante WA en lotes */
+  .lotes-wa-float { position: fixed; bottom: 24px; right: 24px; width: 56px; height: 56px; border-radius: 50%; background: #25d366; display: none; align-items: center; justify-content: center; box-shadow: 0 4px 16px rgba(0,0,0,.2); text-decoration: none; z-index: 200; transition: transform .15s; }
+  .lotes-wa-float:hover { transform: scale(1.08); }
+  .lotes-panel.visible ~ .lotes-wa-float,
+  .lotes-wa-float.show { display: flex; }
+
+  @media (max-width: 600px) {
+    .lotes-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .lotes-filters { gap: 8px; }
+    .lotes-select { font-size: 12px; padding: 7px 8px; }
+    .lote-precio { font-size: 18px; }
+  }
+  @media (max-width: 400px) {
+    .lotes-grid { grid-template-columns: 1fr; }
+  }
 </style>
 </head>
 <body>
@@ -765,6 +811,7 @@
 <div class="tab-nav">
   <button class="tab-btn active" id="tab-contactos" onclick="tryShowTab('contactos')" style="display:none">🔒 Contactos</button>
   <button class="tab-btn locked" id="tab-dashboard" onclick="tryShowTab('dashboard')">⚡ Home</button>
+  <button class="tab-btn" id="tab-lotes" onclick="tryShowTab('lotes')">🌿 Lotes</button>
   <button class="tab-btn" id="tab-propiedades" onclick="tryShowTab('propiedades')">🏠 Propiedades</button>
   <button class="tab-btn locked" id="tab-stats" onclick="tryShowTab('stats')">📊 Stats</button>
   <button class="tab-btn locked" id="tab-pipeline" onclick="tryShowTab('pipeline')">🏗 Pipeline</button>
@@ -831,6 +878,50 @@
       <p>Seleccioná un contacto</p>
     </div>
     <div class="detail-content" id="detailContent" style="display:none"></div>
+  </div>
+</div>
+
+<!-- PANEL LOTES -->
+<div class="lotes-panel" id="lotesPanel">
+  <div class="lotes-header">
+    <div class="lotes-header-top">
+      <div>
+        <h2 style="font-family:'Playfair Display',serif;font-size:22px;margin:0 0 2px">Lotes disponibles</h2>
+        <p style="margin:0;font-size:13px;color:var(--gray)">Tizado Bella Vista · Lotes en barrios privados</p>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <a href="https://instagram.com/joaquin.tizadobv" target="_blank" class="lotes-ig-btn" title="Instagram">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
+        </a>
+      </div>
+    </div>
+    <div class="lotes-filters">
+      <div class="lotes-search-wrap">
+        <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--gray2);pointer-events:none">⌕</span>
+        <input type="text" id="lotesSearch" placeholder="Buscar por N° lote..." oninput="filterLotes()" style="width:100%;padding:8px 10px 8px 30px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--white);font-size:13px;outline:none">
+      </div>
+      <select id="lotesFiltroBarrio" onchange="filterLotes()" class="lotes-select">
+        <option value="">Todos los barrios</option>
+        <option value="Village Joven">Village Joven</option>
+        <option value="Village Plaza">Village Plaza</option>
+        <option value="Pueblo Nuevo">Pueblo Nuevo</option>
+      </select>
+      <select id="lotesFiltroUbic" onchange="filterLotes()" class="lotes-select">
+        <option value="">Todas las ubicaciones</option>
+        <option value="Interno">Interno</option>
+        <option value="Perimetral">Perimetral</option>
+        <option value="Espacio Verde">Espacio Verde</option>
+      </select>
+      <select id="lotesFiltroOrden" onchange="filterLotes()" class="lotes-select">
+        <option value="">Precio (sin ordenar)</option>
+        <option value="asc">Precio: menor a mayor</option>
+        <option value="desc">Precio: mayor a menor</option>
+      </select>
+      <button class="btn btn-ghost btn-sm" onclick="loadLotes(true)" style="white-space:nowrap">↺ Actualizar</button>
+    </div>
+  </div>
+  <div id="lotesContent" style="padding:20px 24px">
+    <div style="text-align:center;padding:60px 0;color:var(--gray)">Cargando lotes…</div>
   </div>
 </div>
 
@@ -3365,7 +3456,8 @@ function showTab(tab) {
   const isIngresos = tab === 'ingresos';
   const isDashboard = tab === 'dashboard';
   const isCierres = tab === 'cierres';
-  ['tab-contactos','tab-propiedades','tab-stats','tab-pipeline','tab-kpis','tab-ingresos','tab-dashboard','tab-cierres'].forEach(id => {
+  const isLotes = tab === 'lotes';
+  ['tab-contactos','tab-propiedades','tab-stats','tab-pipeline','tab-kpis','tab-ingresos','tab-dashboard','tab-cierres','tab-lotes'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.remove('active');
   });
@@ -3384,6 +3476,7 @@ function showTab(tab) {
   document.getElementById('ingresosPanel').classList.toggle('visible', isIngresos);
   document.getElementById('dashboardPanel').classList.toggle('visible', isDashboard);
   document.getElementById('cierresPanel').classList.toggle('visible', isCierres);
+  document.getElementById('lotesPanel').classList.toggle('visible', isLotes);
   if (isProps && properties.length === 0) fetchProperties();
   if (isStats) renderStats();
   if (isPipeline) renderPipeline();
@@ -3391,6 +3484,7 @@ function showTab(tab) {
   if (isIngresos) renderIngresos();
   if (isDashboard) renderDashboard();
   if (isCierres) renderCierres();
+  if (isLotes && !lotesLoaded) loadLotes();
 }
 
 // ─── BÚSQUEDA GLOBAL ─────────────────────────────────────────────────────────
@@ -3774,7 +3868,7 @@ function overdueHtml() {
 }
 
 function tryShowTab(tab) {
-  if (tab === 'propiedades') { showTab('propiedades'); return; }
+  if (tab === 'propiedades' || tab === 'lotes') { showTab(tab); return; }
   if (isUnlocked()) { showTab(tab); return; }
   document.getElementById('pinOverlay').classList.add('visible');
   document.getElementById('pinInput').value = '';
@@ -4533,6 +4627,174 @@ function renderStats() {
       </div>`;
     }).join('');
   }
+}
+
+// ─── LOTES ───────────────────────────────────────────────────────────────────
+const LOTES_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTGmq1jAwgjbtVm3NtFtDmfTq_I_2akDdQ4DAjAHlOpV67dchEWYZG24pDc0RG6Zw/pub?output=csv';
+const LOTES_CSV_URL2 = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTGmq1jAwgjbtVm3NtFtDmfTq_I_2akDdQ4DAjAHlOpV67dchEWYZG24pDc0RG6Zw/pub?gid=1&output=csv';
+let lotesData = [];
+let lotesLoaded = false;
+
+function parseCSV(text) {
+  const lines = text.split('\n').filter(l => l.trim());
+  if (!lines.length) return [];
+  const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+  return lines.slice(1).map(line => {
+    // Handle quoted fields with commas
+    const cols = [];
+    let cur = '', inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') { inQ = !inQ; }
+      else if (ch === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
+      else { cur += ch; }
+    }
+    cols.push(cur.trim());
+    const row = {};
+    headers.forEach((h, i) => { row[h] = (cols[i] || '').replace(/^"|"$/g, '').trim(); });
+    return row;
+  });
+}
+
+async function loadLotes(force = false) {
+  if (lotesLoaded && !force) return;
+  const content = document.getElementById('lotesContent');
+  content.innerHTML = '<div style="text-align:center;padding:60px 0;color:var(--gray)">Cargando lotes…</div>';
+  try {
+    // Fetch both sheets in parallel
+    const [r1, r2] = await Promise.all([
+      fetch(LOTES_CSV_URL + '&t=' + Date.now()).then(r => r.text()),
+      fetch(LOTES_CSV_URL2 + '&t=' + Date.now()).then(r => r.text()).catch(() => '')
+    ]);
+    const rows1 = parseCSV(r1);
+    const rows2 = r2 ? parseCSV(r2) : [];
+
+    // Normalize sheet 1 (Village Joven / Village Plaza): Barrio, Lote, N° contrato, Superficie M2, Precio USD, Ubicacion
+    const sheet1 = rows1.filter(r => r['Lote'] || r['lote']).map(r => ({
+      barrio:      r['Barrio'] || r['barrio'] || '',
+      lote:        r['Lote'] || r['lote'] || '',
+      superficie:  r['Superficie M2'] || r['Superficie'] || r['superficie'] || '',
+      precio:      r['Precio USD'] || r['precio'] || '',
+      ubicacion:   (r['Ubicacion'] || r['Ubicación'] || r['ubicacion'] || '').trim(),
+      contrato:    r['N° contrato'] || '',
+      _sheet: 1
+    }));
+
+    // Normalize sheet 2 (Pueblo Nuevo): LOTE, Superficie, Tipo, Precio Final, Ubicación, Boleto, Posesion
+    const sheet2 = rows2.filter(r => r['LOTE'] || r['Lote']).map(r => ({
+      barrio:      'Pueblo Nuevo',
+      lote:        r['LOTE'] || r['Lote'] || '',
+      superficie:  r['Superficie'] || '',
+      precio:      r['Precio Final'] || r['Precio USD'] || '',
+      ubicacion:   (r['Ubicación'] || r['Ubicacion'] || '').trim(),
+      tipo:        r['Tipo'] || '',
+      _sheet: 2
+    }));
+
+    lotesData = [...sheet1, ...sheet2].filter(l => l.lote);
+    lotesLoaded = true;
+    filterLotes();
+  } catch (e) {
+    content.innerHTML = `<div style="text-align:center;padding:60px 0;color:var(--red)">Error al cargar lotes: ${e.message}<br><button class="btn btn-ghost btn-sm" onclick="loadLotes(true)" style="margin-top:12px">Reintentar</button></div>`;
+  }
+}
+
+function normUbic(u) {
+  const s = (u || '').toLowerCase();
+  if (s.includes('verde') || s.includes('ev') || s.includes('esp')) return 'Espacio Verde';
+  if (s.includes('perim') || s.includes('peri')) return 'Perimetral';
+  if (s.includes('intern') || s.includes('int')) return 'Interno';
+  return u || 'Interno';
+}
+
+function filterLotes() {
+  const q      = (document.getElementById('lotesSearch')?.value || '').toLowerCase();
+  const barrio = document.getElementById('lotesFiltroBarrio')?.value || '';
+  const ubic   = document.getElementById('lotesFiltroUbic')?.value || '';
+  const orden  = document.getElementById('lotesFiltroOrden')?.value || '';
+
+  let rows = lotesData.map(l => ({ ...l, ubicacion: normUbic(l.ubicacion) }));
+  if (q)      rows = rows.filter(l => l.lote.toLowerCase().includes(q));
+  if (barrio) rows = rows.filter(l => l.barrio === barrio);
+  if (ubic)   rows = rows.filter(l => l.ubicacion === ubic);
+  if (orden) {
+    rows.sort((a, b) => {
+      const pa = parseFloat((a.precio || '0').replace(/[^0-9.]/g, '')) || 0;
+      const pb = parseFloat((b.precio || '0').replace(/[^0-9.]/g, '')) || 0;
+      return orden === 'asc' ? pa - pb : pb - pa;
+    });
+  }
+
+  renderLotes(rows);
+}
+
+function renderLotes(rows) {
+  const content = document.getElementById('lotesContent');
+  if (!rows.length) {
+    content.innerHTML = '<div class="lotes-empty">Sin resultados para los filtros seleccionados.</div>';
+    return;
+  }
+
+  const BARRIOS = ['Village Joven', 'Village Plaza', 'Pueblo Nuevo'];
+  const groups = {};
+  rows.forEach(l => {
+    const b = l.barrio || 'Otros';
+    if (!groups[b]) groups[b] = [];
+    groups[b].push(l);
+  });
+
+  // Order sections by known barrios first
+  const keys = [...BARRIOS.filter(b => groups[b]), ...Object.keys(groups).filter(b => !BARRIOS.includes(b))];
+
+  const ubicBadge = u => {
+    if (u === 'Perimetral') return `<span class="lote-badge lote-badge-perimetral">Perimetral</span>`;
+    if (u === 'Espacio Verde') return `<span class="lote-badge lote-badge-verde">Espacio Verde</span>`;
+    return `<span class="lote-badge lote-badge-interno">Interno</span>`;
+  };
+
+  const fmtPrecio = p => {
+    const n = parseFloat((p || '').replace(/[^0-9.]/g, ''));
+    if (!n) return p || '—';
+    return 'USD ' + n.toLocaleString('es-AR');
+  };
+
+  const fmtSup = s => {
+    const n = parseFloat((s || '').replace(/[^0-9.]/g, ''));
+    if (!n) return s || '—';
+    return n.toLocaleString('es-AR') + ' m²';
+  };
+
+  const waMsg = l =>
+    encodeURIComponent(`Hola Joaquín, me interesa el lote ${l.lote} de ${l.barrio} - ${fmtSup(l.superficie)} - ${fmtPrecio(l.precio)}. ¿Podemos hablar?`);
+
+  content.innerHTML = keys.map(barrio => `
+    <div class="lotes-section">
+      <div class="lotes-section-title">${barrio}</div>
+      <div style="font-size:12px;color:var(--gray);margin-bottom:12px">${groups[barrio].length} lote${groups[barrio].length !== 1 ? 's' : ''}</div>
+      <div class="lotes-grid">
+        ${groups[barrio].map(l => `
+          <div class="lote-card">
+            <div class="lote-card-top">
+              <div>
+                <div class="lote-barrio">${barrio}</div>
+                <div class="lote-numero">Lote ${esc(l.lote)}</div>
+              </div>
+              ${ubicBadge(l.ubicacion)}
+            </div>
+            <div>
+              <div class="lote-precio-label">Precio</div>
+              <div class="lote-precio">${fmtPrecio(l.precio)}</div>
+            </div>
+            <div class="lote-sup">📐 ${fmtSup(l.superficie)}</div>
+            <a class="btn-wa-lote" href="https://wa.me/5491162782243?text=${waMsg(l)}" target="_blank">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+              Me interesa
+            </a>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
 }
 
 // ─── PIN / ACCESO ────────────────────────────────────────────────────────────
