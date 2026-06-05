@@ -929,12 +929,8 @@
       </div>
 
       <div class="pv-form-group">
-        <div class="pv-form-label">¿Presupuesto?</div>
-        <div class="pv-options" id="pn-presup">
-          <div class="pv-option" onclick="pvSelect(this,'pn-presup')">Hasta USD 65.000</div>
-          <div class="pv-option" onclick="pvSelect(this,'pn-presup')">USD 65.000 – 80.000</div>
-          <div class="pv-option" onclick="pvSelect(this,'pn-presup')">Más de USD 80.000</div>
-        </div>
+        <div class="pv-form-label">¿Cuál es tu presupuesto?</div>
+        <input class="pv-name-input" id="pn-presup" type="text" placeholder="Ej: USD 70.000">
       </div>
 
       <div class="pv-form-group">
@@ -975,12 +971,8 @@
       </div>
 
       <div class="pv-form-group">
-        <div class="pv-form-label">¿Presupuesto?</div>
-        <div class="pv-options" id="vl-presup">
-          <div class="pv-option" onclick="pvSelect(this,'vl-presup')">Hasta USD 100.000</div>
-          <div class="pv-option" onclick="pvSelect(this,'vl-presup')">USD 100.000 – 130.000</div>
-          <div class="pv-option" onclick="pvSelect(this,'vl-presup')">Más de USD 130.000</div>
-        </div>
+        <div class="pv-form-label">¿Cuál es tu presupuesto?</div>
+        <input class="pv-name-input" id="vl-presup" type="text" placeholder="Ej: USD 120.000">
       </div>
 
       <div class="pv-form-group">
@@ -1019,12 +1011,8 @@
       </div>
 
       <div class="pv-form-group">
-        <div class="pv-form-label">¿Presupuesto total?</div>
-        <div class="pv-options" id="ao-presup">
-          <div class="pv-option" onclick="pvSelect(this,'ao-presup')">Hasta USD 190.000</div>
-          <div class="pv-option" onclick="pvSelect(this,'ao-presup')">USD 190.000 – 220.000</div>
-          <div class="pv-option" onclick="pvSelect(this,'ao-presup')">Más de USD 220.000</div>
-        </div>
+        <div class="pv-form-label">¿Cuál es tu presupuesto total?</div>
+        <input class="pv-name-input" id="ao-presup" type="text" placeholder="Ej: USD 200.000">
       </div>
 
       <div class="pv-form-group">
@@ -4784,24 +4772,37 @@ function pvGet(groupId) {
 function pvEnviar(seccion) {
   let msg = '';
   if (seccion === 'pueblo-nuevo') {
-    const tipo    = pvGet('pn-tipo')    || '(sin especificar)';
-    const ubic    = pvGet('pn-ubic')    || '(sin especificar)';
-    const presup  = pvGet('pn-presup')  || '(sin especificar)';
+    const tipo    = pvGet('pn-tipo');
+    const ubic    = pvGet('pn-ubic');
+    const presup  = (document.getElementById('pn-presup')?.value || '').trim();
     const nombre  = (document.getElementById('pn-nombre')?.value || '').trim() || 'un interesado';
-    msg = `Hola Joaquín, me interesa Pueblo Nuevo. Busco: ${tipo}, ubicación ${ubic}, presupuesto ${presup}. Soy ${nombre}.`;
+    let partes = [];
+    if (tipo)   partes.push(tipo === 'Dentro de barrio con portón' ? 'un lote dentro del barrio con portón' : 'un lote abierto sobre la calle');
+    if (ubic)   partes.push(`ubicación ${ubic.toLowerCase()}`);
+    if (presup) partes.push(`presupuesto de ${presup}`);
+    msg = `Hola Joaquín, soy ${nombre} y me interesa Pueblo Nuevo en Bella Vista. Estoy buscando ${partes.join(', ')}. ¿Podés contarme qué lotes hay disponibles?`;
   } else if (seccion === 'village') {
-    const barrio  = pvGet('vl-barrio')  || '(sin especificar)';
-    const ubic    = pvGet('vl-ubic')    || '(sin especificar)';
-    const presup  = pvGet('vl-presup')  || '(sin especificar)';
+    const barrio  = pvGet('vl-barrio');
+    const ubic    = pvGet('vl-ubic');
+    const presup  = (document.getElementById('vl-presup')?.value || '').trim();
     const nombre  = (document.getElementById('vl-nombre')?.value || '').trim() || 'un interesado';
-    msg = `Hola Joaquín, me interesa ${barrio}. Busco: ubicación ${ubic}, presupuesto ${presup}. Soy ${nombre}.`;
+    const barrioText = barrio === 'Ambos' ? 'Village Joven y Village Plaza' : barrio || 'el Village';
+    let partes = [];
+    if (ubic && ubic !== 'Sin preferencia') partes.push(`prefiero lote ${ubic.toLowerCase()}`);
+    if (presup) partes.push(`mi presupuesto es ${presup}`);
+    msg = `Hola Joaquín, soy ${nombre} y me interesa ${barrioText} en Bella Vista.${partes.length ? ' ' + partes.join(', ') + '.' : ''} ¿Qué lotes tienen disponibles?`;
   } else if (seccion === 'aora') {
-    const amb     = pvGet('ao-amb')     || '(sin especificar)';
-    const etapa   = pvGet('ao-etapa')   || '(sin especificar)';
-    const presup  = pvGet('ao-presup')  || '(sin especificar)';
-    const finan   = pvGet('ao-finan')   || '(sin especificar)';
+    const amb     = pvGet('ao-amb');
+    const etapa   = pvGet('ao-etapa');
+    const presup  = (document.getElementById('ao-presup')?.value || '').trim();
+    const finan   = pvGet('ao-finan');
     const nombre  = (document.getElementById('ao-nombre')?.value || '').trim() || 'un interesado';
-    msg = `Hola Joaquín, me interesa Aora Bella Vista. Busco: ${amb}, ${etapa}, presupuesto ${presup}, financiación: ${finan}. Soy ${nombre}.`;
+    let partes = [];
+    if (amb)    partes.push(amb);
+    if (etapa && etapa !== 'Cualquiera') partes.push(etapa);
+    if (presup) partes.push(`presupuesto ${presup}`);
+    if (finan)  partes.push(finan === 'Sí' ? 'necesito financiación' : 'pago al contado');
+    msg = `Hola Joaquín, soy ${nombre} y me interesa el proyecto Aora Bella Vista. Estoy buscando un depto de ${partes.join(', ')}. ¿Pueden contactarme?`;
   }
   window.open('https://wa.me/5491162782243?text=' + encodeURIComponent(msg), '_blank');
 }
