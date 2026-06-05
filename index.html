@@ -4756,16 +4756,21 @@ function pvShowSection(id, btn) {
   document.getElementById('lotesPanel')?.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// Selección de opciones (botones tipo chip)
+// Selección de opciones — toggle multi-select salvo grupos de una sola opción
+const PV_SINGLE = ['pn-tipo','ao-amb','ao-etapa','ao-finan']; // solo estos son exclusivos
 function pvSelect(el, groupId) {
-  document.querySelectorAll(`#${groupId} .pv-option`).forEach(o => o.classList.remove('selected'));
-  el.classList.add('selected');
+  if (PV_SINGLE.includes(groupId)) {
+    document.querySelectorAll(`#${groupId} .pv-option`).forEach(o => o.classList.remove('selected'));
+    el.classList.add('selected');
+  } else {
+    el.classList.toggle('selected');
+  }
 }
 
-// Obtener selección de un grupo
+// Obtener selección de un grupo — devuelve string (una o varias opciones unidas con " y ")
 function pvGet(groupId) {
-  const sel = document.querySelector(`#${groupId} .pv-option.selected`);
-  return sel ? sel.textContent.trim() : null;
+  const sels = [...document.querySelectorAll(`#${groupId} .pv-option.selected`)].map(o => o.textContent.trim());
+  return sels.length ? sels.join(' y ') : null;
 }
 
 // Enviar formulario → abre WhatsApp
@@ -4777,10 +4782,10 @@ function pvEnviar(seccion) {
     const presup  = (document.getElementById('pn-presup')?.value || '').trim();
     const nombre  = (document.getElementById('pn-nombre')?.value || '').trim() || 'un interesado';
     let partes = [];
-    if (tipo)   partes.push(tipo === 'Dentro de barrio con portón' ? 'un lote dentro del barrio con portón' : 'un lote abierto sobre la calle');
+    if (tipo)   partes.push(tipo === 'Dentro de barrio con portón' ? 'dentro del barrio con portón' : 'lote abierto sobre la calle');
     if (ubic)   partes.push(`ubicación ${ubic.toLowerCase()}`);
-    if (presup) partes.push(`presupuesto de ${presup}`);
-    msg = `Hola Joaquín, soy ${nombre} y me interesa Pueblo Nuevo en Bella Vista. Estoy buscando ${partes.join(', ')}. ¿Podés contarme qué lotes hay disponibles?`;
+    if (presup) partes.push(`presupuesto ${presup}`);
+    msg = `Hola Joaquín, ¿cómo estás? Soy ${nombre} y me interesan los lotes de Pueblo Nuevo en Bella Vista.${partes.length ? ' Estoy buscando ' + partes.join(', ') + '.' : ''} ¿Podés contarme qué hay disponible?`;
   } else if (seccion === 'village') {
     const barrio  = pvGet('vl-barrio');
     const ubic    = pvGet('vl-ubic');
@@ -4790,7 +4795,7 @@ function pvEnviar(seccion) {
     let partes = [];
     if (ubic && ubic !== 'Sin preferencia') partes.push(`prefiero lote ${ubic.toLowerCase()}`);
     if (presup) partes.push(`mi presupuesto es ${presup}`);
-    msg = `Hola Joaquín, soy ${nombre} y me interesa ${barrioText} en Bella Vista.${partes.length ? ' ' + partes.join(', ') + '.' : ''} ¿Qué lotes tienen disponibles?`;
+    msg = `Hola Joaquín, ¿cómo estás? Soy ${nombre} y me interesan los lotes de ${barrioText} en Bella Vista.${partes.length ? ' ' + partes[0].charAt(0).toUpperCase() + partes[0].slice(1) + (partes.length > 1 ? ', ' + partes.slice(1).join(', ') : '') + '.' : ''} ¿Qué lotes tienen disponibles?`;
   } else if (seccion === 'aora') {
     const amb     = pvGet('ao-amb');
     const etapa   = pvGet('ao-etapa');
@@ -4802,7 +4807,7 @@ function pvEnviar(seccion) {
     if (etapa && etapa !== 'Cualquiera') partes.push(etapa);
     if (presup) partes.push(`presupuesto ${presup}`);
     if (finan)  partes.push(finan === 'Sí' ? 'necesito financiación' : 'pago al contado');
-    msg = `Hola Joaquín, soy ${nombre} y me interesa el proyecto Aora Bella Vista. Estoy buscando un depto de ${partes.join(', ')}. ¿Pueden contactarme?`;
+    msg = `Hola Joaquín, ¿cómo estás? Soy ${nombre} y me interesan los departamentos de Aora Bella Vista.${partes.length ? ' Busco ' + partes.join(', ') + '.' : ''} ¿Pueden contactarme?`;
   }
   window.open('https://wa.me/5491162782243?text=' + encodeURIComponent(msg), '_blank');
 }
