@@ -4630,8 +4630,8 @@ function renderStats() {
 }
 
 // ─── LOTES ───────────────────────────────────────────────────────────────────
-const LOTES_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTGmq1jAwgjbtVm3NtFtDmfTq_I_2akDdQ4DAjAHlOpV67dchEWYZG24pDc0RG6Zw/pub?output=csv';
-const LOTES_CSV_URL2 = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTGmq1jAwgjbtVm3NtFtDmfTq_I_2akDdQ4DAjAHlOpV67dchEWYZG24pDc0RG6Zw/pub?gid=1&output=csv';
+const LOTES_CSV_URL  = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTGmq1jAwgjbtVm3NtFtDmfTq_I_2akDdQ4DAjAHlOpV67dchEWYZG24pDc0RG6Zw/pub?output=csv';
+const LOTES_CSV_URL2 = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTGmq1jAwgjbtVm3NtFtDmfTq_I_2akDdQ4DAjAHlOpV67dchEWYZG24pDc0RG6Zw/pub?gid=647335066&single=true&output=csv';
 let lotesData = [];
 let lotesLoaded = false;
 
@@ -4734,13 +4734,61 @@ function parseLotesCSV(text) {
   return lotes;
 }
 
+// Parser para el formato Village (Barrio, Lote, N° contrato, Superficie M2, Precio USD, Ubicacion)
+// Primera columna vacía, primera fila = headers, barrio viene en cada fila de datos
+function parseVillageCSV(text) {
+  const lotes = [];
+  const lines = text.split('\n');
+  let headers = null;
+  const barrioMap = { 'v joven': 'Village Joven', 'v plaza': 'Village Plaza' };
+
+  for (const rawLine of lines) {
+    const cols = splitCSVLine(rawLine);
+    const c = cols.slice(1); // quitar col[0] vacío
+    if (c.every(v => !v)) continue;
+
+    const first = (c[0] || '').trim();
+    const second = (c[1] || '').trim();
+
+    // Fila de headers: cuando c[0]="Barrio" o c[1]="Lote"
+    if (/^barrio$/i.test(first) || (/^lote$/i.test(second) && !/^\d+$/.test(first))) {
+      headers = c.map(h => h.trim());
+      continue;
+    }
+
+    // Fila de datos: c[1] es número (el lote) y headers están cargados
+    if (headers && /^\d+$/.test(second)) {
+      const row = {};
+      headers.forEach((h, i) => { row[h] = (c[i] || '').replace(/^"|"$/g, '').trim(); });
+
+      const barrioRaw = (row['Barrio'] || first).toLowerCase();
+      const barrio = barrioMap[barrioRaw] || row['Barrio'] || first;
+      const lote = row['Lote'] || second;
+      const superficie = row['Superficie M2'] || row['Superficie'] || '';
+      const precioRaw = row['Precio USD'] || '';
+      const precio = precioRaw.replace(/[$,]/g, '').trim();
+      const ubicacion = row['Ubicacion'] || row['Ubicación'] || '';
+      const financia = (c[headers.length - 1] || '').trim(); // última col opcional "Financia"
+
+      if (lote) lotes.push({ barrio, lote, superficie, precio, ubicacion, tipo: financia || '' });
+    }
+  }
+  return lotes;
+}
+
 async function loadLotes(force = false) {
   if (lotesLoaded && !force) return;
   const content = document.getElementById('lotesContent');
   content.innerHTML = '<div style="text-align:center;padding:60px 0;color:var(--gray)">Cargando lotes…</div>';
   try {
-    const text = await fetch(LOTES_CSV_URL + '&t=' + Date.now()).then(r => r.text());
-    lotesData = parseLotesCSV(text);
+    const t = Date.now();
+    const [text1, text2] = await Promise.all([
+      fetch(LOTES_CSV_URL  + '&t=' + t).then(r => r.text()),
+      fetch(LOTES_CSV_URL2 + '&t=' + t).then(r => r.text())
+    ]);
+    const puebloNuevo = parseLotesCSV(text1);
+    const villages    = parseVillageCSV(text2);
+    lotesData = [...villages, ...puebloNuevo];
     lotesLoaded = true;
     // Actualizar opciones de barrio dinámicamente
     const barrios = [...new Set(lotesData.map(l => l.barrio))].sort();
@@ -4791,7 +4839,7 @@ function renderLotes(rows) {
     return;
   }
 
-  const BARRIOS = ['Village Joven', 'Village Plaza', 'Pueblo Nuevo'];
+  const BARRIOS = ['Village Joven', 'Village Plaza', 'Pueblo Nuevo · Remigio Lopez', 'Pueblo Nuevo · La Plata'];
   const groups = {};
   rows.forEach(l => {
     const b = l.barrio || 'Otros';
