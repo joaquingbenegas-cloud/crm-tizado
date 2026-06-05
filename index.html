@@ -777,6 +777,41 @@
     .pv-section-title { font-size: 22px; }
     .pv-subnav-btn { font-size: 12px; padding: 10px 4px; }
   }
+
+  /* ── HERO PÚBLICO ──────────────────────────────────────────────────────── */
+  .pub-hero-panel { display: none; flex-direction: column; background: var(--bg); }
+  .pub-hero-panel.visible { display: flex; }
+
+  .pub-hero-header { background: #0a0a0a; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
+  .pub-hero-logo { height: 32px; width: auto; filter: brightness(0) invert(1); }
+  .pub-hero-header-links { display: flex; gap: 12px; align-items: center; }
+  .pub-hero-header-links a { color: rgba(255,255,255,.65); font-size: 12px; text-decoration: none; transition: color .15s; }
+  .pub-hero-header-links a:hover { color: #fff; }
+
+  .pub-hero-body { background: #0a0a0a; padding: 36px 24px 44px; display: flex; align-items: center; gap: 32px; }
+  .pub-hero-photo { width: 130px; height: 130px; border-radius: 50%; object-fit: cover; object-position: center top; border: 3px solid #C8102E; flex-shrink: 0; }
+  .pub-hero-text { flex: 1; }
+  .pub-hero-greeting { font-size: 14px; color: rgba(255,255,255,.55); margin-bottom: 4px; }
+  .pub-hero-name { font-family: 'Playfair Display', serif; font-size: 32px; font-weight: 700; color: #fff; line-height: 1; margin-bottom: 6px; }
+  .pub-hero-title { font-size: 12px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: #C8102E; margin-bottom: 14px; }
+  .pub-hero-desc { font-size: 14px; color: rgba(255,255,255,.65); line-height: 1.6; margin-bottom: 22px; max-width: 380px; }
+  .pub-hero-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+  .pub-hero-wa { display: inline-flex; align-items: center; gap: 8px; background: #25d366; color: #fff; text-decoration: none; border-radius: 8px; padding: 10px 20px; font-size: 14px; font-weight: 700; transition: background .15s; }
+  .pub-hero-wa:hover { background: #1ebe5d; }
+  .pub-hero-ig { display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,.08); color: rgba(255,255,255,.8); text-decoration: none; border-radius: 8px; padding: 10px 16px; font-size: 14px; border: 1px solid rgba(255,255,255,.15); transition: background .15s; }
+  .pub-hero-ig:hover { background: rgba(255,255,255,.14); }
+
+  /* Formulario captación vendedor */
+  .pub-vender { padding: 36px 24px 60px; max-width: 680px; margin: 0 auto; }
+  .pub-vender-title { font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 700; margin: 0 0 8px; }
+  .pub-vender-sub { font-size: 14px; color: var(--gray); margin-bottom: 28px; line-height: 1.5; }
+
+  @media (max-width: 600px) {
+    .pub-hero-body { flex-direction: column; align-items: flex-start; gap: 20px; padding: 28px 16px 36px; }
+    .pub-hero-photo { width: 100px; height: 100px; }
+    .pub-hero-name { font-size: 26px; }
+    .pub-vender { padding: 28px 16px 60px; }
+  }
 </style>
 </head>
 <body>
@@ -811,6 +846,7 @@
 <div class="tab-nav">
   <button class="tab-btn active" id="tab-contactos" onclick="tryShowTab('contactos')" style="display:none">🔒 Contactos</button>
   <button class="tab-btn locked" id="tab-dashboard" onclick="tryShowTab('dashboard')">⚡ Home</button>
+  <button class="tab-btn" id="tab-hero" onclick="tryShowTab('hero')">🏠 Inicio</button>
   <button class="tab-btn" id="tab-lotes" onclick="tryShowTab('lotes')">🏘 Pueblo Vista</button>
   <button class="tab-btn" id="tab-propiedades" onclick="tryShowTab('propiedades')">🏠 Propiedades</button>
   <button class="tab-btn locked" id="tab-stats" onclick="tryShowTab('stats')">📊 Stats</button>
@@ -882,6 +918,81 @@
 </div>
 
 <!-- PANEL LOTES -->
+<!-- PANEL INICIO / HERO PÚBLICO -->
+<div class="pub-hero-panel" id="heroPanel">
+
+  <!-- Header negro con logo -->
+  <div class="pub-hero-header">
+    <img src="logo-tizado.png" alt="Tizado" class="pub-hero-logo">
+    <div class="pub-hero-header-links">
+      <a href="https://instagram.com/joaquin.tizadobv" target="_blank">@joaquin.tizadobv</a>
+      <a href="https://wa.me/5491162782243" target="_blank">+54 11 6278 2243</a>
+    </div>
+  </div>
+
+  <!-- Hero: foto + texto -->
+  <div class="pub-hero-body">
+    <img src="joaquin.png" alt="Joaquín" class="pub-hero-photo">
+    <div class="pub-hero-text">
+      <div class="pub-hero-greeting">Hola, soy</div>
+      <div class="pub-hero-name">Joaquín</div>
+      <div class="pub-hero-title">Asesor Inmobiliario · Tizado Bella Vista</div>
+      <p class="pub-hero-desc">Trabajo todos los días con propiedades en Bella Vista y alrededores. ¿Pensando en vender, comprar o invertir? Estoy para acompañarte en cada paso.</p>
+      <div class="pub-hero-actions">
+        <a href="https://wa.me/5491162782243" target="_blank" class="pub-hero-wa">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          Hablemos
+        </a>
+        <a href="https://instagram.com/joaquin.tizadobv" target="_blank" class="pub-hero-ig">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
+          Instagram
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Formulario captación vendedor -->
+  <div class="pub-vender">
+    <div style="display:inline-block;font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--red);border:1px solid rgba(200,16,46,.3);border-radius:20px;padding:3px 10px;margin-bottom:12px">Vendé con Tizado</div>
+    <h2 class="pub-vender-title">¿Querés vender tu propiedad?</h2>
+    <p class="pub-vender-sub">Contame qué tenés y te doy una opinión de valor sin compromiso.</p>
+
+    <div class="pv-form-group">
+      <div class="pv-form-label">¿Qué tipo de propiedad es?</div>
+      <div class="pv-options" id="vd-tipo">
+        <div class="pv-option" onclick="pvSelect(this,'vd-tipo')">Casa</div>
+        <div class="pv-option" onclick="pvSelect(this,'vd-tipo')">Lote / Terreno</div>
+        <div class="pv-option" onclick="pvSelect(this,'vd-tipo')">Departamento</div>
+        <div class="pv-option" onclick="pvSelect(this,'vd-tipo')">Local / Oficina</div>
+      </div>
+    </div>
+
+    <div class="pv-form-group">
+      <div class="pv-form-label">¿En qué zona está?</div>
+      <input class="pv-name-input" id="vd-zona" type="text" placeholder="Ej: Bella Vista, cerca del golf">
+    </div>
+
+    <div class="pv-form-group">
+      <div class="pv-form-label">¿Tenés un precio en mente?</div>
+      <div class="pv-options" id="vd-precio">
+        <div class="pv-option" onclick="pvSelect(this,'vd-precio')">Sí, tengo un precio</div>
+        <div class="pv-option" onclick="pvSelect(this,'vd-precio')">No, quiero que me asesores</div>
+      </div>
+    </div>
+
+    <div class="pv-form-group">
+      <div class="pv-form-label">Tu nombre</div>
+      <input class="pv-name-input" id="vd-nombre" type="text" placeholder="Ej: Martín López">
+    </div>
+
+    <button class="pv-submit" onclick="pvEnviarVenta()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      Quiero vender
+    </button>
+  </div>
+
+</div><!-- /heroPanel -->
+
 <!-- PANEL PUEBLO VISTA -->
 <div class="pv-panel" id="lotesPanel">
 
@@ -3569,7 +3680,8 @@ function showTab(tab) {
   const isDashboard = tab === 'dashboard';
   const isCierres = tab === 'cierres';
   const isLotes = tab === 'lotes';
-  ['tab-contactos','tab-propiedades','tab-stats','tab-pipeline','tab-kpis','tab-ingresos','tab-dashboard','tab-cierres','tab-lotes'].forEach(id => {
+  const isHero  = tab === 'hero';
+  ['tab-contactos','tab-propiedades','tab-stats','tab-pipeline','tab-kpis','tab-ingresos','tab-dashboard','tab-cierres','tab-lotes','tab-hero'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.remove('active');
   });
@@ -3589,6 +3701,7 @@ function showTab(tab) {
   document.getElementById('dashboardPanel').classList.toggle('visible', isDashboard);
   document.getElementById('cierresPanel').classList.toggle('visible', isCierres);
   document.getElementById('lotesPanel').classList.toggle('visible', isLotes);
+  document.getElementById('heroPanel').classList.toggle('visible', isHero);
   if (isProps && properties.length === 0) fetchProperties();
   if (isStats) renderStats();
   if (isPipeline) renderPipeline();
@@ -3980,7 +4093,7 @@ function overdueHtml() {
 }
 
 function tryShowTab(tab) {
-  if (tab === 'propiedades' || tab === 'lotes') { showTab(tab); return; }
+  if (tab === 'propiedades' || tab === 'lotes' || tab === 'hero') { showTab(tab); return; }
   if (isUnlocked()) { showTab(tab); return; }
   document.getElementById('pinOverlay').classList.add('visible');
   document.getElementById('pinInput').value = '';
@@ -4757,7 +4870,7 @@ function pvShowSection(id, btn) {
 }
 
 // Selección de opciones — toggle multi-select salvo grupos de una sola opción
-const PV_SINGLE = ['pn-tipo','ao-amb','ao-etapa','ao-finan']; // solo estos son exclusivos
+const PV_SINGLE = ['pn-tipo','ao-amb','ao-etapa','ao-finan','vd-tipo','vd-precio']; // solo estos son exclusivos
 function pvSelect(el, groupId) {
   if (PV_SINGLE.includes(groupId)) {
     document.querySelectorAll(`#${groupId} .pv-option`).forEach(o => o.classList.remove('selected'));
@@ -4813,6 +4926,16 @@ function pvEnviar(seccion) {
 }
 
 // Manejar ancla al cargar la sección
+function pvEnviarVenta() {
+  const tipo   = pvGet('vd-tipo')  || '(sin especificar)';
+  const zona   = (document.getElementById('vd-zona')?.value || '').trim() || '(sin especificar)';
+  const precio = pvGet('vd-precio') || '(sin especificar)';
+  const nombre = (document.getElementById('vd-nombre')?.value || '').trim() || 'un interesado';
+  const precioTexto = precio === 'Sí, tengo un precio' ? 'tengo un precio en mente' : 'quiero asesoramiento de precio';
+  const msg = `Hola Joaquín, ¿cómo estás? Soy ${nombre} y quiero vender mi propiedad. Tengo: ${tipo.toLowerCase()}, en ${zona}, ${precioTexto}. ¿Podés darme una opinión de valor?`;
+  window.open('https://wa.me/5491162782243?text=' + encodeURIComponent(msg), '_blank');
+}
+
 function pvHandleHash() {
   const hash = window.location.hash.replace('#', '');
   const sections = ['pueblo-nuevo', 'village', 'aora'];
@@ -4876,8 +4999,8 @@ if (isUnlocked()) {
   updateTabBadges();
   showFollowUpModal();
 } else {
-  showTab('propiedades');
-  document.getElementById('tab-propiedades').classList.add('active');
+  showTab('hero');
+  document.getElementById('tab-hero').classList.add('active');
   document.getElementById('tab-contactos').classList.remove('active');
   document.getElementById('tab-contactos').classList.add('locked');
 }
