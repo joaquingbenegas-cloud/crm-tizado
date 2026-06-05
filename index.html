@@ -782,30 +782,30 @@
   .pub-hero-panel { display: none; flex-direction: column; background: var(--bg); }
   .pub-hero-panel.visible { display: flex; }
 
-  .pub-hero-header { background: #0a0a0a; padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; }
-  .pub-hero-logo { height: 28px; width: auto; filter: brightness(0) invert(1); }
-  .pub-hero-header-links { display: flex; gap: 14px; align-items: center; }
-  .pub-hero-header-links a { color: #fff; font-size: 13px; font-weight: 600; text-decoration: none; transition: opacity .15s; }
-  .pub-hero-header-links a:hover { opacity: .75; }
+  .pub-hero-header { background: #fff; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #e8e8e8; }
+  .pub-hero-logo { height: 32px; width: auto; }
+  .pub-hero-header-links { display: flex; gap: 16px; align-items: center; }
+  .pub-hero-header-links a { color: #1a1a1a; font-size: 13px; font-weight: 600; text-decoration: none; transition: opacity .15s; }
+  .pub-hero-header-links a:hover { opacity: .6; }
   .pub-hero-header-links .header-phone { color: #25d366; }
 
-  .pub-hero-body { background: #0a0a0a; padding: 24px 20px 28px; display: flex; align-items: center; gap: 20px; }
-  .pub-hero-photo { width: 110px; height: 110px; border-radius: 50%; object-fit: cover; object-position: center center; border: 3px solid #C8102E; flex-shrink: 0; }
+  .pub-hero-body { background: #f7f8fa; padding: 28px 20px 32px; display: flex; align-items: center; gap: 22px; }
+  .pub-hero-photo { width: 110px; height: 110px; border-radius: 50%; object-fit: cover; object-position: center center; border: 3px solid #1a3a6b; flex-shrink: 0; box-shadow: 0 4px 16px rgba(0,0,0,.12); }
   .pub-hero-text { flex: 1; }
-  .pub-hero-greeting { font-size: 13px; color: rgba(255,255,255,.55); margin-bottom: 2px; }
-  .pub-hero-name { font-family: 'Playfair Display', serif; font-size: 30px; font-weight: 700; color: #fff; line-height: 1; margin-bottom: 5px; }
-  .pub-hero-title { font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: #C8102E; margin-bottom: 12px; }
-  .pub-hero-desc { font-size: 14px; color: rgba(255,255,255,.7); line-height: 1.55; margin-bottom: 18px; max-width: 380px; }
+  .pub-hero-greeting { font-size: 13px; color: #888; margin-bottom: 2px; }
+  .pub-hero-name { font-family: 'Playfair Display', serif; font-size: 30px; font-weight: 700; color: #111; line-height: 1; margin-bottom: 5px; }
+  .pub-hero-title { font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: #1a3a6b; margin-bottom: 12px; }
+  .pub-hero-desc { font-size: 14px; color: #555; line-height: 1.6; margin-bottom: 18px; max-width: 380px; }
   .pub-hero-actions { display: flex; gap: 10px; flex-wrap: wrap; }
   .pub-hero-wa { display: inline-flex; align-items: center; gap: 8px; background: #25d366; color: #fff; text-decoration: none; border-radius: 8px; padding: 10px 20px; font-size: 14px; font-weight: 700; transition: background .15s; }
   .pub-hero-wa:hover { background: #1ebe5d; }
-  .pub-hero-ig { display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,.08); color: rgba(255,255,255,.8); text-decoration: none; border-radius: 8px; padding: 10px 16px; font-size: 14px; border: 1px solid rgba(255,255,255,.15); transition: background .15s; }
-  .pub-hero-ig:hover { background: rgba(255,255,255,.14); }
+  .pub-hero-ig { display: inline-flex; align-items: center; gap: 8px; background: #fff; color: #333; text-decoration: none; border-radius: 8px; padding: 10px 16px; font-size: 14px; border: 1px solid #ddd; transition: background .15s; }
+  .pub-hero-ig:hover { background: #f0f0f0; }
 
   /* Formulario captación vendedor */
-  .pub-vender { padding: 36px 24px 60px; max-width: 680px; margin: 0 auto; }
-  .pub-vender-title { font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 700; margin: 0 0 8px; }
-  .pub-vender-sub { font-size: 14px; color: var(--gray); margin-bottom: 28px; line-height: 1.5; }
+  .pub-vender { padding: 36px 24px 60px; max-width: 680px; margin: 0 auto; background: #fff; }
+  .pub-vender-title { font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 700; margin: 0 0 8px; color: #111; }
+  .pub-vender-sub { font-size: 14px; color: #666; margin-bottom: 28px; line-height: 1.5; }
 
   @media (max-width: 600px) {
     .pub-hero-body { padding: 20px 16px 24px; gap: 16px; }
@@ -923,9 +923,9 @@
 <!-- PANEL INICIO / HERO PÚBLICO -->
 <div class="pub-hero-panel" id="heroPanel">
 
-  <!-- Header negro con logo -->
+  <!-- Header con logo -->
   <div class="pub-hero-header">
-    <img src="logo-tizado.png" alt="Tizado" class="pub-hero-logo">
+    <img src="logo-tizado.png" alt="Tizado" class="pub-hero-logo" ondblclick="tryShowTab('contactos')" title="">
     <div class="pub-hero-header-links">
       <a href="https://instagram.com/joaquin.tizadobv" target="_blank">@joaquin.tizadobv</a>
       <a href="https://wa.me/5491162782243" target="_blank" class="header-phone">+54 11 6278 2243</a>
@@ -3705,6 +3705,9 @@ function showTab(tab) {
   document.getElementById('cierresPanel').classList.toggle('visible', isCierres);
   document.getElementById('lotesPanel').classList.toggle('visible', isLotes);
   document.getElementById('heroPanel').classList.toggle('visible', isHero);
+  const isPublic = isHero || isLotes;
+  document.querySelector('header').style.display = isPublic ? 'none' : 'flex';
+  document.querySelector('.tab-nav').style.display = isPublic ? 'none' : 'flex';
   if (isProps && properties.length === 0) fetchProperties();
   if (isStats) renderStats();
   if (isPipeline) renderPipeline();
