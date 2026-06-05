@@ -4635,25 +4635,103 @@ const LOTES_CSV_URL2 = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTGmq1jA
 let lotesData = [];
 let lotesLoaded = false;
 
-function parseCSV(text) {
-  const lines = text.split('\n').filter(l => l.trim());
-  if (!lines.length) return [];
-  const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
-  return lines.slice(1).map(line => {
-    // Handle quoted fields with commas
-    const cols = [];
-    let cur = '', inQ = false;
-    for (let i = 0; i < line.length; i++) {
-      const ch = line[i];
-      if (ch === '"') { inQ = !inQ; }
-      else if (ch === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
-      else { cur += ch; }
+// Parsea una línea CSV respetando campos entre comillas
+function splitCSVLine(line) {
+  const cols = [];
+  let cur = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') { inQ = !inQ; }
+    else if (ch === ',' && !inQ) { cols.push(cur.replace(/^"|"$/g, '').trim()); cur = ''; }
+    else { cur += ch; }
+  }
+  cols.push(cur.replace(/^"|"$/g, '').trim());
+  return cols;
+}
+
+// Parsea el formato real del CSV de lotes:
+// - Primera columna siempre vacía (offset)
+// - Filas de sección: col[1] contiene nombre del barrio (contiene "–" o "TIZADO" o "VILLAGE" etc.)
+// - Filas de encabezado: col[1] = "LOTE" o "Lote" o "Barrio"
+// - Filas de datos: col[1] es un número (el número de lote)
+// - Filas vacías: separadoras
+function parseLotesCSV(text) {
+  const lines = text.split('\n');
+  const lotes = [];
+  let currentBarrio = '';
+  let headers = null;   // array de nombres de columna (sin el col[0] vacío)
+  let headerType = null; // 'pueblo_nuevo' | 'village'
+
+  for (const rawLine of lines) {
+    const cols = splitCSVLine(rawLine);
+    // col[0] siempre vacío; datos desde col[1]
+    const c = cols.slice(1); // c[0] = primera col real
+
+    // Fila completamente vacía → reset de contexto de encabezado
+    if (c.every(v => !v)) { headers = null; headerType = null; continue; }
+
+    const first = (c[0] || '').trim();
+    if (!first) continue;
+
+    // ¿Es una fila de título de sección? (no es número, no es "LOTE")
+    const isNumber = /^\d+$/.test(first);
+    const isLoteHeader = /^LOTE$/i.test(first) || /^Barrio$/i.test(first);
+
+    if (!isNumber && !isLoteHeader) {
+      // Puede ser título de sección O encabezado de columnas
+      // Si contiene múltiples palabras en mayúscula o guiones → es título
+      const looksLikeTitle = /[–—-]/.test(first) || /^[A-ZÁÉÍÓÚÑ\s]+$/.test(first);
+      if (looksLikeTitle) {
+        // Extraer nombre del barrio del título
+        // "PLAN COMERCIAL – TIZADO – PUEBLO NUEVO – REMIGIO LOPEZ" → "Pueblo Nuevo · Remigio Lopez"
+        // "TIZADO – PUEBLO NUEVO – LA PLATA" → "Pueblo Nuevo · La Plata"
+        // "VILLAGE JOVEN" → "Village Joven"
+        const clean = first.replace(/PLAN COMERCIAL\s*[–—-]\s*/i, '').replace(/TIZADO\s*[–—-]\s*/i, '').trim();
+        // Capitalize
+        currentBarrio = clean.split(/\s*[–—-]\s*/).map(p =>
+          p.trim().replace(/\w\S*/g, w => w[0].toUpperCase() + w.slice(1).toLowerCase())
+        ).join(' · ');
+        headers = null; headerType = null;
+        continue;
+      }
     }
-    cols.push(cur.trim());
-    const row = {};
-    headers.forEach((h, i) => { row[h] = (cols[i] || '').replace(/^"|"$/g, '').trim(); });
-    return row;
-  });
+
+    // ¿Es fila de encabezado de columnas?
+    if (isLoteHeader) {
+      headers = c;
+      // Detectar tipo por las columnas
+      headerType = headers.some(h => /precio final/i.test(h)) ? 'pueblo_nuevo' : 'village';
+      continue;
+    }
+
+    // ¿Es fila de datos (primer campo es número)?
+    if (isNumber && headers) {
+      const row = {};
+      headers.forEach((h, i) => { row[h.trim()] = (c[i] || '').trim(); });
+
+      let lote, superficie, precio, ubicacion, tipo;
+      if (headerType === 'pueblo_nuevo') {
+        lote       = row['LOTE'] || row['Lote'] || first;
+        superficie = row['Superficie'] || '';
+        precio     = row['Precio Final'] || '';
+        ubicacion  = row['Ubicación'] || row['Ubicacion'] || '';
+        tipo       = row['Tipo'] || '';
+      } else {
+        lote       = row['Lote'] || row['lote'] || first;
+        superficie = row['Superficie M2'] || row['Superficie'] || '';
+        precio     = row['Precio USD'] || '';
+        ubicacion  = row['Ubicacion'] || row['Ubicación'] || '';
+        tipo       = '';
+      }
+
+      if (lote) {
+        // Limpiar precio: "$82,365.00" → "82365"
+        const precioNum = precio.replace(/[$,]/g, '').trim();
+        lotes.push({ barrio: currentBarrio || 'Pueblo Nuevo', lote, superficie, precio: precioNum, ubicacion, tipo });
+      }
+    }
+  }
+  return lotes;
 }
 
 async function loadLotes(force = false) {
@@ -4661,38 +4739,16 @@ async function loadLotes(force = false) {
   const content = document.getElementById('lotesContent');
   content.innerHTML = '<div style="text-align:center;padding:60px 0;color:var(--gray)">Cargando lotes…</div>';
   try {
-    // Fetch both sheets in parallel
-    const [r1, r2] = await Promise.all([
-      fetch(LOTES_CSV_URL + '&t=' + Date.now()).then(r => r.text()),
-      fetch(LOTES_CSV_URL2 + '&t=' + Date.now()).then(r => r.text()).catch(() => '')
-    ]);
-    const rows1 = parseCSV(r1);
-    const rows2 = r2 ? parseCSV(r2) : [];
-
-    // Normalize sheet 1 (Village Joven / Village Plaza): Barrio, Lote, N° contrato, Superficie M2, Precio USD, Ubicacion
-    const sheet1 = rows1.filter(r => r['Lote'] || r['lote']).map(r => ({
-      barrio:      r['Barrio'] || r['barrio'] || '',
-      lote:        r['Lote'] || r['lote'] || '',
-      superficie:  r['Superficie M2'] || r['Superficie'] || r['superficie'] || '',
-      precio:      r['Precio USD'] || r['precio'] || '',
-      ubicacion:   (r['Ubicacion'] || r['Ubicación'] || r['ubicacion'] || '').trim(),
-      contrato:    r['N° contrato'] || '',
-      _sheet: 1
-    }));
-
-    // Normalize sheet 2 (Pueblo Nuevo): LOTE, Superficie, Tipo, Precio Final, Ubicación, Boleto, Posesion
-    const sheet2 = rows2.filter(r => r['LOTE'] || r['Lote']).map(r => ({
-      barrio:      'Pueblo Nuevo',
-      lote:        r['LOTE'] || r['Lote'] || '',
-      superficie:  r['Superficie'] || '',
-      precio:      r['Precio Final'] || r['Precio USD'] || '',
-      ubicacion:   (r['Ubicación'] || r['Ubicacion'] || '').trim(),
-      tipo:        r['Tipo'] || '',
-      _sheet: 2
-    }));
-
-    lotesData = [...sheet1, ...sheet2].filter(l => l.lote);
+    const text = await fetch(LOTES_CSV_URL + '&t=' + Date.now()).then(r => r.text());
+    lotesData = parseLotesCSV(text);
     lotesLoaded = true;
+    // Actualizar opciones de barrio dinámicamente
+    const barrios = [...new Set(lotesData.map(l => l.barrio))].sort();
+    const sel = document.getElementById('lotesFiltroBarrio');
+    if (sel) {
+      sel.innerHTML = '<option value="">Todos los barrios</option>' +
+        barrios.map(b => `<option value="${b}">${b}</option>`).join('');
+    }
     filterLotes();
   } catch (e) {
     content.innerHTML = `<div style="text-align:center;padding:60px 0;color:var(--red)">Error al cargar lotes: ${e.message}<br><button class="btn btn-ghost btn-sm" onclick="loadLotes(true)" style="margin-top:12px">Reintentar</button></div>`;
