@@ -813,6 +813,7 @@
           <option value="urgencia">Urgencia</option>
         </select>
         <span class="count-badge" id="countBadge"></span>
+        <button class="btn btn-ghost btn-sm" onclick="exportContactsCSV()" style="margin-left:auto;font-size:12px" title="Exportar contactos a CSV">⬇ CSV</button>
       </div>
     </div>
     <div id="followUpBanner"></div>
@@ -1070,6 +1071,7 @@
   <div class="opp-side-actions">
     <button class="btn btn-ghost btn-sm" onclick="openOppModal(oppSideContactId)">+ Nueva oportunidad</button>
     <button class="btn btn-wa btn-sm" id="oppSideWA" onclick="openOppWA()">💬 WhatsApp</button>
+    <button class="btn btn-ghost btn-sm" id="oppSideShareBtn" onclick="shareContactWA(oppSideContactId)" title="Compartir ficha por WhatsApp">📤 Compartir</button>
     <button class="btn btn-ghost btn-sm" id="oppSideArchiveBtn" style="margin-left:auto;color:var(--gray)" onclick="toggleArchiveContact(oppSideContactId)">Archivar</button>
   </div>
 </div>
@@ -1880,6 +1882,99 @@ function sendFollowUpWA(contactId) {
   const accion = c.nextAction || 'seguimiento';
   const msg = `Hola ${nombre}! Te escribo de Tizado Bella Vista. ${accion}. Quedamos en contacto, saludos 🏠`;
   window.open(`https://wa.me/${c.tel.replace(/\D/g,'')}?text=${encodeURIComponent(msg)}`, '_blank');
+}
+
+// ─── COMPARTIR FICHA WA ──────────────────────────────────────────────────────
+function shareContactWA(contactId) {
+  const c = contacts.find(x => x.id === contactId);
+  if (!c) return;
+  const myOpps = opps.filter(o => o.contactId === contactId && o.etapa !== 'Negociación Caída');
+  let lines = [];
+  lines.push(`📇 *${c.nombre}*`);
+  if (c.interesEn) lines.push(`Interés: ${c.interesEn}`);
+  if (c.tel)       lines.push(`📞 ${c.tel}`);
+  if (c.presupuesto) lines.push(`💰 Presupuesto: ${c.presupuesto}`);
+  if (c.urgencia)  lines.push(`Urgencia: ${c.urgencia}`);
+  if (c.desc)      lines.push(`📝 ${c.desc}`);
+  if (myOpps.length) {
+    lines.push('');
+    lines.push(`🏗 *Oportunidades activas:*`);
+    myOpps.forEach(o => {
+      let oppLine = `• ${o.etapa}`;
+      if (o.prop) oppLine += ` — ${o.prop}`;
+      if (o.valor) oppLine += ` (${o.tipo === 'Alquiler' ? '$' : 'USD'} ${Number(o.valor).toLocaleString('es-AR')})`;
+      lines.push(oppLine);
+    });
+  }
+  if (c.nextAction) {
+    lines.push('');
+    lines.push(`📌 Próximo: ${c.nextAction}${c.nextActionDate ? ' (' + formatDate(c.nextActionDate) + ')' : ''}`);
+  }
+  lines.push('');
+  lines.push(`_CRM Tizado Bella Vista_`);
+  const msg = lines.join('\n');
+  window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+}
+
+// ─── EXPORTAR CSV ────────────────────────────────────────────────────────────
+function exportContactsCSV() {
+  const activeFilter = document.querySelector('.filter-chip.active')?.dataset.filter || 'all';
+  const search = (document.getElementById('searchInput')?.value || '').toLowerCase();
+  let rows = contacts.filter(c => !c.archived);
+
+  // apply same filters as renderList
+  if (activeFilter && activeFilter !== 'all') {
+    if (activeFilter === 'today') {
+      rows = rows.filter(c => c.nextActionDate === TODAY);
+    } else if (activeFilter === 'notable') {
+      rows = rows.filter(c => c.notable);
+    } else if (activeFilter === 'overdue') {
+      rows = rows.filter(c => c.nextActionDate && c.nextActionDate < TODAY);
+    } else if (activeFilter === 'sintel') {
+      rows = rows.filter(c => !c.tel);
+    } else if (activeFilter === 'stale') {
+      const days = parseInt(document.getElementById('staleDaysSelect')?.value || '30');
+      const cutoff = new Date(TODAY); cutoff.setDate(cutoff.getDate() - days);
+      rows = rows.filter(c => {
+        const last = c.lastContact || c.createdAt || '2000-01-01';
+        return new Date(last) < cutoff;
+      });
+    } else if (['ALTA','MEDIA','BAJA'].includes(activeFilter)) {
+      rows = rows.filter(c => c.urgencia === activeFilter);
+    } else {
+      rows = rows.filter(c => c.interesEn === activeFilter);
+    }
+  }
+  if (search) {
+    rows = rows.filter(c =>
+      (c.nombre||'').toLowerCase().includes(search) ||
+      (c.tel||'').includes(search) ||
+      (c.desc||'').toLowerCase().includes(search)
+    );
+  }
+
+  const headers = ['Nombre','Teléfono','Interés','Urgencia','Presupuesto','Descripción','Próximo seguimiento','Fecha seguimiento','Último contacto','Creado'];
+  const escape = v => {
+    if (v == null) return '';
+    const s = String(v).replace(/"/g, '""');
+    return /[,"\n]/.test(s) ? `"${s}"` : s;
+  };
+  const csvRows = [headers.join(',')];
+  rows.forEach(c => {
+    csvRows.push([
+      c.nombre, c.tel, c.interesEn, c.urgencia, c.presupuesto, c.desc,
+      c.nextAction, c.nextActionDate, c.lastContact, c.createdAt
+    ].map(escape).join(','));
+  });
+
+  const blob = new Blob(['﻿' + csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `contactos-tizado-${TODAY}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast(`${rows.length} contactos exportados`, 'ok');
 }
 
 // ─── KPIs RENDER ─────────────────────────────────────────────────────────────
