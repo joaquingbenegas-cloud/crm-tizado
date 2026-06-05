@@ -3669,23 +3669,103 @@ function renderCierres() {
 }
 
 function showFollowUpModal() {
+  // Solo mostrar una vez por día
+  const lastShown = sessionStorage.getItem('crm_daily_shown');
+  if (lastShown === TODAY) return;
+  sessionStorage.setItem('crm_daily_shown', TODAY);
+
+  // ── Métricas ──────────────────────────────────────────────────────────────
   const due = contacts.filter(c => c.nextAction && c.nextActionDate && c.nextActionDate <= TODAY && !c.archived)
     .sort((a,b) => (a.nextActionDate||'').localeCompare(b.nextActionDate||''));
-  if (!due.length) return;
+  const todayOnly  = due.filter(c => c.nextActionDate === TODAY);
+  const overdue    = due.filter(c => c.nextActionDate < TODAY);
+
+  // Opps sin movimiento esta semana (más de 7 días sin cambio de etapa)
+  const weekAgo = new Date(TODAY); weekAgo.setDate(weekAgo.getDate() - 7);
+  const weekAgoStr = weekAgo.toISOString().slice(0,10);
+  const staleOpps = opps.filter(o =>
+    !['Cierre','Negociación Caída'].includes(o.etapa) &&
+    (o.etapaChangedAt || o.createdAt || '2000-01-01') < weekAgoStr
+  );
+
+  // Progreso al objetivo mensual
+  const thisMonth = TODAY.slice(0,7);
+  const ingresosMes = ingresos.filter(i => (i.fecha||'').startsWith(thisMonth))
+    .reduce((s,i) => s + (parseFloat(i.monto)||0), 0);
+  const obj = getObjMensual();
+  const pct = Math.min(100, Math.round(ingresosMes / obj * 100));
+  const falta = Math.max(0, obj - ingresosMes);
+
+  // ── Render ────────────────────────────────────────────────────────────────
+  const dayNames = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+  const dayName  = dayNames[new Date(TODAY + 'T12:00:00').getDay()];
+  const [yy,mm,dd] = TODAY.split('-');
+  const monthNames = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const dateStr = `${parseInt(dd)} de ${monthNames[parseInt(mm)-1]}`;
+
   const body = document.getElementById('followUpModalBody');
-  body.innerHTML = due.map(c => {
-    const isOverdue = c.nextActionDate < TODAY;
-    return `<div style="background:var(--bg3);border-radius:8px;padding:10px 14px;cursor:pointer;border:1px solid ${isOverdue?'rgba(200,16,46,.3)':'var(--border)'}"
-      onclick="document.getElementById('followUpModal').classList.remove('open');openContactSide('${c.id}')">
-      <div style="display:flex;align-items:center;gap:8px">
-        <span style="font-size:13px">${isOverdue?'⚠️':'📌'}</span>
-        <strong style="font-size:13px">${esc(c.nombre)}</strong>
-        <span style="font-size:11px;color:var(--gray);margin-left:auto">${formatDate(c.nextActionDate)}</span>
+
+  // Cards de métricas
+  const metricColor = (n, warn, bad) => n >= bad ? 'var(--red)' : n >= warn ? 'var(--yellow)' : 'var(--green)';
+
+  body.innerHTML = `
+    <div style="text-align:center;margin-bottom:16px">
+      <div style="font-size:13px;color:var(--gray);text-transform:capitalize">${dayName}, ${dateStr}</div>
+    </div>
+
+    <!-- 3 métricas -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:18px">
+      <div style="background:var(--bg3);border-radius:10px;padding:12px 10px;text-align:center;border:1px solid var(--border)">
+        <div style="font-size:26px;font-weight:700;color:${metricColor(due.length,1,3)}">${due.length}</div>
+        <div style="font-size:11px;color:var(--gray);margin-top:3px;line-height:1.3">seguimientos<br>pendientes</div>
+        ${overdue.length ? `<div style="font-size:10px;color:var(--red);margin-top:4px">${overdue.length} vencido${overdue.length>1?'s':''}</div>` : ''}
       </div>
-      <div style="font-size:12px;color:var(--gray);margin-top:3px;padding-left:22px">→ ${esc(c.nextAction)}</div>
-    </div>`;
-  }).join('');
+      <div style="background:var(--bg3);border-radius:10px;padding:12px 10px;text-align:center;border:1px solid var(--border)">
+        <div style="font-size:26px;font-weight:700;color:${metricColor(staleOpps.length,2,5)}">${staleOpps.length}</div>
+        <div style="font-size:11px;color:var(--gray);margin-top:3px;line-height:1.3">opps sin<br>movimiento</div>
+        <div style="font-size:10px;color:var(--gray2);margin-top:4px">+7 días</div>
+      </div>
+      <div style="background:var(--bg3);border-radius:10px;padding:12px 10px;text-align:center;border:1px solid var(--border)">
+        <div style="font-size:26px;font-weight:700;color:${pct>=100?'var(--green)':pct>=60?'var(--yellow)':'var(--red)'}">${pct}%</div>
+        <div style="font-size:11px;color:var(--gray);margin-top:3px;line-height:1.3">objetivo<br>del mes</div>
+        ${pct < 100 ? `<div style="font-size:10px;color:var(--gray2);margin-top:4px">falta $${falta.toLocaleString('es-AR')}</div>` : `<div style="font-size:10px;color:var(--green);margin-top:4px">¡Cumplido! 🎉</div>`}
+      </div>
+    </div>
+
+    <!-- Barra de progreso objetivo -->
+    <div style="margin-bottom:18px">
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--gray);margin-bottom:5px">
+        <span>Ingresos del mes</span>
+        <span>$${ingresosMes.toLocaleString('es-AR')} / $${obj.toLocaleString('es-AR')}</span>
+      </div>
+      <div style="background:var(--bg3);border-radius:20px;height:8px;overflow:hidden">
+        <div style="height:100%;width:${pct}%;background:${pct>=100?'var(--green)':pct>=60?'var(--yellow)':'var(--red)'};border-radius:20px;transition:width .6s"></div>
+      </div>
+    </div>
+
+    ${due.length ? `
+    <!-- Lista de seguimientos -->
+    <div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--gray);margin-bottom:8px">
+      Seguimientos de hoy${todayOnly.length !== due.length ? ` + vencidos` : ''}
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto">
+      ${due.map(c => {
+        const isOv = c.nextActionDate < TODAY;
+        return `<div style="background:var(--bg3);border-radius:8px;padding:9px 12px;cursor:pointer;border:1px solid ${isOv?'rgba(200,16,46,.3)':'var(--border)'};display:flex;align-items:center;gap:8px"
+          onclick="document.getElementById('followUpModal').classList.remove('open');openContactSide('${c.id}')">
+          <span>${isOv?'⚠️':'📌'}</span>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(c.nombre)}</div>
+            <div style="font-size:11px;color:var(--gray);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">→ ${esc(c.nextAction)}</div>
+          </div>
+          <span style="font-size:11px;color:${isOv?'var(--red)':'var(--gray)'};flex-shrink:0">${isOv ? 'vencido' : 'hoy'}</span>
+        </div>`;
+      }).join('')}
+    </div>` : `<div style="text-align:center;color:var(--green);font-size:13px;padding:8px 0">✓ Sin seguimientos pendientes hoy</div>`}
+  `;
+
   document.getElementById('followUpModal').classList.add('open');
+  document.querySelector('#followUpModal .modal-header h2').textContent = '☀️ Resumen del día';
 }
 
 function overdueHtml() {
