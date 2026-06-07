@@ -1192,31 +1192,13 @@
     </ul>
 
     <div class="pv-form-group">
-      <div class="pv-form-label">¿Qué tipo de propiedad es?</div>
-      <div class="pv-options" id="vd-tipo">
-        <div class="pv-option" onclick="pvSelect(this,'vd-tipo')">Casa</div>
-        <div class="pv-option" onclick="pvSelect(this,'vd-tipo')">Lote / Terreno</div>
-        <div class="pv-option" onclick="pvSelect(this,'vd-tipo')">Departamento</div>
-        <div class="pv-option" onclick="pvSelect(this,'vd-tipo')">Local / Oficina</div>
-      </div>
+      <div class="pv-form-label">¿Qué propiedad querés vender?</div>
+      <input class="pv-name-input" id="vd-propiedad" type="text">
     </div>
 
     <div class="pv-form-group">
-      <div class="pv-form-label">¿En qué zona está?</div>
-      <input class="pv-name-input" id="vd-zona" type="text" placeholder="Ej: Bella Vista, cerca del golf">
-    </div>
-
-    <div class="pv-form-group">
-      <div class="pv-form-label">¿Tenés un precio en mente?</div>
-      <div class="pv-options" id="vd-precio">
-        <div class="pv-option" onclick="pvSelect(this,'vd-precio')">Sí, tengo un precio</div>
-        <div class="pv-option" onclick="pvSelect(this,'vd-precio')">No, quiero que me asesores</div>
-      </div>
-    </div>
-
-    <div class="pv-form-group">
-      <div class="pv-form-label">Tu nombre</div>
-      <input class="pv-name-input" id="vd-nombre" type="text" placeholder="Ej: Martín López">
+      <div class="pv-form-label">Nombre</div>
+      <input class="pv-name-input" id="vd-nombre" type="text">
     </div>
 
     <button class="pv-submit" onclick="pvEnviarVenta()">
@@ -1280,12 +1262,12 @@
 
       <div class="pv-form-group">
         <div class="pv-form-label">¿Cuál es tu presupuesto?</div>
-        <input class="pv-name-input" id="pn-presup" type="text" placeholder="Ej: USD 70.000">
+        <input class="pv-name-input" id="pn-presup" type="text">
       </div>
 
       <div class="pv-form-group">
         <div class="pv-form-label">Tu nombre</div>
-        <input class="pv-name-input" id="pn-nombre" type="text" placeholder="Ej: María González">
+        <input class="pv-name-input" id="pn-nombre" type="text">
       </div>
 
       <button class="pv-submit" onclick="pvEnviar('pueblo-nuevo')">
@@ -1322,12 +1304,12 @@
 
       <div class="pv-form-group">
         <div class="pv-form-label">¿Cuál es tu presupuesto?</div>
-        <input class="pv-name-input" id="vl-presup" type="text" placeholder="Ej: USD 120.000">
+        <input class="pv-name-input" id="vl-presup" type="text">
       </div>
 
       <div class="pv-form-group">
         <div class="pv-form-label">Tu nombre</div>
-        <input class="pv-name-input" id="vl-nombre" type="text" placeholder="Ej: Carlos Rodríguez">
+        <input class="pv-name-input" id="vl-nombre" type="text">
       </div>
 
       <button class="pv-submit" onclick="pvEnviar('village')">
@@ -1362,7 +1344,7 @@
 
       <div class="pv-form-group">
         <div class="pv-form-label">¿Cuál es tu presupuesto total?</div>
-        <input class="pv-name-input" id="ao-presup" type="text" placeholder="Ej: USD 200.000">
+        <input class="pv-name-input" id="ao-presup" type="text">
       </div>
 
       <div class="pv-form-group">
@@ -1375,7 +1357,7 @@
 
       <div class="pv-form-group">
         <div class="pv-form-label">Tu nombre</div>
-        <input class="pv-name-input" id="ao-nombre" type="text" placeholder="Ej: Laura Martínez">
+        <input class="pv-name-input" id="ao-nombre" type="text">
       </div>
 
       <button class="pv-submit" onclick="pvEnviar('aora')">
@@ -5170,12 +5152,9 @@ function pvEnviar(seccion) {
 
 // Manejar ancla al cargar la sección
 function pvEnviarVenta() {
-  const tipo   = pvGet('vd-tipo')  || '(sin especificar)';
-  const zona   = (document.getElementById('vd-zona')?.value || '').trim() || '(sin especificar)';
-  const precio = pvGet('vd-precio') || '(sin especificar)';
+  const propiedad = (document.getElementById('vd-propiedad')?.value || '').trim() || '(sin especificar)';
   const nombre = (document.getElementById('vd-nombre')?.value || '').trim() || 'un interesado';
-  const precioTexto = precio === 'Sí, tengo un precio' ? 'tengo un precio en mente' : 'quiero asesoramiento de precio';
-  const msg = `Hola Joaquín, ¿cómo estás? Soy ${nombre}. Quiero vender mi propiedad. Tengo: ${tipo.toLowerCase()}, en ${zona}, ${precioTexto}. ¿Podés darme una opinión de valor?`;
+  const msg = `Hola Joaquín, ¿cómo estás? Soy ${nombre}. Quiero vender: ${propiedad}.`;
   window.open('https://wa.me/5491162782243?text=' + encodeURIComponent(msg), '_blank');
 }
 
