@@ -839,6 +839,8 @@
   .pub-buscar { padding: 8px 20px 8px; max-width: 680px; margin: 0 auto; }
   .pub-buscar h2 { font-size: 21px; font-weight: 700; margin: 16px 0 16px; color: #111; text-align: center; }
   .pub-buscar-options { display: flex; flex-direction: column; gap: 10px; margin-bottom: 6px; }
+  .pub-back-btn { display: inline-block; background: none; border: none; color: #888; font-size: 13px; cursor: pointer; padding: 4px 0; margin-bottom: 10px; }
+  .pub-back-btn:hover { color: #555; text-decoration: underline; }
   .pub-buscar-card { background: #fff; border: 1.5px solid #e0e0e0; border-radius: 10px; padding: 14px 16px; font-size: 14px; font-weight: 600; color: #1a1a1a; cursor: pointer; transition: border-color .15s, background .15s; }
   .pub-buscar-card.selected { border-color: #1a3a6b; background: #f7f8fa; }
   .pub-buscar-card small { display: block; font-weight: 400; color: #888; font-size: 12px; margin-top: 2px; }
@@ -1033,6 +1035,7 @@
 
   <!-- Formulario captación vendedor (directo, sin sección separada) -->
   <div class="pub-vender-inline" id="pubVenderForm" style="display:none">
+    <button class="pub-back-btn" onclick="pubBackToTrigger('pubVenderForm')">← Volver</button>
     <div class="pv-form-group">
       <div class="pv-form-label">¿Qué propiedad querés vender?</div>
       <input class="pv-name-input" id="vd-propiedad" type="text">
@@ -1049,6 +1052,7 @@
 
   <!-- INTERMEDIO: ¿Qué estás buscando? -->
   <div class="pub-buscar" id="pubBuscar" style="display:none">
+    <button class="pub-back-btn" onclick="pubBackToTrigger('pubBuscar')">← Volver</button>
     <h2>¿Qué estás buscando?</h2>
     <div class="pub-buscar-options" id="pubBuscarOptions">
       <div class="pub-buscar-card" onclick="pubShowForm('village', this)">Lote en barrio cerrado<small>Village Joven / Village Plaza</small></div>
@@ -1061,6 +1065,7 @@
 
     <!-- Form: Village -->
     <div class="pub-buscar-form" id="pbf-village" style="display:none">
+      <button class="pub-back-btn" onclick="pubShowOptions()">← Volver</button>
       <div class="pv-form-group">
         <div class="pv-form-label">¿Qué barrio te interesa?</div>
         <div class="pv-options" id="pb-village-barrio">
@@ -1091,6 +1096,7 @@
 
     <!-- Form: Pueblo Nuevo -->
     <div class="pub-buscar-form" id="pbf-pueblo-nuevo" style="display:none">
+      <button class="pub-back-btn" onclick="pubShowOptions()">← Volver</button>
       <div class="pv-form-group">
         <div class="pv-form-label">¿Qué buscás?</div>
         <div class="pv-options" id="pb-pn-tipo">
@@ -1118,6 +1124,7 @@
 
     <!-- Form: Aora -->
     <div class="pub-buscar-form" id="pbf-aora" style="display:none">
+      <button class="pub-back-btn" onclick="pubShowOptions()">← Volver</button>
       <div class="pv-form-group">
         <div class="pv-form-label">¿Cuántos ambientes?</div>
         <div class="pv-options" id="pb-aora-amb">
@@ -1153,6 +1160,7 @@
 
     <!-- Form: Casa -->
     <div class="pub-buscar-form" id="pbf-casa" style="display:none">
+      <button class="pub-back-btn" onclick="pubShowOptions()">← Volver</button>
       <div class="pv-form-group">
         <div class="pv-form-label">¿Qué buscás?</div>
         <input class="pv-name-input" id="pb-casa-tipo" type="text">
@@ -1178,6 +1186,7 @@
 
     <!-- Form: Casa en barrio cerrado -->
     <div class="pub-buscar-form" id="pbf-casa-cerrado" style="display:none">
+      <button class="pub-back-btn" onclick="pubShowOptions()">← Volver</button>
       <div class="pv-form-group">
         <div class="pv-form-label">¿Qué barrio cerrado te interesa?</div>
         <input class="pv-name-input" id="pb-cc-barrio" type="text">
@@ -1207,6 +1216,7 @@
 
     <!-- Form: Otra -->
     <div class="pub-buscar-form" id="pbf-otra" style="display:none">
+      <button class="pub-back-btn" onclick="pubShowOptions()">← Volver</button>
       <div class="pv-form-group">
         <div class="pv-form-label">¿Qué tipo de propiedad buscás?</div>
         <input class="pv-name-input" id="pb-otra-tipo" type="text">
@@ -5193,6 +5203,18 @@ function pubShowVenderForm() {
 function pubShowBuscar() {
   document.getElementById('pubBuscar').style.display = 'block';
   document.getElementById('pubBuscar').scrollIntoView({ behavior: 'smooth' });
+}
+
+function pubBackToTrigger(panelId) {
+  document.getElementById(panelId).style.display = 'none';
+  document.getElementById('pubTrigger').scrollIntoView({ behavior: 'smooth' });
+}
+
+function pubShowOptions() {
+  document.querySelectorAll('.pub-buscar-form').forEach(f => f.style.display = 'none');
+  document.querySelectorAll('#pubBuscarOptions .pub-buscar-card').forEach(c => c.classList.remove('selected'));
+  const opts = document.getElementById('pubBuscarOptions');
+  opts.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 function pubShowForm(key, card) {
