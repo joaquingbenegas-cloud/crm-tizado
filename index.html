@@ -793,8 +793,8 @@
   .pub-hero-panel { display: none; flex-direction: column; background: var(--bg); }
   .pub-hero-panel.visible { display: flex; }
 
-  .pub-hero-header { background: #fff; padding: 8px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #e8e8e8; }
-  .pub-hero-logo { height: 68px; width: auto; }
+  .pub-hero-header { background: #fff; padding: 4px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #e8e8e8; }
+  .pub-hero-logo { height: 84px; width: auto; }
   .pub-hero-header-links { display: flex; gap: 16px; align-items: center; }
   .pub-hero-header-links a { color: #1a1a1a; font-size: 13px; font-weight: 600; text-decoration: none; transition: opacity .15s; }
   .pub-hero-header-links a:hover { opacity: .6; }
@@ -816,13 +816,12 @@
   /* Formulario captación vendedor */
 
   /* Por qué trabajar con nosotros */
-  .pub-why { padding: 28px 20px 8px; max-width: 680px; margin: 0 auto; text-align: center; }
+  .pub-why { padding: 32px 20px 16px; max-width: 640px; margin: 0 auto; text-align: center; }
   .pub-why h2 { font-size: 22px; font-weight: 700; margin: 0 0 8px; color: #111; }
-  .pub-why-sub { font-size: 14px; color: #666; margin: 0 0 20px; line-height: 1.5; }
-  .pub-why-cards { display: flex; gap: 12px; flex-wrap: wrap; }
-  .pub-why-card { flex: 1; min-width: 160px; background: #f7f8fa; border: 1px solid #e8e8e8; border-radius: 12px; padding: 18px 14px; }
-  .pub-why-icon { font-size: 24px; margin-bottom: 8px; }
-  .pub-why-card p { font-size: 13px; color: #444; line-height: 1.5; margin: 0; }
+  .pub-why-sub { font-size: 14px; color: #666; margin: 0 0 28px; line-height: 1.5; }
+  .pub-why-blocks { display: flex; flex-direction: column; gap: 22px; text-align: left; }
+  .pub-why-block h3 { font-size: 16px; font-weight: 700; margin: 0 0 6px; color: #111; }
+  .pub-why-block p { font-size: 14px; color: #555; line-height: 1.6; margin: 0; }
 
   /* Formulario vender inline */
   .pub-vender-inline { padding: 8px 20px 28px; max-width: 680px; margin: 0 auto; }
@@ -857,7 +856,6 @@
     .pub-hero-actions { justify-content: center; }
     .pub-trigger { padding: 18px 16px; gap: 12px; }
     .pub-trigger-card { min-width: 100%; }
-    .pub-why-card { min-width: 100%; }
   }
 </style>
 </head>
@@ -974,7 +972,7 @@
 
   <!-- Header con logo -->
   <div class="pub-hero-header">
-    <img src="logo-tizado.png" alt="Tizado" class="pub-hero-logo" ondblclick="tryShowTab('contactos')" title="">
+    <img src="logo-tizado.png" alt="Tizado" class="pub-hero-logo">
     <div class="pub-hero-header-links">
       <a href="https://instagram.com/joaquin.tizadobv" target="_blank">@joaquin.tizadobv</a>
       <a href="https://wa.me/5491162782243" target="_blank" class="header-phone">+54 11 6278 2243</a>
@@ -1000,19 +998,19 @@
   <!-- POR QUÉ TRABAJAR CON NOSOTROS -->
   <div class="pub-why">
     <h2>Tu operación en las mejores manos.</h2>
-    <p class="pub-why-sub">Ya sea que quieras comprar, vender o invertir, te acompañamos en cada paso con el respaldo de Tizado.</p>
-    <div class="pub-why-cards">
-      <div class="pub-why-card">
-        <div class="pub-why-icon">📍</div>
-        <p>Conocemos la zona como nadie — vivimos y trabajamos acá todos los días.</p>
+    <p class="pub-why-sub">Ya sea que quieras comprar, vender o invertir, te acompañamos con el respaldo de una de las marcas líderes del país.</p>
+    <div class="pub-why-blocks">
+      <div class="pub-why-block">
+        <h3>Más de 15 años en Bella Vista.</h3>
+        <p>Conocemos cada barrio, cada precio y cada proyecto de la zona mejor que nadie.</p>
       </div>
-      <div class="pub-why-card">
-        <div class="pub-why-icon">🛡️</div>
-        <p>Respaldo de Tizado, una de las inmobiliarias líderes del país.</p>
+      <div class="pub-why-block">
+        <h3>El respaldo de Tizado.</h3>
+        <p>Con más de 35 años en el mercado inmobiliario argentino, operás con una de las marcas más reconocidas y confiables del país.</p>
       </div>
-      <div class="pub-why-card">
-        <div class="pub-why-icon">🤝</div>
-        <p>Te acompañamos desde la primera consulta hasta la escritura.</p>
+      <div class="pub-why-block">
+        <h3>De principio a fin.</h3>
+        <p>Desde la primera consulta hasta la escritura, estamos para acompañarte con respuestas claras y sin vueltas.</p>
       </div>
     </div>
   </div>
@@ -1227,6 +1225,10 @@
       </div>
       <button class="pv-submit" onclick="pubSendBuscar('otra')">Enviar por WhatsApp</button>
     </div>
+  </div>
+
+  <div style="text-align:center;padding:18px 20px 10px">
+    <button onclick="tryShowTab('contactos')" style="background:none;border:none;color:#bbb;font-size:11px;cursor:pointer;text-decoration:underline">Acceso interno</button>
   </div>
 
   <!-- Formulario captación vendedor -->
