@@ -753,7 +753,7 @@
   .pv-section { display: none; padding: 32px 24px 60px; max-width: 680px; margin: 0 auto; }
   .pv-section.active { display: block; }
   .pv-section-badge { display: inline-block; font-size: 11px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--red); border: 1px solid rgba(200,16,46,.3); border-radius: 20px; padding: 3px 10px; margin-bottom: 12px; }
-  .pv-section-title { font-family: 'Playfair Display', serif; font-size: 26px; font-weight: 700; margin: 0 0 10px; line-height: 1.2; }
+  .pv-section-title { font-family: 'Inter', sans-serif; font-size: 26px; font-weight: 700; margin: 0 0 10px; line-height: 1.2; }
   .pv-section-desc { font-size: 14px; color: var(--gray); line-height: 1.65; margin-bottom: 28px; }
   .pv-divider { border: none; border-top: 1px solid var(--border); margin: 28px 0; }
 
@@ -778,6 +778,11 @@
     .pv-subnav-btn { font-size: 12px; padding: 10px 4px; }
   }
 
+  /* ── NAV PÚBLICO ──────────────────────────────────────────────────────── */
+  .pub-nav { display: none; background: #fff; border-bottom: 1px solid #e8e8e8; padding: 0 16px; gap: 0; }
+  .pub-nav-btn { flex: 1; max-width: 160px; padding: 12px 16px; font-size: 14px; font-weight: 600; color: #888; background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; transition: color .15s, border-color .15s; }
+  .pub-nav-btn.active { color: #1a3a6b; border-bottom-color: #1a3a6b; }
+
   /* ── HERO PÚBLICO ──────────────────────────────────────────────────────── */
   .pub-hero-panel { display: none; flex-direction: column; background: var(--bg); }
   .pub-hero-panel.visible { display: flex; }
@@ -793,7 +798,7 @@
   .pub-hero-photo { width: 110px; height: 110px; border-radius: 50%; object-fit: cover; object-position: center center; border: 3px solid #1a3a6b; flex-shrink: 0; box-shadow: 0 4px 16px rgba(0,0,0,.12); }
   .pub-hero-text { flex: 1; }
   .pub-hero-greeting { font-size: 13px; color: #888; margin-bottom: 2px; }
-  .pub-hero-name { font-family: 'Playfair Display', serif; font-size: 30px; font-weight: 700; color: #111; line-height: 1; margin-bottom: 5px; }
+  .pub-hero-name { font-family: 'Inter', sans-serif; font-size: 24px; font-weight: 700; color: #111; line-height: 1.2; margin-bottom: 6px; }
   .pub-hero-title { font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: #1a3a6b; margin-bottom: 12px; }
   .pub-hero-desc { font-size: 14px; color: #555; line-height: 1.6; margin-bottom: 18px; max-width: 380px; }
   .pub-hero-actions { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -804,15 +809,42 @@
 
   /* Formulario captación vendedor */
   .pub-vender { padding: 36px 24px 60px; max-width: 680px; margin: 0 auto; background: #fff; }
-  .pub-vender-title { font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 700; margin: 0 0 8px; color: #111; }
-  .pub-vender-sub { font-size: 14px; color: #666; margin-bottom: 28px; line-height: 1.5; }
+  .pub-vender-title { font-family: 'Inter', sans-serif; font-size: 24px; font-weight: 700; margin: 0 0 8px; color: #111; }
+  .pub-vender-sub { font-size: 14px; color: #666; margin-bottom: 16px; line-height: 1.5; }
+  .pub-vender-trust { margin: 0 0 28px; padding: 0 0 0 20px; font-size: 13px; color: #444; line-height: 1.7; }
+  .pub-vender-trust li { margin-bottom: 4px; }
+
+  /* Trigger comprar/vender */
+  .pub-trigger { display: flex; gap: 14px; padding: 24px 20px; max-width: 680px; margin: 0 auto; flex-wrap: wrap; }
+  .pub-trigger-card { flex: 1; min-width: 240px; background: #f7f8fa; border: 1px solid #e8e8e8; border-radius: 14px; padding: 22px 18px; text-align: center; }
+  .pub-trigger-icon { font-size: 30px; margin-bottom: 8px; }
+  .pub-trigger-card h3 { font-size: 17px; margin: 0 0 6px; font-weight: 700; color: #111; }
+  .pub-trigger-card p { font-size: 13px; color: #666; margin: 0 0 14px; line-height: 1.5; }
+  .pub-trigger-btn { background: #1a3a6b; color: #fff; border: none; border-radius: 8px; padding: 10px 18px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background .15s; }
+  .pub-trigger-btn:hover { background: #142d54; }
+
+  /* Pantalla intermedia "¿Qué estás buscando?" */
+  .pub-buscar { padding: 8px 20px 8px; max-width: 680px; margin: 0 auto; }
+  .pub-buscar h2 { font-size: 21px; font-weight: 700; margin: 16px 0 16px; color: #111; text-align: center; }
+  .pub-buscar-options { display: flex; flex-direction: column; gap: 10px; margin-bottom: 6px; }
+  .pub-buscar-card { background: #fff; border: 1.5px solid #e0e0e0; border-radius: 10px; padding: 14px 16px; font-size: 14px; font-weight: 600; color: #1a1a1a; cursor: pointer; transition: border-color .15s, background .15s; }
+  .pub-buscar-card.selected { border-color: #1a3a6b; background: #f7f8fa; }
+  .pub-buscar-card small { display: block; font-weight: 400; color: #888; font-size: 12px; margin-top: 2px; }
+  .pub-buscar-form { padding-top: 22px; }
+
+  /* FAB WhatsApp flotante */
+  .pub-fab-wa { position: fixed; bottom: 20px; right: 20px; width: 54px; height: 54px; border-radius: 50%; background: #25d366; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(0,0,0,.25); z-index: 80; text-decoration: none; }
 
   @media (max-width: 600px) {
-    .pub-hero-body { padding: 20px 16px 24px; gap: 16px; }
-    .pub-hero-photo { width: 90px; height: 90px; }
-    .pub-hero-name { font-size: 26px; }
-    .pub-hero-desc { font-size: 13px; margin-bottom: 14px; }
+    .pub-hero-body { flex-direction: column; align-items: center; text-align: center; padding: 18px 16px 22px; gap: 12px; }
+    .pub-hero-photo { width: 84px; height: 84px; }
+    .pub-hero-name { font-size: 21px; }
+    .pub-hero-title { margin-bottom: 8px; }
+    .pub-hero-desc { font-size: 13px; margin: 0 auto 14px; }
+    .pub-hero-actions { justify-content: center; }
     .pub-vender { padding: 24px 16px 50px; }
+    .pub-trigger { padding: 18px 16px; gap: 12px; }
+    .pub-trigger-card { min-width: 100%; }
   }
 </style>
 </head>
@@ -845,6 +877,10 @@
   </div>
 </header>
 
+<div class="pub-nav" id="pubNav">
+  <button class="pub-nav-btn active" id="pubnav-hero" onclick="showTab('hero')">🏠 Inicio</button>
+  <button class="pub-nav-btn" id="pubnav-lotes" onclick="showTab('lotes')">🏘 Pueblo Vista</button>
+</div>
 <div class="tab-nav">
   <button class="tab-btn active" id="tab-contactos" onclick="tryShowTab('contactos')" style="display:none">🔒 Contactos</button>
   <button class="tab-btn locked" id="tab-dashboard" onclick="tryShowTab('dashboard')">⚡ Home</button>
@@ -936,28 +972,197 @@
   <div class="pub-hero-body">
     <img src="joaquin.png" alt="Joaquín" class="pub-hero-photo">
     <div class="pub-hero-text">
-      <div class="pub-hero-greeting">Hola, soy</div>
-      <div class="pub-hero-name">Joaquín</div>
+      <div class="pub-hero-name">Hola, soy Joaquín González Benegas</div>
       <div class="pub-hero-title">Asesor Inmobiliario · Tizado Bella Vista</div>
-      <p class="pub-hero-desc">¿Pensando en vender, comprar o invertir? Estoy para acompañarte en cada paso.</p>
+      <p class="pub-hero-desc">Nací y crecí en Bella Vista. Conozco cada barrio, cada calle y cada proyecto de la zona. Si estás pensando en comprar, vender o invertir acá, estoy para acompañarte en cada paso.</p>
       <div class="pub-hero-actions">
         <a href="https://wa.me/5491162782243" target="_blank" class="pub-hero-wa">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
           Hablemos
         </a>
-        <a href="https://instagram.com/joaquin.tizadobv" target="_blank" class="pub-hero-ig">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
-          Instagram
-        </a>
       </div>
     </div>
   </div>
 
+  <!-- TRIGGER: comprar / vender -->
+  <div class="pub-trigger" id="pubTrigger">
+    <div class="pub-trigger-card">
+      <div class="pub-trigger-icon">🏠</div>
+      <h3>Quiero comprar</h3>
+      <p>Encontrá tu propiedad ideal en Bella Vista y alrededores.</p>
+      <button class="pub-trigger-btn" onclick="pubShowBuscar()">Ver opciones</button>
+    </div>
+    <div class="pub-trigger-card">
+      <div class="pub-trigger-icon">🏷️</div>
+      <h3>Quiero vender</h3>
+      <p>Te ayudamos a vender tu propiedad al mejor precio.</p>
+      <button class="pub-trigger-btn" onclick="document.getElementById('pubVender').scrollIntoView({behavior:'smooth'})">Quiero vender</button>
+    </div>
+  </div>
+
+  <!-- INTERMEDIO: ¿Qué estás buscando? -->
+  <div class="pub-buscar" id="pubBuscar" style="display:none">
+    <h2>¿Qué estás buscando?</h2>
+    <div class="pub-buscar-options" id="pubBuscarOptions">
+      <div class="pub-buscar-card" onclick="pubShowForm('village', this)">Lote en barrio cerrado<small>Village Joven / Village Plaza</small></div>
+      <div class="pub-buscar-card" onclick="pubShowForm('pueblo-nuevo', this)">Lote en Pueblo Nuevo</div>
+      <div class="pub-buscar-card" onclick="pubShowForm('aora', this)">Departamento en Aora</div>
+      <div class="pub-buscar-card" onclick="pubShowForm('casa', this)">Casa en Bella Vista</div>
+      <div class="pub-buscar-card" onclick="pubShowForm('otra', this)">Otra propiedad</div>
+    </div>
+
+    <!-- Form: Village -->
+    <div class="pub-buscar-form" id="pbf-village" style="display:none">
+      <div class="pv-form-group">
+        <div class="pv-form-label">¿Qué barrio te interesa?</div>
+        <div class="pv-options" id="pb-village-barrio">
+          <div class="pv-option" onclick="pvSelect(this,'pb-village-barrio')">Village Joven</div>
+          <div class="pv-option" onclick="pvSelect(this,'pb-village-barrio')">Village Plaza</div>
+          <div class="pv-option" onclick="pvSelect(this,'pb-village-barrio')">Ambos</div>
+        </div>
+      </div>
+      <div class="pv-form-group">
+        <div class="pv-form-label">¿Ubicación preferida?</div>
+        <div class="pv-options" id="pb-village-ubic">
+          <div class="pv-option" onclick="pvSelect(this,'pb-village-ubic')">Interno</div>
+          <div class="pv-option" onclick="pvSelect(this,'pb-village-ubic')">Perimetral</div>
+          <div class="pv-option" onclick="pvSelect(this,'pb-village-ubic')">Espacio Verde</div>
+          <div class="pv-option" onclick="pvSelect(this,'pb-village-ubic')">Sin preferencia</div>
+        </div>
+      </div>
+      <div class="pv-form-group">
+        <div class="pv-form-label">¿Presupuesto aproximado?</div>
+        <input class="pv-name-input" id="pb-village-presup" type="text">
+      </div>
+      <div class="pv-form-group">
+        <div class="pv-form-label">Nombre</div>
+        <input class="pv-name-input" id="pb-village-nombre" type="text">
+      </div>
+      <button class="pv-submit" onclick="pubSendBuscar('village')">Enviar por WhatsApp</button>
+    </div>
+
+    <!-- Form: Pueblo Nuevo -->
+    <div class="pub-buscar-form" id="pbf-pueblo-nuevo" style="display:none">
+      <div class="pv-form-group">
+        <div class="pv-form-label">¿Qué buscás?</div>
+        <div class="pv-options" id="pb-pn-tipo">
+          <div class="pv-option" onclick="pvSelect(this,'pb-pn-tipo')">Dentro de barrio con portón</div>
+          <div class="pv-option" onclick="pvSelect(this,'pb-pn-tipo')">Lote abierto sobre la calle</div>
+        </div>
+      </div>
+      <div class="pv-form-group">
+        <div class="pv-form-label">¿Ubicación preferida?</div>
+        <div class="pv-options" id="pb-pn-ubic">
+          <div class="pv-option" onclick="pvSelect(this,'pb-pn-ubic')">Interno</div>
+          <div class="pv-option" onclick="pvSelect(this,'pb-pn-ubic')">Perimetral</div>
+        </div>
+      </div>
+      <div class="pv-form-group">
+        <div class="pv-form-label">¿Presupuesto aproximado?</div>
+        <input class="pv-name-input" id="pb-pn-presup" type="text">
+      </div>
+      <div class="pv-form-group">
+        <div class="pv-form-label">Nombre</div>
+        <input class="pv-name-input" id="pb-pn-nombre" type="text">
+      </div>
+      <button class="pv-submit" onclick="pubSendBuscar('pueblo-nuevo')">Enviar por WhatsApp</button>
+    </div>
+
+    <!-- Form: Aora -->
+    <div class="pub-buscar-form" id="pbf-aora" style="display:none">
+      <div class="pv-form-group">
+        <div class="pv-form-label">¿Cuántos ambientes?</div>
+        <div class="pv-options" id="pb-aora-amb">
+          <div class="pv-option" onclick="pvSelect(this,'pb-aora-amb')">2 ambientes</div>
+          <div class="pv-option" onclick="pvSelect(this,'pb-aora-amb')">3 ambientes</div>
+        </div>
+      </div>
+      <div class="pv-form-group">
+        <div class="pv-form-label">¿Etapa?</div>
+        <div class="pv-options" id="pb-aora-etapa">
+          <div class="pv-option" onclick="pvSelect(this,'pb-aora-etapa')">Etapa 1 (entrega ~fin 2026)</div>
+          <div class="pv-option" onclick="pvSelect(this,'pb-aora-etapa')">Etapa 2</div>
+          <div class="pv-option" onclick="pvSelect(this,'pb-aora-etapa')">Cualquiera</div>
+        </div>
+      </div>
+      <div class="pv-form-group">
+        <div class="pv-form-label">¿Necesitás financiación?</div>
+        <div class="pv-options" id="pb-aora-finan">
+          <div class="pv-option" onclick="pvSelect(this,'pb-aora-finan')">Sí</div>
+          <div class="pv-option" onclick="pvSelect(this,'pb-aora-finan')">No</div>
+        </div>
+      </div>
+      <div class="pv-form-group">
+        <div class="pv-form-label">¿Presupuesto aproximado?</div>
+        <input class="pv-name-input" id="pb-aora-presup" type="text">
+      </div>
+      <div class="pv-form-group">
+        <div class="pv-form-label">Nombre</div>
+        <input class="pv-name-input" id="pb-aora-nombre" type="text">
+      </div>
+      <button class="pv-submit" onclick="pubSendBuscar('aora')">Enviar por WhatsApp</button>
+    </div>
+
+    <!-- Form: Casa -->
+    <div class="pub-buscar-form" id="pbf-casa" style="display:none">
+      <div class="pv-form-group">
+        <div class="pv-form-label">¿Qué buscás?</div>
+        <div class="pv-options" id="pb-casa-tipo">
+          <div class="pv-option" onclick="pvSelect(this,'pb-casa-tipo')">Casa para vivir</div>
+          <div class="pv-option" onclick="pvSelect(this,'pb-casa-tipo')">Casa para invertir</div>
+        </div>
+      </div>
+      <div class="pv-form-group">
+        <div class="pv-form-label">¿Cantidad de ambientes?</div>
+        <div class="pv-options" id="pb-casa-amb">
+          <div class="pv-option" onclick="pvSelect(this,'pb-casa-amb')">2-3 ambientes</div>
+          <div class="pv-option" onclick="pvSelect(this,'pb-casa-amb')">4+ ambientes</div>
+          <div class="pv-option" onclick="pvSelect(this,'pb-casa-amb')">Sin preferencia</div>
+        </div>
+      </div>
+      <div class="pv-form-group">
+        <div class="pv-form-label">¿Presupuesto aproximado?</div>
+        <input class="pv-name-input" id="pb-casa-presup" type="text">
+      </div>
+      <div class="pv-form-group">
+        <div class="pv-form-label">Nombre</div>
+        <input class="pv-name-input" id="pb-casa-nombre" type="text">
+      </div>
+      <button class="pv-submit" onclick="pubSendBuscar('casa')">Enviar por WhatsApp</button>
+    </div>
+
+    <!-- Form: Otra -->
+    <div class="pub-buscar-form" id="pbf-otra" style="display:none">
+      <div class="pv-form-group">
+        <div class="pv-form-label">¿Qué tipo de propiedad buscás?</div>
+        <input class="pv-name-input" id="pb-otra-tipo" type="text">
+      </div>
+      <div class="pv-form-group">
+        <div class="pv-form-label">¿En qué zona?</div>
+        <input class="pv-name-input" id="pb-otra-zona" type="text">
+      </div>
+      <div class="pv-form-group">
+        <div class="pv-form-label">¿Presupuesto aproximado?</div>
+        <input class="pv-name-input" id="pb-otra-presup" type="text">
+      </div>
+      <div class="pv-form-group">
+        <div class="pv-form-label">Nombre</div>
+        <input class="pv-name-input" id="pb-otra-nombre" type="text">
+      </div>
+      <button class="pv-submit" onclick="pubSendBuscar('otra')">Enviar por WhatsApp</button>
+    </div>
+  </div>
+
   <!-- Formulario captación vendedor -->
-  <div class="pub-vender">
+  <div class="pub-vender" id="pubVender">
     <div style="display:inline-block;font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--red);border:1px solid rgba(200,16,46,.3);border-radius:20px;padding:3px 10px;margin-bottom:12px">Vendé con Tizado</div>
     <h2 class="pub-vender-title">¿Querés vender tu propiedad?</h2>
     <p class="pub-vender-sub">Contame qué tenés y te doy una opinión de valor sin compromiso.</p>
+    <ul class="pub-vender-trust">
+      <li>Conocemos Bella Vista como nadie — vivimos y trabajamos acá todos los días.</li>
+      <li>Respaldo de Tizado, una de las inmobiliarias líderes del país.</li>
+      <li>Te acompañamos en cada paso: tasación, publicación, negociación y escritura.</li>
+    </ul>
 
     <div class="pv-form-group">
       <div class="pv-form-label">¿Qué tipo de propiedad es?</div>
@@ -993,6 +1198,10 @@
     </button>
   </div>
 
+  <a href="https://wa.me/5491162782243" target="_blank" class="pub-fab-wa" title="Hablar por WhatsApp">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+  </a>
+
 </div><!-- /heroPanel -->
 
 <!-- PANEL PUEBLO VISTA -->
@@ -1002,7 +1211,7 @@
   <div class="pv-header">
     <div class="pv-header-top">
       <div>
-        <h2 style="font-family:'Playfair Display',serif;font-size:20px;margin:0 0 2px">Pueblo Vista</h2>
+        <h2 style="font-family:'Inter', sans-serif;font-size:20px;margin:0 0 2px">Pueblo Vista</h2>
         <p style="margin:0;font-size:12px;color:var(--gray)">Tizado Bella Vista · Proyectos</p>
       </div>
       <a href="https://instagram.com/joaquin.tizadobv" target="_blank" class="pv-ig-btn" title="Instagram">
@@ -4876,7 +5085,8 @@ function pvShowSection(id, btn) {
 }
 
 // Selección de opciones — toggle multi-select salvo grupos de una sola opción
-const PV_SINGLE = ['pn-tipo','ao-amb','ao-etapa','ao-finan','vd-tipo','vd-precio']; // solo estos son exclusivos
+const PV_SINGLE = ['pn-tipo','ao-amb','ao-etapa','ao-finan','vd-tipo','vd-precio',
+  'pb-village-barrio','pb-village-ubic','pb-pn-tipo','pb-pn-ubic','pb-aora-amb','pb-aora-etapa','pb-aora-finan','pb-casa-tipo','pb-casa-amb']; // solo estos son exclusivos
 function pvSelect(el, groupId) {
   if (PV_SINGLE.includes(groupId)) {
     document.querySelectorAll(`#${groupId} .pv-option`).forEach(o => o.classList.remove('selected'));
@@ -4939,6 +5149,62 @@ function pvEnviarVenta() {
   const nombre = (document.getElementById('vd-nombre')?.value || '').trim() || 'un interesado';
   const precioTexto = precio === 'Sí, tengo un precio' ? 'tengo un precio en mente' : 'quiero asesoramiento de precio';
   const msg = `Hola Joaquín, ¿cómo estás? Soy ${nombre} y quiero vender mi propiedad. Tengo: ${tipo.toLowerCase()}, en ${zona}, ${precioTexto}. ¿Podés darme una opinión de valor?`;
+  window.open('https://wa.me/5491162782243?text=' + encodeURIComponent(msg), '_blank');
+}
+
+// ─── TRIGGER COMPRAR / PANTALLA INTERMEDIA ──────────────────────────────────
+function pubShowBuscar() {
+  document.getElementById('pubBuscar').style.display = 'block';
+  document.getElementById('pubBuscar').scrollIntoView({ behavior: 'smooth' });
+}
+
+function pubShowForm(key, card) {
+  document.querySelectorAll('#pubBuscarOptions .pub-buscar-card').forEach(c => c.classList.remove('selected'));
+  if (card) card.classList.add('selected');
+  document.querySelectorAll('.pub-buscar-form').forEach(f => f.style.display = 'none');
+  const form = document.getElementById('pbf-' + key);
+  if (form) {
+    form.style.display = 'block';
+    form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+
+function pubSendBuscar(key) {
+  const val = id => (document.getElementById(id)?.value || '').trim();
+  let msg = '';
+  if (key === 'village') {
+    const barrio = pvGet('pb-village-barrio') || '(sin especificar)';
+    const barrioText = barrio === 'Ambos' ? 'Village Joven y Village Plaza' : barrio;
+    const ubic = pvGet('pb-village-ubic') || '(sin preferencia)';
+    const presup = val('pb-village-presup') || '(sin especificar)';
+    const nombre = val('pb-village-nombre') || 'un interesado';
+    msg = `Hola Joaquín, me interesa un lote en ${barrioText}. Busco ubicación ${ubic}, presupuesto ${presup}. Soy ${nombre}.`;
+  } else if (key === 'pueblo-nuevo') {
+    const tipo = pvGet('pb-pn-tipo') || '(sin especificar)';
+    const ubic = pvGet('pb-pn-ubic') || '(sin preferencia)';
+    const presup = val('pb-pn-presup') || '(sin especificar)';
+    const nombre = val('pb-pn-nombre') || 'un interesado';
+    msg = `Hola Joaquín, me interesa un lote en Pueblo Nuevo. Busco ${tipo}, ubicación ${ubic}, presupuesto ${presup}. Soy ${nombre}.`;
+  } else if (key === 'aora') {
+    const amb = pvGet('pb-aora-amb') || '(sin especificar)';
+    const etapa = pvGet('pb-aora-etapa') || '(sin preferencia)';
+    const finan = pvGet('pb-aora-finan') || '(sin especificar)';
+    const presup = val('pb-aora-presup') || '(sin especificar)';
+    const nombre = val('pb-aora-nombre') || 'un interesado';
+    msg = `Hola Joaquín, me interesa Aora Bella Vista. Busco ${amb}, ${etapa}, financiación: ${finan}, presupuesto ${presup}. Soy ${nombre}.`;
+  } else if (key === 'casa') {
+    const tipo = pvGet('pb-casa-tipo') || '(sin especificar)';
+    const amb = pvGet('pb-casa-amb') || '(sin preferencia)';
+    const presup = val('pb-casa-presup') || '(sin especificar)';
+    const nombre = val('pb-casa-nombre') || 'un interesado';
+    msg = `Hola Joaquín, estoy buscando una casa en Bella Vista. Busco ${tipo}, ${amb}, presupuesto ${presup}. Soy ${nombre}.`;
+  } else if (key === 'otra') {
+    const tipo = val('pb-otra-tipo') || '(sin especificar)';
+    const zona = val('pb-otra-zona') || '(sin especificar)';
+    const presup = val('pb-otra-presup') || '(sin especificar)';
+    const nombre = val('pb-otra-nombre') || 'un interesado';
+    msg = `Hola Joaquín, estoy buscando: ${tipo}, en ${zona}, presupuesto ${presup}. Soy ${nombre}.`;
+  }
   window.open('https://wa.me/5491162782243?text=' + encodeURIComponent(msg), '_blank');
 }
 
