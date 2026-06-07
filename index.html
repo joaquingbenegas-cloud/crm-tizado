@@ -989,7 +989,7 @@
     <div class="pub-trigger-card">
       <div class="pub-trigger-icon">🏠</div>
       <h3>Quiero comprar</h3>
-      <p>Encontrá tu propiedad ideal en Bella Vista y alrededores.</p>
+      <p>Encontrá tu propiedad ideal en la zona.</p>
       <button class="pub-trigger-btn" onclick="pubShowBuscar()">Ver opciones</button>
     </div>
     <div class="pub-trigger-card">
@@ -1007,7 +1007,8 @@
       <div class="pub-buscar-card" onclick="pubShowForm('village', this)">Lote en barrio cerrado<small>Village Joven / Village Plaza</small></div>
       <div class="pub-buscar-card" onclick="pubShowForm('pueblo-nuevo', this)">Lote en Pueblo Nuevo</div>
       <div class="pub-buscar-card" onclick="pubShowForm('aora', this)">Departamento en Aora</div>
-      <div class="pub-buscar-card" onclick="pubShowForm('casa', this)">Casa en Bella Vista</div>
+      <div class="pub-buscar-card" onclick="pubShowForm('casa', this)">Casa</div>
+      <div class="pub-buscar-card" onclick="pubShowForm('casa-cerrado', this)">Casa en barrio cerrado</div>
       <div class="pub-buscar-card" onclick="pubShowForm('otra', this)">Otra propiedad</div>
     </div>
 
@@ -1107,18 +1108,15 @@
     <div class="pub-buscar-form" id="pbf-casa" style="display:none">
       <div class="pv-form-group">
         <div class="pv-form-label">¿Qué buscás?</div>
-        <div class="pv-options" id="pb-casa-tipo">
-          <div class="pv-option" onclick="pvSelect(this,'pb-casa-tipo')">Casa para vivir</div>
-          <div class="pv-option" onclick="pvSelect(this,'pb-casa-tipo')">Casa para invertir</div>
-        </div>
+        <input class="pv-name-input" id="pb-casa-tipo" type="text">
       </div>
       <div class="pv-form-group">
-        <div class="pv-form-label">¿Cantidad de ambientes?</div>
-        <div class="pv-options" id="pb-casa-amb">
-          <div class="pv-option" onclick="pvSelect(this,'pb-casa-amb')">2-3 ambientes</div>
-          <div class="pv-option" onclick="pvSelect(this,'pb-casa-amb')">4+ ambientes</div>
-          <div class="pv-option" onclick="pvSelect(this,'pb-casa-amb')">Sin preferencia</div>
-        </div>
+        <div class="pv-form-label">¿Cuántos ambientes?</div>
+        <input class="pv-name-input" id="pb-casa-amb" type="text">
+      </div>
+      <div class="pv-form-group">
+        <div class="pv-form-label">¿Metros cuadrados aproximados?</div>
+        <input class="pv-name-input" id="pb-casa-m2" type="text">
       </div>
       <div class="pv-form-group">
         <div class="pv-form-label">¿Presupuesto aproximado?</div>
@@ -1129,6 +1127,35 @@
         <input class="pv-name-input" id="pb-casa-nombre" type="text">
       </div>
       <button class="pv-submit" onclick="pubSendBuscar('casa')">Enviar por WhatsApp</button>
+    </div>
+
+    <!-- Form: Casa en barrio cerrado -->
+    <div class="pub-buscar-form" id="pbf-casa-cerrado" style="display:none">
+      <div class="pv-form-group">
+        <div class="pv-form-label">¿Qué barrio cerrado te interesa?</div>
+        <input class="pv-name-input" id="pb-cc-barrio" type="text">
+      </div>
+      <div class="pv-form-group">
+        <div class="pv-form-label">¿Qué buscás?</div>
+        <input class="pv-name-input" id="pb-cc-tipo" type="text">
+      </div>
+      <div class="pv-form-group">
+        <div class="pv-form-label">¿Cuántos ambientes?</div>
+        <input class="pv-name-input" id="pb-cc-amb" type="text">
+      </div>
+      <div class="pv-form-group">
+        <div class="pv-form-label">¿Metros cuadrados aproximados?</div>
+        <input class="pv-name-input" id="pb-cc-m2" type="text">
+      </div>
+      <div class="pv-form-group">
+        <div class="pv-form-label">¿Presupuesto aproximado?</div>
+        <input class="pv-name-input" id="pb-cc-presup" type="text">
+      </div>
+      <div class="pv-form-group">
+        <div class="pv-form-label">Nombre</div>
+        <input class="pv-name-input" id="pb-cc-nombre" type="text">
+      </div>
+      <button class="pv-submit" onclick="pubSendBuscar('casa-cerrado')">Enviar por WhatsApp</button>
     </div>
 
     <!-- Form: Otra -->
@@ -1159,7 +1186,7 @@
     <h2 class="pub-vender-title">¿Querés vender tu propiedad?</h2>
     <p class="pub-vender-sub">Contame qué tenés y te doy una opinión de valor sin compromiso.</p>
     <ul class="pub-vender-trust">
-      <li>Conocemos Bella Vista como nadie — vivimos y trabajamos acá todos los días.</li>
+      <li>Conocemos la zona como nadie — vivimos y trabajamos acá todos los días.</li>
       <li>Respaldo de Tizado, una de las inmobiliarias líderes del país.</li>
       <li>Te acompañamos en cada paso: tasación, publicación, negociación y escritura.</li>
     </ul>
@@ -5086,7 +5113,7 @@ function pvShowSection(id, btn) {
 
 // Selección de opciones — toggle multi-select salvo grupos de una sola opción
 const PV_SINGLE = ['pn-tipo','ao-amb','ao-etapa','ao-finan','vd-tipo','vd-precio',
-  'pb-village-barrio','pb-village-ubic','pb-pn-tipo','pb-pn-ubic','pb-aora-amb','pb-aora-etapa','pb-aora-finan','pb-casa-tipo','pb-casa-amb']; // solo estos son exclusivos
+  'pb-village-barrio','pb-village-ubic','pb-pn-tipo','pb-pn-ubic','pb-aora-amb','pb-aora-etapa','pb-aora-finan']; // solo estos son exclusivos
 function pvSelect(el, groupId) {
   if (PV_SINGLE.includes(groupId)) {
     document.querySelectorAll(`#${groupId} .pv-option`).forEach(o => o.classList.remove('selected'));
@@ -5114,7 +5141,7 @@ function pvEnviar(seccion) {
     if (tipo)   partes.push(tipo === 'Dentro de barrio con portón' ? 'dentro del barrio con portón' : 'lote abierto sobre la calle');
     if (ubic)   partes.push(`ubicación ${ubic.toLowerCase()}`);
     if (presup) partes.push(`presupuesto ${presup}`);
-    msg = `Hola Joaquín, ¿cómo estás? Soy ${nombre} y me interesan los lotes de Pueblo Nuevo en Bella Vista.${partes.length ? ' Estoy buscando ' + partes.join(', ') + '.' : ''} ¿Podés contarme qué hay disponible?`;
+    msg = `Hola Joaquín, ¿cómo estás? Soy ${nombre}.${partes.length ? ' Estoy buscando lotes en Pueblo Nuevo: ' + partes.join(', ') + '.' : ' Me interesan los lotes de Pueblo Nuevo.'} ¿Podés contarme qué hay disponible?`;
   } else if (seccion === 'village') {
     const barrio  = pvGet('vl-barrio');
     const ubic    = pvGet('vl-ubic');
@@ -5124,7 +5151,7 @@ function pvEnviar(seccion) {
     let partes = [];
     if (ubic && ubic !== 'Sin preferencia') partes.push(`prefiero lote ${ubic.toLowerCase()}`);
     if (presup) partes.push(`mi presupuesto es ${presup}`);
-    msg = `Hola Joaquín, ¿cómo estás? Soy ${nombre} y me interesan los lotes de ${barrioText} en Bella Vista.${partes.length ? ' ' + partes[0].charAt(0).toUpperCase() + partes[0].slice(1) + (partes.length > 1 ? ', ' + partes.slice(1).join(', ') : '') + '.' : ''} ¿Qué lotes tienen disponibles?`;
+    msg = `Hola Joaquín, ¿cómo estás? Soy ${nombre}. Me interesan los lotes de ${barrioText}.${partes.length ? ' ' + partes[0].charAt(0).toUpperCase() + partes[0].slice(1) + (partes.length > 1 ? ', ' + partes.slice(1).join(', ') : '') + '.' : ''} ¿Qué lotes tienen disponibles?`;
   } else if (seccion === 'aora') {
     const amb     = pvGet('ao-amb');
     const etapa   = pvGet('ao-etapa');
@@ -5136,7 +5163,7 @@ function pvEnviar(seccion) {
     if (etapa && etapa !== 'Cualquiera') partes.push(etapa);
     if (presup) partes.push(`presupuesto ${presup}`);
     if (finan)  partes.push(finan === 'Sí' ? 'necesito financiación' : 'pago al contado');
-    msg = `Hola Joaquín, ¿cómo estás? Soy ${nombre} y me interesan los departamentos de Aora Bella Vista.${partes.length ? ' Busco ' + partes.join(', ') + '.' : ''} ¿Pueden contactarme?`;
+    msg = `Hola Joaquín, ¿cómo estás? Soy ${nombre}. Me interesan los departamentos de Aora Bella Vista.${partes.length ? ' Busco ' + partes.join(', ') + '.' : ''} ¿Pueden contactarme?`;
   }
   window.open('https://wa.me/5491162782243?text=' + encodeURIComponent(msg), '_blank');
 }
@@ -5148,7 +5175,7 @@ function pvEnviarVenta() {
   const precio = pvGet('vd-precio') || '(sin especificar)';
   const nombre = (document.getElementById('vd-nombre')?.value || '').trim() || 'un interesado';
   const precioTexto = precio === 'Sí, tengo un precio' ? 'tengo un precio en mente' : 'quiero asesoramiento de precio';
-  const msg = `Hola Joaquín, ¿cómo estás? Soy ${nombre} y quiero vender mi propiedad. Tengo: ${tipo.toLowerCase()}, en ${zona}, ${precioTexto}. ¿Podés darme una opinión de valor?`;
+  const msg = `Hola Joaquín, ¿cómo estás? Soy ${nombre}. Quiero vender mi propiedad. Tengo: ${tipo.toLowerCase()}, en ${zona}, ${precioTexto}. ¿Podés darme una opinión de valor?`;
   window.open('https://wa.me/5491162782243?text=' + encodeURIComponent(msg), '_blank');
 }
 
@@ -5178,32 +5205,41 @@ function pubSendBuscar(key) {
     const ubic = pvGet('pb-village-ubic') || '(sin preferencia)';
     const presup = val('pb-village-presup') || '(sin especificar)';
     const nombre = val('pb-village-nombre') || 'un interesado';
-    msg = `Hola Joaquín, me interesa un lote en ${barrioText}. Busco ubicación ${ubic}, presupuesto ${presup}. Soy ${nombre}.`;
+    msg = `Hola Joaquín, ¿cómo estás? Soy ${nombre}. Me interesa un lote en ${barrioText}. Busco ubicación ${ubic}, presupuesto ${presup}.`;
   } else if (key === 'pueblo-nuevo') {
     const tipo = pvGet('pb-pn-tipo') || '(sin especificar)';
     const ubic = pvGet('pb-pn-ubic') || '(sin preferencia)';
     const presup = val('pb-pn-presup') || '(sin especificar)';
     const nombre = val('pb-pn-nombre') || 'un interesado';
-    msg = `Hola Joaquín, me interesa un lote en Pueblo Nuevo. Busco ${tipo}, ubicación ${ubic}, presupuesto ${presup}. Soy ${nombre}.`;
+    msg = `Hola Joaquín, ¿cómo estás? Soy ${nombre}. Me interesa un lote en Pueblo Nuevo. Busco ${tipo}, ubicación ${ubic}, presupuesto ${presup}.`;
   } else if (key === 'aora') {
     const amb = pvGet('pb-aora-amb') || '(sin especificar)';
     const etapa = pvGet('pb-aora-etapa') || '(sin preferencia)';
     const finan = pvGet('pb-aora-finan') || '(sin especificar)';
     const presup = val('pb-aora-presup') || '(sin especificar)';
     const nombre = val('pb-aora-nombre') || 'un interesado';
-    msg = `Hola Joaquín, me interesa Aora Bella Vista. Busco ${amb}, ${etapa}, financiación: ${finan}, presupuesto ${presup}. Soy ${nombre}.`;
+    msg = `Hola Joaquín, ¿cómo estás? Soy ${nombre}. Me interesa Aora Bella Vista. Busco ${amb}, ${etapa}, financiación: ${finan}, presupuesto ${presup}.`;
   } else if (key === 'casa') {
-    const tipo = pvGet('pb-casa-tipo') || '(sin especificar)';
-    const amb = pvGet('pb-casa-amb') || '(sin preferencia)';
+    const tipo = val('pb-casa-tipo') || '(sin especificar)';
+    const amb = val('pb-casa-amb') || '(sin especificar)';
+    const m2 = val('pb-casa-m2') || '(sin especificar)';
     const presup = val('pb-casa-presup') || '(sin especificar)';
     const nombre = val('pb-casa-nombre') || 'un interesado';
-    msg = `Hola Joaquín, estoy buscando una casa en Bella Vista. Busco ${tipo}, ${amb}, presupuesto ${presup}. Soy ${nombre}.`;
+    msg = `Hola Joaquín, ¿cómo estás? Soy ${nombre}. Estoy buscando una casa: ${tipo}, ${amb} ambientes, ${m2}m², presupuesto ${presup}.`;
+  } else if (key === 'casa-cerrado') {
+    const barrio = val('pb-cc-barrio') || '(sin especificar)';
+    const tipo = val('pb-cc-tipo') || '(sin especificar)';
+    const amb = val('pb-cc-amb') || '(sin especificar)';
+    const m2 = val('pb-cc-m2') || '(sin especificar)';
+    const presup = val('pb-cc-presup') || '(sin especificar)';
+    const nombre = val('pb-cc-nombre') || 'un interesado';
+    msg = `Hola Joaquín, ¿cómo estás? Soy ${nombre}. Estoy buscando una casa en barrio cerrado: ${barrio}, ${tipo}, ${amb} ambientes, ${m2}m², presupuesto ${presup}.`;
   } else if (key === 'otra') {
     const tipo = val('pb-otra-tipo') || '(sin especificar)';
     const zona = val('pb-otra-zona') || '(sin especificar)';
     const presup = val('pb-otra-presup') || '(sin especificar)';
     const nombre = val('pb-otra-nombre') || 'un interesado';
-    msg = `Hola Joaquín, estoy buscando: ${tipo}, en ${zona}, presupuesto ${presup}. Soy ${nombre}.`;
+    msg = `Hola Joaquín, ¿cómo estás? Soy ${nombre}. Estoy buscando: ${tipo}, en ${zona}, presupuesto ${presup}.`;
   }
   window.open('https://wa.me/5491162782243?text=' + encodeURIComponent(msg), '_blank');
 }
