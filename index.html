@@ -866,6 +866,7 @@
   <button class="tab-btn locked" id="tab-kpis" onclick="tryShowTab('kpis')">📈 KPIs</button>
   <button class="tab-btn locked" id="tab-ingresos" onclick="tryShowTab('ingresos')">💰 Ingresos</button>
   <button class="tab-btn locked" id="tab-cierres" onclick="tryShowTab('cierres')">🎉 Cierres</button>
+  <button class="tab-btn locked" id="tab-alertas" onclick="tryShowTab('alertas')">🔔 Alertas</button>
 </div>
 
 <div class="main">
@@ -1871,6 +1872,34 @@
 </div>
 
 <!-- ══════════════════ CIERRES PANEL ══════════════════ -->
+<!-- ══ ALERTAS PANEL ══════════════════════════════════════════════════════ -->
+<div class="cierres-panel" id="alertasPanel" style="padding:20px">
+  <div style="max-width:960px;margin:0 auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
+      <h2 style="font-family:'Playfair Display',serif;font-size:22px">🔔 Alertas ZonaProp</h2>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <select id="alFiltroTipo" onchange="renderAlertas()" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--card);color:var(--text)">
+          <option value="">Todas las tipologías</option>
+          <option value="Casa">Casa</option>
+          <option value="Terreno/Lote">Terreno/Lote</option>
+          <option value="Departamento">Departamento</option>
+          <option value="Local/Oficina">Local/Oficina</option>
+          <option value="Dueño directo">Dueño directo</option>
+        </select>
+        <select id="alFiltroZona" onchange="renderAlertas()" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--card);color:var(--text)">
+          <option value="">Todas las zonas</option>
+          <option value="Bella Vista">Bella Vista</option>
+          <option value="Muñiz">Muñiz</option>
+          <option value="San Miguel">San Miguel</option>
+        </select>
+        <button onclick="cargarAlertas()" style="padding:6px 14px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer">↺ Actualizar</button>
+        <span id="alContador" style="font-size:12px;color:var(--gray)"></span>
+      </div>
+    </div>
+    <div id="alertasList"></div>
+  </div>
+</div>
+
 <div class="cierres-panel" id="cierresPanel">
   <div style="max-width:900px">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
@@ -3983,9 +4012,10 @@ function showTab(tab) {
   const isIngresos = tab === 'ingresos';
   const isDashboard = tab === 'dashboard';
   const isCierres = tab === 'cierres';
+  const isAlertas = tab === 'alertas';
   const isLotes = tab === 'lotes';
   const isHero  = tab === 'hero';
-  ['tab-contactos','tab-propiedades','tab-stats','tab-pipeline','tab-kpis','tab-ingresos','tab-dashboard','tab-cierres','tab-lotes','tab-hero'].forEach(id => {
+  ['tab-contactos','tab-propiedades','tab-stats','tab-pipeline','tab-kpis','tab-ingresos','tab-dashboard','tab-cierres','tab-alertas','tab-lotes','tab-hero'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.remove('active');
   });
@@ -4004,6 +4034,7 @@ function showTab(tab) {
   document.getElementById('ingresosPanel').classList.toggle('visible', isIngresos);
   document.getElementById('dashboardPanel').classList.toggle('visible', isDashboard);
   document.getElementById('cierresPanel').classList.toggle('visible', isCierres);
+  document.getElementById('alertasPanel').classList.toggle('visible', isAlertas);
   document.getElementById('lotesPanel').classList.toggle('visible', isLotes);
   document.getElementById('heroPanel').classList.toggle('visible', isHero);
   const isPublic = isHero || isLotes;
@@ -4016,6 +4047,7 @@ function showTab(tab) {
   if (isIngresos) renderIngresos();
   if (isDashboard) renderDashboard();
   if (isCierres) renderCierres();
+  if (isAlertas && alertasData.length === 0) cargarAlertas();
   if (isLotes) pvHandleHash();
 }
 
@@ -4253,6 +4285,106 @@ function renderDashboard() {
 }
 
 // ─── CIERRES ─────────────────────────────────────────────────────────────────
+// ─── ALERTAS ─────────────────────────────────────────────────────────────────
+let alertasData = [];
+
+function cargarAlertas() {
+  const list = document.getElementById('alertasList');
+  const cnt  = document.getElementById('alContador');
+  if (!list) return;
+  list.innerHTML = '<div style="color:var(--gray);font-size:13px;padding:20px 0">Cargando alertas…</div>';
+  if (cnt) cnt.textContent = '';
+  fetch(SHEETS_URL + '?action=getAlertas')
+    .then(r => r.json())
+    .then(d => {
+      alertasData = d.alertas || [];
+      renderAlertas();
+    })
+    .catch(() => {
+      list.innerHTML = '<div style="color:#e53e3e;font-size:13px;padding:20px 0">Error al cargar. Verificá que el Apps Script tenga el handler getAlertas.</div>';
+    });
+}
+
+function renderAlertas() {
+  const list = document.getElementById('alertasList');
+  const cnt  = document.getElementById('alContador');
+  if (!list) return;
+  const filtroTipo = document.getElementById('alFiltroTipo')?.value || '';
+  const filtroZona = document.getElementById('alFiltroZona')?.value || '';
+
+  let data = alertasData.filter(a => {
+    if (filtroTipo && a.tipologia !== filtroTipo) return false;
+    if (filtroZona && a.zona !== filtroZona) return false;
+    return true;
+  });
+
+  // Ordenar: más recientes primero
+  data.sort((a,b) => (b.fecha||'').localeCompare(a.fecha||''));
+
+  if (cnt) cnt.textContent = data.length + ' propiedad' + (data.length !== 1 ? 'es' : '');
+
+  if (!data.length) {
+    list.innerHTML = '<div style="color:var(--gray);font-size:13px;padding:20px 0">No hay alertas con estos filtros.</div>';
+    return;
+  }
+
+  // Agrupar por tipología
+  const grupos = {};
+  data.forEach(a => {
+    const k = a.tipologia || 'Otros';
+    if (!grupos[k]) grupos[k] = [];
+    grupos[k].push(a);
+  });
+
+  const TIPO_COLOR = {
+    'Casa':          '#3b82f6',
+    'Terreno/Lote':  '#10b981',
+    'Departamento':  '#8b5cf6',
+    'Local/Oficina': '#f59e0b',
+    'Dueño directo': '#ef4444',
+  };
+
+  let html = '';
+  for (const [tipo, items] of Object.entries(grupos)) {
+    const color = TIPO_COLOR[tipo] || '#6b7280';
+    html += `<div style="margin-bottom:28px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <span style="background:${color};color:#fff;font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;letter-spacing:.5px">${tipo.toUpperCase()}</span>
+        <span style="font-size:12px;color:var(--gray)">${items.length} propiedad${items.length!==1?'es':''}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px">`;
+    items.forEach(a => {
+      const precio = a.precio ? `${a.moneda||'USD'} ${Number(a.precio).toLocaleString('es-AR')}` : 'Consultar';
+      const m2Parts = [];
+      if (a.m2_cubiertos) m2Parts.push(`${a.m2_cubiertos}m² cub.`);
+      if (a.m2_terreno)   m2Parts.push(`${a.m2_terreno}m² tot.`);
+      const m2str = m2Parts.join(' · ') || '—';
+      const pm2 = a.precio_m2 ? `<span style="font-size:11px;color:var(--gray)">${a.moneda||'USD'} ${Number(a.precio_m2).toLocaleString('es-AR')}/m²</span>` : '';
+      const dueno = a.quien_publica === 'Dueño directo'
+        ? `<span style="background:#fef2f2;color:#ef4444;font-size:10px;padding:2px 7px;border-radius:10px;font-weight:600">Dueño directo</span>`
+        : `<span style="font-size:11px;color:var(--gray)">${a.quien_publica||''}</span>`;
+      html += `<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:6px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+          <div style="font-size:13px;font-weight:600;line-height:1.3;flex:1">${esc(a.direccion||a.titulo||'Sin dirección')}</div>
+          <span style="font-size:10px;color:var(--gray);white-space:nowrap">${a.fecha||''}</span>
+        </div>
+        <div style="font-size:14px;font-weight:700;color:var(--accent)">${precio}</div>
+        <div style="font-size:12px;color:var(--gray)">${m2str}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
+          ${dueno}
+          ${pm2}
+        </div>
+        <div style="display:flex;gap:8px;margin-top:4px">
+          <span style="background:var(--bg);border:1px solid var(--border);font-size:11px;padding:2px 8px;border-radius:6px;color:var(--gray)">${esc(a.zona||'')}</span>
+          ${a.url ? `<a href="${esc(a.url)}" target="_blank" style="font-size:11px;color:var(--accent);text-decoration:none;padding:2px 8px;border:1px solid var(--accent);border-radius:6px">Ver en ZP →</a>` : ''}
+        </div>
+      </div>`;
+    });
+    html += `</div></div>`;
+  }
+  list.innerHTML = html;
+}
+
 function renderCierres() {
   const closed = opps.filter(o => o.etapa === 'Cierre')
     .sort((a,b) => (b.etapaChangedAt||b.createdAt||'').localeCompare(a.etapaChangedAt||a.createdAt||''));
