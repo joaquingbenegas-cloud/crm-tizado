@@ -1026,16 +1026,22 @@
       <button class="pub-trigger-btn" onclick="pubShowBuscar()">Ver opciones</button>
     </div>
     <div class="pub-trigger-card">
+      <div class="pub-trigger-icon">🔑</div>
+      <h3>Quiero alquilar</h3>
+      <p>Encontrá el lugar ideal para alquilar.</p>
+      <button class="pub-trigger-btn" onclick="pubShowAlquilar()">Ver opciones</button>
+    </div>
+    <div class="pub-trigger-card">
       <div class="pub-trigger-icon">🏷️</div>
-      <h3>Quiero vender</h3>
-      <p>Te ayudamos a vender tu propiedad al mejor precio.</p>
-      <button class="pub-trigger-btn" onclick="pubShowVenderForm()">Quiero vender</button>
+      <h3>Quiero vender / alquilar mi propiedad</h3>
+      <p>Te ayudamos a vender o alquilar tu propiedad al mejor precio.</p>
+      <button class="pub-trigger-btn" onclick="pubShowPublicar()">Quiero publicar</button>
     </div>
   </div>
 
   <!-- Formulario captación vendedor (directo, sin sección separada) -->
   <div class="pub-vender-inline" id="pubVenderForm" style="display:none">
-    <button class="pub-back-btn" onclick="pubBackToTrigger('pubVenderForm')">← Volver</button>
+    <button class="pub-back-btn" onclick="pubBackFromVender()">← Volver</button>
     <div class="pv-form-group">
       <div class="pv-form-label">¿Qué propiedad querés vender?</div>
       <input class="pv-name-input" id="vd-propiedad" type="text">
@@ -1048,6 +1054,67 @@
       <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
       Quiero vender
     </button>
+  </div>
+
+  <!-- INTERMEDIO: Alquilar -->
+  <div class="pub-buscar" id="pubAlquilar" style="display:none">
+    <button class="pub-back-btn" onclick="pubBackToTrigger('pubAlquilar')">← Volver</button>
+    <h2>¿Qué necesitás?</h2>
+    <div class="pub-buscar-options" id="pubAlquilarOptions">
+      <div class="pub-buscar-card" onclick="pubShowAlquilarForm('buscar', this)">Busco alquilar una propiedad</div>
+      <div class="pub-buscar-card" onclick="pubShowAlquilarForm('poner', this)">Quiero poner mi propiedad en alquiler</div>
+    </div>
+
+    <!-- Form: Busco alquilar -->
+    <div class="pub-buscar-form" id="alq-form-buscar" style="display:none">
+      <button class="pub-back-btn" onclick="pubBackAlquilarOptions()">← Volver</button>
+      <div class="pv-form-group">
+        <div class="pv-form-label">¿Qué buscás?</div>
+        <div class="pv-options" id="alq-buscar-tipo">
+          <div class="pv-option" onclick="pvSelect(this,'alq-buscar-tipo')">Casa</div>
+          <div class="pv-option" onclick="pvSelect(this,'alq-buscar-tipo')">Departamento</div>
+          <div class="pv-option" onclick="pvSelect(this,'alq-buscar-tipo')">Local / Oficina</div>
+          <div class="pv-option" onclick="pvSelect(this,'alq-buscar-tipo')">Otro</div>
+        </div>
+      </div>
+      <div class="pv-form-group">
+        <div class="pv-form-label">¿Cuántos ambientes?</div>
+        <input class="pv-name-input" id="alq-buscar-ambientes" type="text">
+      </div>
+      <div class="pv-form-group">
+        <div class="pv-form-label">¿Zona preferida?</div>
+        <input class="pv-name-input" id="alq-buscar-zona" type="text">
+      </div>
+      <div class="pv-form-group">
+        <div class="pv-form-label">Nombre</div>
+        <input class="pv-name-input" id="alq-buscar-nombre" type="text">
+      </div>
+      <button class="pv-submit" onclick="pvEnviarAlquilerBuscar()">Enviar por WhatsApp</button>
+    </div>
+
+    <!-- Form: Poner en alquiler -->
+    <div class="pub-buscar-form" id="alq-form-poner" style="display:none">
+      <button class="pub-back-btn" onclick="pubBackAlquilarOptions()">← Volver</button>
+      <div class="pv-form-group">
+        <div class="pv-form-label">¿Qué propiedad tenés?</div>
+        <input class="pv-name-input" id="alq-poner-propiedad" type="text">
+      </div>
+      <div class="pv-form-group">
+        <div class="pv-form-label">Nombre</div>
+        <input class="pv-name-input" id="alq-poner-nombre" type="text">
+      </div>
+      <button class="pv-submit" onclick="pvEnviarAlquilerPoner()">Enviar por WhatsApp</button>
+    </div>
+  </div>
+
+  <!-- INTERMEDIO: Publicar (vender o alquilar mi propiedad) -->
+  <div class="pub-buscar" id="pubPublicar" style="display:none">
+    <button class="pub-back-btn" onclick="pubBackToTrigger('pubPublicar')">← Volver</button>
+    <h2>¿Qué querés hacer?</h2>
+    <div class="pub-buscar-options" id="pubPublicarOptions">
+      <div class="pub-buscar-card" onclick="pubPublicarVender()">Quiero vender mi propiedad</div>
+      <div class="pub-buscar-card" onclick="pubPublicarAlquilar()">Quiero alquilar mi propiedad</div>
+    </div>
   </div>
 
   <!-- INTERMEDIO: ¿Qué estás buscando? -->
@@ -5131,7 +5198,7 @@ function pvShowSection(id, btn) {
 
 // Selección de opciones — toggle multi-select salvo grupos de una sola opción
 const PV_SINGLE = ['pn-tipo','ao-amb','ao-etapa','ao-finan','vd-tipo','vd-precio',
-  'pb-village-barrio','pb-village-ubic','pb-pn-tipo','pb-pn-ubic','pb-aora-amb','pb-aora-etapa','pb-aora-finan']; // solo estos son exclusivos
+  'pb-village-barrio','pb-village-ubic','pb-pn-tipo','pb-pn-ubic','pb-aora-amb','pb-aora-etapa','pb-aora-finan','alq-buscar-tipo']; // solo estos son exclusivos
 function pvSelect(el, groupId) {
   if (PV_SINGLE.includes(groupId)) {
     document.querySelectorAll(`#${groupId} .pv-option`).forEach(o => o.classList.remove('selected'));
@@ -5195,9 +5262,89 @@ function pvEnviarVenta() {
 }
 
 // ─── TRIGGER COMPRAR / PANTALLA INTERMEDIA ──────────────────────────────────
-function pubShowVenderForm() {
+let pubVenderOrigin = 'trigger';
+let pubPonerOrigin = 'alquilar';
+
+function pubShowVenderForm(origin) {
+  pubVenderOrigin = origin || 'trigger';
+  if (pubVenderOrigin === 'publicar') document.getElementById('pubPublicar').style.display = 'none';
   document.getElementById('pubVenderForm').style.display = 'block';
   document.getElementById('pubVenderForm').scrollIntoView({ behavior: 'smooth' });
+}
+
+function pubBackFromVender() {
+  document.getElementById('pubVenderForm').style.display = 'none';
+  if (pubVenderOrigin === 'publicar') {
+    document.getElementById('pubPublicar').style.display = 'block';
+    document.getElementById('pubPublicar').scrollIntoView({ behavior: 'smooth' });
+  } else {
+    document.getElementById('pubTrigger').scrollIntoView({ behavior: 'smooth' });
+  }
+}
+
+function pubShowAlquilar() {
+  document.getElementById('pubAlquilar').style.display = 'block';
+  document.getElementById('pubAlquilar').scrollIntoView({ behavior: 'smooth' });
+}
+
+function pubShowAlquilarForm(key, card) {
+  document.querySelectorAll('#pubAlquilarOptions .pub-buscar-card').forEach(c => c.classList.remove('selected'));
+  if (card) card.classList.add('selected');
+  document.getElementById('alq-form-buscar').style.display = 'none';
+  document.getElementById('alq-form-poner').style.display = 'none';
+  pubPonerOrigin = 'alquilar';
+  const form = document.getElementById('alq-form-' + key);
+  if (form) {
+    form.style.display = 'block';
+    form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+
+function pubBackAlquilarOptions() {
+  document.getElementById('alq-form-buscar').style.display = 'none';
+  document.getElementById('alq-form-poner').style.display = 'none';
+  document.querySelectorAll('#pubAlquilarOptions .pub-buscar-card').forEach(c => c.classList.remove('selected'));
+  if (pubPonerOrigin === 'publicar') {
+    document.getElementById('pubAlquilar').style.display = 'none';
+    document.getElementById('pubPublicar').style.display = 'block';
+    document.getElementById('pubPublicar').scrollIntoView({ behavior: 'smooth' });
+  } else {
+    document.getElementById('pubAlquilarOptions').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+
+function pubShowPublicar() {
+  document.getElementById('pubPublicar').style.display = 'block';
+  document.getElementById('pubPublicar').scrollIntoView({ behavior: 'smooth' });
+}
+
+function pubPublicarVender() {
+  pubShowVenderForm('publicar');
+}
+
+function pubPublicarAlquilar() {
+  pubPonerOrigin = 'publicar';
+  document.getElementById('pubPublicar').style.display = 'none';
+  document.getElementById('pubAlquilar').style.display = 'block';
+  document.getElementById('alq-form-buscar').style.display = 'none';
+  document.getElementById('alq-form-poner').style.display = 'block';
+  document.getElementById('alq-form-poner').scrollIntoView({ behavior: 'smooth' });
+}
+
+function pvEnviarAlquilerBuscar() {
+  const tipo = pvGet('alq-buscar-tipo') || '(sin especificar)';
+  const ambientes = (document.getElementById('alq-buscar-ambientes')?.value || '').trim() || '(sin especificar)';
+  const zona = (document.getElementById('alq-buscar-zona')?.value || '').trim() || '(sin especificar)';
+  const nombre = (document.getElementById('alq-buscar-nombre')?.value || '').trim() || 'un interesado';
+  const msg = `Hola Joaquín, ¿cómo estás? Soy ${nombre}. Estoy buscando alquilar: ${tipo}, ${ambientes} ambientes, zona ${zona}.`;
+  window.open('https://wa.me/5491162782243?text=' + encodeURIComponent(msg), '_blank');
+}
+
+function pvEnviarAlquilerPoner() {
+  const propiedad = (document.getElementById('alq-poner-propiedad')?.value || '').trim() || '(sin especificar)';
+  const nombre = (document.getElementById('alq-poner-nombre')?.value || '').trim() || 'un interesado';
+  const msg = `Hola Joaquín, ¿cómo estás? Soy ${nombre}. Quiero poner en alquiler: ${propiedad}.`;
+  window.open('https://wa.me/5491162782243?text=' + encodeURIComponent(msg), '_blank');
 }
 
 function pubShowBuscar() {
