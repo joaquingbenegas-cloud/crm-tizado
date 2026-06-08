@@ -3,6 +3,38 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdn.tailwindcss.com"></script>
+<style type="text/tailwindcss">
+  /* Componentes públicos migrados a Tailwind vía @apply (mantienen sus nombres de clase para no romper el JS) */
+  .pv-form-group { @apply mb-5; }
+  .pv-form-label { @apply text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2; }
+  .pv-options { @apply flex flex-wrap gap-2; }
+  .pv-option { @apply bg-[var(--bg3)] border-[1.5px] border-[var(--border)] rounded-lg px-3.5 py-2 text-[13px] text-white cursor-pointer select-none transition-colors hover:border-[var(--red)]; }
+  .pv-option.selected { @apply border-[var(--red)] bg-[#C8102E]/10 text-[var(--red)] font-semibold; }
+  .pv-name-input { @apply w-full px-3 py-2.5 bg-[var(--bg3)] border-[1.5px] border-[var(--border)] rounded-lg text-white text-sm font-sans outline-none transition-colors box-border focus:border-[var(--red)] placeholder:text-[var(--gray2)]; }
+  .pv-submit { @apply w-full flex items-center justify-center gap-2 bg-[#25d366] hover:bg-[#1ebe5d] text-white border-0 rounded-[10px] py-3.5 text-[15px] font-bold cursor-pointer transition-all mt-2 active:translate-y-0 hover:-translate-y-px; }
+  .pv-submit svg { @apply shrink-0; }
+
+  .pub-vender-inline { @apply px-5 pt-2 pb-7 max-w-[680px] mx-auto; }
+
+  .pub-trigger { @apply flex flex-wrap gap-3.5 px-5 py-6 max-w-[680px] mx-auto max-md:px-4 max-md:py-4 max-md:gap-3; }
+  .pub-trigger-card { @apply flex-1 min-w-[240px] max-md:min-w-full bg-gray-50 border border-gray-200 rounded-2xl px-[18px] py-[22px] text-center; }
+  .pub-trigger-icon { @apply text-3xl mb-2; }
+  .pub-trigger-card h3 { @apply text-[17px] mb-1.5 font-bold text-gray-900; }
+  .pub-trigger-card p { @apply text-[13px] text-gray-600 mb-3.5 leading-snug; }
+  .pub-trigger-btn { @apply bg-[#1a3a6b] hover:bg-[#142d54] text-white border-0 rounded-lg px-[18px] py-2.5 text-sm font-semibold cursor-pointer transition-colors; }
+
+  .pub-buscar { @apply px-5 py-2 max-w-[680px] mx-auto; }
+  .pub-buscar h2 { @apply text-xl font-bold text-gray-900 text-center my-4; }
+  .pub-buscar-options { @apply flex flex-col gap-2.5 mb-1.5; }
+  .pub-back-btn { @apply inline-block bg-transparent border-0 text-gray-400 text-[13px] cursor-pointer py-1 mb-2.5 hover:text-gray-600 hover:underline; }
+  .pub-buscar-card { @apply bg-white border-[1.5px] border-gray-200 rounded-[10px] px-4 py-3.5 text-sm font-semibold text-gray-900 cursor-pointer transition-colors; }
+  .pub-buscar-card.selected { @apply border-[#1a3a6b] bg-gray-50; }
+  .pub-buscar-card small { @apply block font-normal text-gray-400 text-xs mt-0.5; }
+  .pub-buscar-form { @apply pt-[22px]; }
+
+  .pub-fab-wa { @apply fixed bottom-5 right-5 w-[54px] h-[54px] rounded-full bg-[#25d366] flex items-center justify-center shadow-lg z-[80] no-underline; }
+</style>
 <title>Joaquín González Benegas · Asesor Inmobiliario · Tizado Bella Vista</title>
 <meta property="og:title" content="Joaquín González Benegas · Asesor Inmobiliario · Tizado Bella Vista">
 <meta property="og:description" content="Comprá, vendé o invertí en Bella Vista y alrededores. Hablemos.">
@@ -763,20 +795,7 @@
   .pv-section-desc { font-size: 14px; color: var(--gray); line-height: 1.65; margin-bottom: 28px; }
   .pv-divider { border: none; border-top: 1px solid var(--border); margin: 28px 0; }
 
-  /* Formulario */
-  .pv-form-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--gray); margin-bottom: 8px; }
-  .pv-form-group { margin-bottom: 20px; }
-  .pv-options { display: flex; flex-wrap: wrap; gap: 8px; }
-  .pv-option { background: var(--bg3); border: 1.5px solid var(--border); border-radius: 8px; padding: 8px 14px; font-size: 13px; color: var(--white); cursor: pointer; transition: border-color .15s, background .15s; user-select: none; }
-  .pv-option:hover { border-color: var(--red); }
-  .pv-option.selected { border-color: var(--red); background: rgba(200,16,46,.07); color: var(--red); font-weight: 600; }
-  .pv-name-input { width: 100%; padding: 10px 12px; background: var(--bg3); border: 1.5px solid var(--border); border-radius: 8px; color: var(--white); font-size: 14px; font-family: Inter, sans-serif; outline: none; box-sizing: border-box; transition: border-color .15s; }
-  .pv-name-input:focus { border-color: var(--red); }
-  .pv-name-input::placeholder { color: var(--gray2); }
-  .pv-submit { width: 100%; display: flex; align-items: center; justify-content: center; gap: 9px; background: #25d366; color: #fff; border: none; border-radius: 10px; padding: 14px; font-size: 15px; font-weight: 700; cursor: pointer; transition: background .2s, transform .1s; margin-top: 8px; }
-  .pv-submit:hover { background: #1ebe5d; transform: translateY(-1px); }
-  .pv-submit:active { transform: translateY(0); }
-  .pv-submit svg { flex-shrink: 0; }
+  /* Formulario: estilos migrados a Tailwind @apply (ver bloque <style type="text/tailwindcss"> en <head>) */
 
   @media (max-width: 600px) {
     .pv-section { padding: 24px 16px 60px; }
@@ -793,79 +812,10 @@
   .pub-hero-panel { display: none; flex-direction: column; background: var(--bg); }
   .pub-hero-panel.visible { display: flex; }
 
-  .pub-hero-header { background: #fff; padding: 4px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #e8e8e8; }
-  .pub-hero-logo { width: 120px; height: auto; }
-  .pub-hero-header-links { display: flex; gap: 16px; align-items: center; }
-  .pub-hero-header-links a { color: #1a1a1a; font-size: 13px; font-weight: 600; text-decoration: none; transition: opacity .15s; }
-  .pub-hero-header-links a:hover { opacity: .6; }
-  .pub-hero-header-links .header-phone { color: #25d366; }
+  /* Header, hero y "por qué" migrados a Tailwind utility classes inline */
 
-  .pub-hero-body { background: #f7f8fa; padding: 28px 20px 32px; display: flex; align-items: center; gap: 22px; }
-  .pub-hero-photo { width: 110px; height: 110px; border-radius: 50%; object-fit: cover; object-position: center center; border: 3px solid #1a3a6b; flex-shrink: 0; box-shadow: 0 4px 16px rgba(0,0,0,.12); }
-  .pub-hero-text { flex: 1; }
-  .pub-hero-greeting { font-size: 13px; color: #888; margin-bottom: 2px; }
-  .pub-hero-name { font-family: 'Inter', sans-serif; font-size: 24px; font-weight: 700; color: #111; line-height: 1.2; margin-bottom: 6px; }
-  .pub-hero-title { font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: #1a3a6b; margin-bottom: 12px; }
-  .pub-hero-desc { font-size: 14px; color: #555; line-height: 1.6; margin-bottom: 18px; max-width: 380px; }
-  .pub-hero-actions { display: flex; gap: 10px; flex-wrap: wrap; }
-  .pub-hero-wa { display: inline-flex; align-items: center; gap: 8px; background: #25d366; color: #fff; text-decoration: none; border-radius: 8px; padding: 10px 20px; font-size: 14px; font-weight: 700; transition: background .15s; }
-  .pub-hero-wa:hover { background: #1ebe5d; }
-  .pub-hero-ig { display: inline-flex; align-items: center; gap: 8px; background: #fff; color: #333; text-decoration: none; border-radius: 8px; padding: 10px 16px; font-size: 14px; border: 1px solid #ddd; transition: background .15s; }
-  .pub-hero-ig:hover { background: #f0f0f0; }
+  /* Trigger, "¿qué estás buscando?", back-btn y FAB: migrados a Tailwind @apply (ver <head>) */
 
-  /* Formulario captación vendedor */
-
-  /* Por qué trabajar con nosotros */
-  .pub-why-dark { background: #f7f7f7; padding: 40px 20px; display: flex; align-items: center; gap: 40px; max-width: 880px; margin: 0 auto; }
-  .pub-why-col-logo { flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
-  .pub-why-logo-img { width: 180px; max-width: 100%; height: auto; border-radius: 0; background: none; pointer-events: none; }
-  .pub-why-col-text { flex: 1; }
-  .pub-why-col-text h2 { font-size: 22px; font-weight: 700; margin: 0 0 22px; color: #1a1a1a; }
-  .pub-why-blocks { display: flex; flex-direction: column; gap: 20px; text-align: left; }
-  .pub-why-block h3 { font-size: 16px; font-weight: 700; margin: 0 0 6px; color: #1a1a1a; }
-  .pub-why-block p { font-size: 14px; color: #1a1a1a; line-height: 1.6; margin: 0; }
-
-  /* Formulario vender inline */
-  .pub-vender-inline { padding: 8px 20px 28px; max-width: 680px; margin: 0 auto; }
-
-  /* Trigger comprar/vender */
-  .pub-trigger { display: flex; gap: 14px; padding: 24px 20px; max-width: 680px; margin: 0 auto; flex-wrap: wrap; }
-  .pub-trigger-card { flex: 1; min-width: 240px; background: #f7f8fa; border: 1px solid #e8e8e8; border-radius: 14px; padding: 22px 18px; text-align: center; }
-  .pub-trigger-icon { font-size: 30px; margin-bottom: 8px; }
-  .pub-trigger-card h3 { font-size: 17px; margin: 0 0 6px; font-weight: 700; color: #111; }
-  .pub-trigger-card p { font-size: 13px; color: #666; margin: 0 0 14px; line-height: 1.5; }
-  .pub-trigger-btn { background: #1a3a6b; color: #fff; border: none; border-radius: 8px; padding: 10px 18px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background .15s; }
-  .pub-trigger-btn:hover { background: #142d54; }
-
-  /* Pantalla intermedia "¿Qué estás buscando?" */
-  .pub-buscar { padding: 8px 20px 8px; max-width: 680px; margin: 0 auto; }
-  .pub-buscar h2 { font-size: 21px; font-weight: 700; margin: 16px 0 16px; color: #111; text-align: center; }
-  .pub-buscar-options { display: flex; flex-direction: column; gap: 10px; margin-bottom: 6px; }
-  .pub-back-btn { display: inline-block; background: none; border: none; color: #888; font-size: 13px; cursor: pointer; padding: 4px 0; margin-bottom: 10px; }
-  .pub-back-btn:hover { color: #555; text-decoration: underline; }
-  .pub-buscar-card { background: #fff; border: 1.5px solid #e0e0e0; border-radius: 10px; padding: 14px 16px; font-size: 14px; font-weight: 600; color: #1a1a1a; cursor: pointer; transition: border-color .15s, background .15s; }
-  .pub-buscar-card.selected { border-color: #1a3a6b; background: #f7f8fa; }
-  .pub-buscar-card small { display: block; font-weight: 400; color: #888; font-size: 12px; margin-top: 2px; }
-  .pub-buscar-form { padding-top: 22px; }
-
-  /* FAB WhatsApp flotante */
-  .pub-fab-wa { position: fixed; bottom: 20px; right: 20px; width: 54px; height: 54px; border-radius: 50%; background: #25d366; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(0,0,0,.25); z-index: 80; text-decoration: none; }
-
-  @media (max-width: 600px) {
-    .pub-hero-body { flex-direction: column; align-items: center; text-align: center; padding: 18px 16px 22px; gap: 12px; }
-    .pub-why-dark { flex-direction: column; gap: 24px; padding: 32px 20px; text-align: center; }
-    .pub-why-logo-img { width: 150px; }
-    .pub-why-col-text h2 { text-align: center; }
-    .pub-why-blocks { text-align: center; }
-    .pub-hero-photo { width: 84px; height: 84px; }
-    .pub-hero-logo { width: 90px; }
-    .pub-hero-name { font-size: 21px; }
-    .pub-hero-title { margin-bottom: 8px; }
-    .pub-hero-desc { font-size: 13px; margin: 0 auto 14px; }
-    .pub-hero-actions { justify-content: center; }
-    .pub-trigger { padding: 18px 16px; gap: 12px; }
-    .pub-trigger-card { min-width: 100%; }
-  }
 </style>
 </head>
 <body>
@@ -980,23 +930,24 @@
 <div class="pub-hero-panel" id="heroPanel">
 
   <!-- Header con logo -->
-  <div class="pub-hero-header">
-    <img src="tizado-real.png" alt="Tizado" class="pub-hero-logo">
-    <div class="pub-hero-header-links">
-      <a href="https://instagram.com/joaquin.tizadobv" target="_blank">@joaquin.tizadobv</a>
-      <a href="https://wa.me/5491162782243" target="_blank" class="header-phone">+54 11 6278 2243</a>
+  <div class="bg-white px-5 py-1 flex items-center justify-between border-b border-gray-200">
+    <img src="tizado-real.png" alt="Tizado" class="w-[120px] md:w-[120px] max-md:w-[90px] h-auto">
+    <div class="flex items-center gap-4">
+      <a href="https://instagram.com/joaquin.tizadobv" target="_blank" class="text-[13px] font-semibold text-gray-900 hover:opacity-60 transition-opacity">@joaquin.tizadobv</a>
+      <a href="https://wa.me/5491162782243" target="_blank" class="text-[13px] font-semibold text-[#25d366] hover:opacity-60 transition-opacity">+54 11 6278 2243</a>
     </div>
   </div>
 
   <!-- Hero: foto + texto -->
-  <div class="pub-hero-body">
-    <img src="joaquin.png" alt="Joaquín" class="pub-hero-photo">
-    <div class="pub-hero-text">
-      <div class="pub-hero-name">Hola, soy Joaquín González Benegas</div>
-      <div class="pub-hero-title">Asesor Inmobiliario · Tizado Bella Vista</div>
-      <p class="pub-hero-desc">Nací y crecí en Bella Vista. Conozco cada barrio, cada calle y cada proyecto de la zona. Si estás pensando en comprar, vender o invertir acá, estoy para acompañarte en cada paso.</p>
-      <div class="pub-hero-actions">
-        <a href="https://wa.me/5491162782243" target="_blank" class="pub-hero-wa">
+  <div class="bg-gray-50 px-5 py-7 md:py-8 flex flex-col md:flex-row items-center text-center md:text-left gap-4 md:gap-6">
+    <img src="joaquin.png" alt="Joaquín" class="w-[84px] h-[84px] md:w-[110px] md:h-[110px] rounded-full object-cover border-[3px] border-[#1a3a6b] shadow-lg shrink-0">
+    <div class="flex-1">
+      <div class="text-[13px] text-gray-500 mb-0.5">Hola, soy</div>
+      <div class="font-sans text-[21px] md:text-2xl font-bold text-gray-900 leading-tight mb-1.5">Joaquín González Benegas</div>
+      <div class="text-[11px] font-semibold tracking-[.12em] uppercase text-[#1a3a6b] mb-2 md:mb-3">Asesor Inmobiliario · Tizado Bella Vista</div>
+      <p class="text-[13px] md:text-sm text-gray-600 leading-relaxed mb-3.5 md:mb-4 max-w-[380px] mx-auto md:mx-0">Nací y crecí en Bella Vista. Conozco cada barrio, cada calle y cada proyecto de la zona. Si estás pensando en comprar, vender o invertir acá, estoy para acompañarte en cada paso.</p>
+      <div class="flex gap-2.5 flex-wrap justify-center md:justify-start">
+        <a href="https://wa.me/5491162782243" target="_blank" class="inline-flex items-center gap-2 bg-[#25d366] hover:bg-[#1ebe5d] text-white no-underline rounded-lg px-5 py-2.5 text-sm font-bold transition-colors">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
           Hablemos
         </a>
@@ -1005,24 +956,24 @@
   </div>
 
   <!-- POR QUÉ TRABAJAR CON NOSOTROS -->
-  <div class="pub-why pub-why-dark">
-    <div class="pub-why-col-logo">
-      <img src="tizado-instagram.jpg" alt="Tizado" class="pub-why-logo-img">
+  <div class="bg-[#f7f7f7] px-5 py-10 max-w-[880px] mx-auto flex flex-col md:flex-row items-center gap-6 md:gap-10 text-center md:text-left">
+    <div class="shrink-0 flex items-center justify-center">
+      <img src="tizado-instagram.jpg" alt="Tizado" class="w-[150px] md:w-[320px] max-w-full h-auto pointer-events-none">
     </div>
-    <div class="pub-why-col-text">
-      <h2>Tu operación en las mejores manos.</h2>
-      <div class="pub-why-blocks">
-        <div class="pub-why-block">
-          <h3>El respaldo de Tizado.</h3>
-          <p>35 años en el mercado. Una marca en la que confiar.</p>
+    <div class="flex-1">
+      <h2 class="text-[22px] font-bold text-gray-900 mb-5">Tu operación en las mejores manos.</h2>
+      <div class="flex flex-col gap-5 text-left">
+        <div>
+          <h3 class="text-base font-bold text-gray-900 mb-1.5">El respaldo de Tizado.</h3>
+          <p class="text-sm text-gray-900 leading-relaxed">35 años en el mercado. Una marca en la que confiar.</p>
         </div>
-        <div class="pub-why-block">
-          <h3>Conocemos la zona.</h3>
-          <p>15 años en Bella Vista y alrededores. Cada barrio, cada precio, cada oportunidad.</p>
+        <div>
+          <h3 class="text-base font-bold text-gray-900 mb-1.5">Conocemos la zona.</h3>
+          <p class="text-sm text-gray-900 leading-relaxed">15 años en Bella Vista y alrededores. Cada barrio, cada precio, cada oportunidad.</p>
         </div>
-        <div class="pub-why-block">
-          <h3>De principio a fin.</h3>
-          <p>Primera consulta, negociación, escritura. Estamos en cada paso.</p>
+        <div>
+          <h3 class="text-base font-bold text-gray-900 mb-1.5">De principio a fin.</h3>
+          <p class="text-sm text-gray-900 leading-relaxed">Primera consulta, negociación, escritura. Estamos en cada paso.</p>
         </div>
       </div>
     </div>
