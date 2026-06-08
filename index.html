@@ -1009,8 +1009,22 @@
   <div class="pub-vender-inline" id="pubVenderForm" style="display:none">
     <button class="pub-back-btn" onclick="pubBackFromVender()">← Volver</button>
     <div class="pv-form-group">
-      <div class="pv-form-label">¿Qué propiedad querés vender?</div>
-      <input class="pv-name-input" id="vd-propiedad" type="text">
+      <div class="pv-form-label">¿Qué tipo de propiedad es?</div>
+      <div class="pv-options" id="vd-tipo-prop">
+        <div class="pv-option" onclick="pvSelect(this,'vd-tipo-prop')">Casa</div>
+        <div class="pv-option" onclick="pvSelect(this,'vd-tipo-prop')">Departamento</div>
+        <div class="pv-option" onclick="pvSelect(this,'vd-tipo-prop')">Lote</div>
+        <div class="pv-option" onclick="pvSelect(this,'vd-tipo-prop')">Local / Oficina</div>
+        <div class="pv-option" onclick="pvSelect(this,'vd-tipo-prop')">Otro</div>
+      </div>
+    </div>
+    <div class="pv-form-group">
+      <div class="pv-form-label">¿Cuántos ambientes tiene?</div>
+      <input class="pv-name-input" id="vd-ambientes" type="text">
+    </div>
+    <div class="pv-form-group">
+      <div class="pv-form-label">¿Cuántos m² aproximadamente?</div>
+      <input class="pv-name-input" id="vd-metros" type="text">
     </div>
     <div class="pv-form-group">
       <div class="pv-form-label">Nombre</div>
@@ -5164,7 +5178,7 @@ function pvShowSection(id, btn) {
 
 // Selección de opciones — toggle multi-select salvo grupos de una sola opción
 const PV_SINGLE = ['pn-tipo','ao-amb','ao-etapa','ao-finan','vd-tipo','vd-precio',
-  'pb-village-barrio','pb-village-ubic','pb-pn-tipo','pb-pn-ubic','pb-aora-amb','pb-aora-etapa','pb-aora-finan','alq-buscar-tipo']; // solo estos son exclusivos
+  'pb-village-barrio','pb-village-ubic','pb-pn-tipo','pb-pn-ubic','pb-aora-amb','pb-aora-etapa','pb-aora-finan','alq-buscar-tipo','vd-tipo-prop']; // solo estos son exclusivos
 function pvSelect(el, groupId) {
   if (PV_SINGLE.includes(groupId)) {
     document.querySelectorAll(`#${groupId} .pv-option`).forEach(o => o.classList.remove('selected'));
@@ -5221,9 +5235,11 @@ function pvEnviar(seccion) {
 
 // Manejar ancla al cargar la sección
 function pvEnviarVenta() {
-  const propiedad = (document.getElementById('vd-propiedad')?.value || '').trim() || '(sin especificar)';
+  const tipo = pvGet('vd-tipo-prop') || '(sin especificar)';
+  const ambientes = (document.getElementById('vd-ambientes')?.value || '').trim() || '(sin especificar)';
+  const metros = (document.getElementById('vd-metros')?.value || '').trim() || '(sin especificar)';
   const nombre = (document.getElementById('vd-nombre')?.value || '').trim() || 'un interesado';
-  const msg = `Hola Joaquín, ¿cómo estás? Soy ${nombre}. Quiero vender: ${propiedad}.`;
+  const msg = `Hola Joaquín, ¿cómo estás? Soy ${nombre}. Quiero vender: ${tipo}, ${ambientes} ambientes, ${metros}m².`;
   window.open('https://wa.me/5491162782243?text=' + encodeURIComponent(msg), '_blank');
 }
 
