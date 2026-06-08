@@ -816,14 +816,14 @@
   /* Formulario captación vendedor */
 
   /* Por qué trabajar con nosotros */
-  .pub-why { padding: 32px 20px 16px; max-width: 640px; margin: 0 auto; text-align: center; }
-  .pub-why-logo { width: 200px; max-width: 100%; height: auto; display: block; margin: 0 auto 16px; pointer-events: none; }
-  .pub-why h2 { font-size: 22px; font-weight: 700; margin: 0 0 8px; color: #111; }
-  .pub-why-tagline { font-size: 12px; color: #999; margin: 0 0 18px; letter-spacing: .3px; }
-  .pub-why-sub { font-size: 14px; color: #666; margin: 0 0 28px; line-height: 1.5; }
-  .pub-why-blocks { display: flex; flex-direction: column; gap: 22px; text-align: left; }
-  .pub-why-block h3 { font-size: 16px; font-weight: 700; margin: 0 0 6px; color: #111; }
-  .pub-why-block p { font-size: 14px; color: #555; line-height: 1.6; margin: 0; }
+  .pub-why-dark { background: #2d2d2d; padding: 40px 20px; display: flex; align-items: center; gap: 40px; max-width: 880px; margin: 0 auto; }
+  .pub-why-col-logo { flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+  .pub-why-logo-img { width: 220px; max-width: 100%; height: auto; filter: brightness(1.8) contrast(1.2); pointer-events: none; }
+  .pub-why-col-text { flex: 1; }
+  .pub-why-col-text h2 { font-size: 22px; font-weight: 700; margin: 0 0 22px; color: #fff; }
+  .pub-why-blocks { display: flex; flex-direction: column; gap: 20px; text-align: left; }
+  .pub-why-block h3 { font-size: 16px; font-weight: 700; margin: 0 0 6px; color: #fff; }
+  .pub-why-block p { font-size: 14px; color: #ccc; line-height: 1.6; margin: 0; }
 
   /* Formulario vender inline */
   .pub-vender-inline { padding: 8px 20px 28px; max-width: 680px; margin: 0 auto; }
@@ -853,8 +853,11 @@
 
   @media (max-width: 600px) {
     .pub-hero-body { flex-direction: column; align-items: center; text-align: center; padding: 18px 16px 22px; gap: 12px; }
+    .pub-why-dark { flex-direction: column; gap: 24px; padding: 32px 20px; text-align: center; }
+    .pub-why-logo-img { width: 150px; }
+    .pub-why-col-text h2 { text-align: center; }
+    .pub-why-blocks { text-align: center; }
     .pub-hero-photo { width: 84px; height: 84px; }
-    .pub-why-logo { width: 150px; }
     .pub-hero-name { font-size: 21px; }
     .pub-hero-title { margin-bottom: 8px; }
     .pub-hero-desc { font-size: 13px; margin: 0 auto 14px; }
@@ -1001,23 +1004,25 @@
   </div>
 
   <!-- POR QUÉ TRABAJAR CON NOSOTROS -->
-  <div class="pub-why">
-    <img src="logo-tizado.png" alt="Tizado" class="pub-why-logo">
-    <h2>Tu operación en las mejores manos.</h2>
-    <p class="pub-why-tagline">35 años en el mercado · 15 años en Bella Vista</p>
-    <p class="pub-why-sub">Ya sea que quieras comprar, vender o invertir, te acompañamos con el respaldo de una de las marcas líderes del país.</p>
-    <div class="pub-why-blocks">
-      <div class="pub-why-block">
-        <h3>Más de 15 años en Bella Vista.</h3>
-        <p>Conocemos cada barrio, cada precio y cada proyecto de la zona mejor que nadie.</p>
-      </div>
-      <div class="pub-why-block">
-        <h3>El respaldo de Tizado.</h3>
-        <p>Con más de 35 años en el mercado inmobiliario argentino, operás con una de las marcas más reconocidas y confiables del país.</p>
-      </div>
-      <div class="pub-why-block">
-        <h3>De principio a fin.</h3>
-        <p>Desde la primera consulta hasta la escritura, estamos para acompañarte con respuestas claras y sin vueltas.</p>
+  <div class="pub-why pub-why-dark">
+    <div class="pub-why-col-logo">
+      <img src="logo-tizado.png" alt="Tizado" class="pub-why-logo-img">
+    </div>
+    <div class="pub-why-col-text">
+      <h2>Tu operación en las mejores manos.</h2>
+      <div class="pub-why-blocks">
+        <div class="pub-why-block">
+          <h3>El respaldo de Tizado.</h3>
+          <p>35 años en el mercado. Una marca en la que confiar.</p>
+        </div>
+        <div class="pub-why-block">
+          <h3>Conocemos la zona.</h3>
+          <p>15 años en Bella Vista y alrededores. Cada barrio, cada precio, cada oportunidad.</p>
+        </div>
+        <div class="pub-why-block">
+          <h3>De principio a fin.</h3>
+          <p>Primera consulta, negociación, escritura. Estamos en cada paso.</p>
+        </div>
       </div>
     </div>
   </div>
