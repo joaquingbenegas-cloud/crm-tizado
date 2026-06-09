@@ -178,31 +178,26 @@ def scrape_zonaprop(vistas: set) -> list:
     todas = []
     BASE = "https://www.zonaprop.com.ar"
 
-    # Solo dueño directo (publisherTypeId=1), todas las tipologías
-    for zona_slug, zona_label in ZONAS_ZP.items():
-        url = f"{BASE}/propiedades-venta-{zona_slug}.html?orden=mas-recientes&publisherType=Inmobiliaria"
-        # ZonaProp no filtra por param — scrapeamos y filtramos localmente
-        url = f"{BASE}/propiedades-venta-{zona_slug}.html?orden=mas-recientes"
-        print(f"\n  [ZP Dueño directo] {zona_label}")
-        print(f"  GET {url}")
-        soup = fetch_page(url, BASE + "/")
-        if not soup:
-            time.sleep(random.uniform(2, 4))
-            continue
-        state = zp_extraer_state(soup)
-        if not state:
-            time.sleep(random.uniform(2, 4))
-            continue
-        postings_raw = state.get("listStore", {}).get("listPostings", []) or []
-        dd = [p for p in postings_raw if (p.get("publisher") or {}).get("publisherTypeId") == "1"]
-        print(f"  → en página: {len(postings_raw)} | dueño directo: {len(dd)}")
-        for p in dd:
-            zp_id = "zp_" + str(p.get("postingId") or "")
-            if not zp_id or zp_id in vistas or any(x["id"] == zp_id for x in todas):
+    for tipo_slug, tipo_label in TIPOLOGIAS_ZP.items():
+        for zona_slug, zona_label in ZONAS_ZP.items():
+            url = f"{BASE}/{tipo_slug}-venta-{zona_slug}.html?orden=mas-recientes"
+            print(f"\n  [ZP] {tipo_label} — {zona_label}")
+            print(f"  GET {url}")
+            soup = fetch_page(url, BASE + "/")
+            if not soup:
+                time.sleep(random.uniform(2, 4))
                 continue
-            items = zp_parsear_postings({"listStore": {"listPostings": [p]}}, "Dueño directo", zona_label)
-            todas.extend(items)
-        time.sleep(random.uniform(2, 4))
+            state = zp_extraer_state(soup)
+            if not state:
+                print("  ⚠ No se encontró __PRELOADED_STATE__")
+                time.sleep(random.uniform(2, 4))
+                continue
+            total = state.get("listStore", {}).get("totalPosting", "?")
+            items = zp_parsear_postings(state, tipo_label, zona_label)
+            nuevos = [x for x in items if x["id"] not in vistas]
+            print(f"  → ZP total: {total} | página: {len(items)} | nuevos: {len(nuevos)}")
+            todas.extend(nuevos)
+            time.sleep(random.uniform(2, 4))
 
     return todas
 
@@ -327,7 +322,7 @@ def subir_a_sheets(alertas: list):
 def main():
     print("=" * 60)
     print(f"Scraper — {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    print("Fuentes: ZonaProp · Argenprop (dueño directo)")
+    print("Fuente: ZonaProp")
     print("Zonas: Bella Vista · Muñiz · San Miguel")
     print("=" * 60)
 
@@ -339,12 +334,7 @@ def main():
     for x in zp:
         nuevas_vistas.add(x["id"])
 
-    print("\n── Argenprop (dueño directo) ─────────────────────────────")
-    ap = scrape_argenprop(vistas | {x["id"] for x in zp})
-    for x in ap:
-        nuevas_vistas.add(x["id"])
-
-    todas = zp + ap
+    todas = zp
     guardar_vistas(nuevas_vistas)
 
     print(f"\n{'=' * 60}")
