@@ -1897,6 +1897,12 @@
           <option value="descartada">Descartadas ✗</option>
           <option value="">Todas</option>
         </select>
+        <select id="alFiltroOrden" onchange="renderAlertas()" style="padding:5px 9px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--card);color:var(--text)">
+          <option value="recientes">Más recientes primero</option>
+          <option value="precio_asc">Menor precio</option>
+          <option value="precio_desc">Mayor precio</option>
+          <option value="precio_m2_asc">Menor precio/m²</option>
+        </select>
         <button onclick="cargarAlertas()" style="padding:5px 14px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer">↺ Actualizar</button>
         <span id="alContador" style="font-size:12px;color:var(--gray)"></span>
       </div>
@@ -4337,7 +4343,11 @@ function renderAlertas() {
     return true;
   });
 
-  data.sort((a,b) => (b.fecha||'').localeCompare(a.fecha||''));
+  const orden = document.getElementById('alFiltroOrden')?.value || 'recientes';
+  if (orden === 'recientes')    data.sort((a,b) => (b.fecha||'').localeCompare(a.fecha||''));
+  else if (orden === 'precio_asc')  data.sort((a,b) => (Number(a.precio)||Infinity) - (Number(b.precio)||Infinity));
+  else if (orden === 'precio_desc') data.sort((a,b) => (Number(b.precio)||0) - (Number(a.precio)||0));
+  else if (orden === 'precio_m2_asc') data.sort((a,b) => (Number(a.precio_m2)||Infinity) - (Number(b.precio_m2)||Infinity));
   if (cnt) cnt.textContent = data.length + ' propiedad' + (data.length !== 1 ? 'es' : '');
 
   if (!data.length) {
