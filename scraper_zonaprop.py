@@ -12,7 +12,7 @@ import json
 import re
 import time
 import random
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -144,11 +144,35 @@ def zp_parsear_publicador(p: dict) -> str:
     return pub.get("name", "").strip() or "Inmobiliaria"
 
 
+CUTOFF_DIAS = 7
+
+def zp_es_de_esta_semana(p: dict) -> bool:
+    raw = p.get("modified_date") or ""
+    if not raw:
+        return True
+    try:
+        ts = datetime.fromisoformat(raw)
+        ahora = datetime.now(timezone.utc).astimezone(ts.tzinfo)
+        return (ahora - ts) <= timedelta(days=CUTOFF_DIAS)
+    except Exception:
+        return True
+
+def zp_parsear_foto(p: dict) -> str:
+    try:
+        pics = (p.get("visiblePictures") or {}).get("pictures") or []
+        if pics:
+            return pics[0].get("url730x532") or pics[0].get("url360x266") or ""
+    except Exception:
+        pass
+    return ""
+
 def zp_parsear_postings(state: dict, tipologia: str, zona: str) -> list:
     postings = state.get("listStore", {}).get("listPostings", []) or []
     out = []
     for p in postings:
         try:
+            if not zp_es_de_esta_semana(p):
+                continue
             zp_id = "zp_" + str(p.get("postingId") or p.get("postingCode") or "")
             if not zp_id or zp_id == "zp_":
                 continue
@@ -168,6 +192,7 @@ def zp_parsear_postings(state: dict, tipologia: str, zona: str) -> list:
                 "m2_cubiertos": m2_cub, "m2_terreno": m2_ter, "precio_m2": precio_m2,
                 "quien_publica": publicador, "url": url, "zona": zona,
                 "fecha": (p.get("modified_date") or hoy())[:10],
+                "foto": zp_parsear_foto(p),
             })
         except Exception as e:
             print(f"  ⚠ ZP posting error: {e}")

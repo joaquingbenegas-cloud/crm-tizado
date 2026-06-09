@@ -1873,26 +1873,31 @@
 
 <!-- ══════════════════ CIERRES PANEL ══════════════════ -->
 <!-- ══ ALERTAS PANEL ══════════════════════════════════════════════════════ -->
-<div class="cierres-panel" id="alertasPanel" style="padding:20px">
-  <div style="max-width:960px;margin:0 auto">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
-      <h2 style="font-family:'Playfair Display',serif;font-size:22px">🔔 Alertas ZonaProp</h2>
+<div class="cierres-panel" id="alertasPanel" style="padding:20px 16px">
+  <div style="max-width:1100px;margin:0 auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+      <h2 style="font-family:'Playfair Display',serif;font-size:20px">🔔 Alertas</h2>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <select id="alFiltroTipo" onchange="renderAlertas()" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--card);color:var(--text)">
+        <select id="alFiltroTipo" onchange="renderAlertas()" style="padding:5px 9px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--card);color:var(--text)">
           <option value="">Todas las tipologías</option>
           <option value="Casa">Casa</option>
           <option value="Terreno/Lote">Terreno/Lote</option>
           <option value="Departamento">Departamento</option>
           <option value="Local/Oficina">Local/Oficina</option>
-          <option value="Dueño directo">Dueño directo</option>
         </select>
-        <select id="alFiltroZona" onchange="renderAlertas()" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--card);color:var(--text)">
+        <select id="alFiltroZona" onchange="renderAlertas()" style="padding:5px 9px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--card);color:var(--text)">
           <option value="">Todas las zonas</option>
           <option value="Bella Vista">Bella Vista</option>
           <option value="Muñiz">Muñiz</option>
           <option value="San Miguel">San Miguel</option>
         </select>
-        <button onclick="cargarAlertas()" style="padding:6px 14px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer">↺ Actualizar</button>
+        <select id="alFiltroEstado" onchange="renderAlertas()" style="padding:5px 9px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--card);color:var(--text)">
+          <option value="pendiente">Sin revisar</option>
+          <option value="guardada">Guardadas ✓</option>
+          <option value="descartada">Descartadas ✗</option>
+          <option value="">Todas</option>
+        </select>
+        <button onclick="cargarAlertas()" style="padding:5px 14px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer">↺ Actualizar</button>
         <span id="alContador" style="font-size:12px;color:var(--gray)"></span>
       </div>
     </div>
@@ -4287,6 +4292,17 @@ function renderDashboard() {
 // ─── CIERRES ─────────────────────────────────────────────────────────────────
 // ─── ALERTAS ─────────────────────────────────────────────────────────────────
 let alertasData = [];
+const AL_KEY = 'crm_alertas_estados'; // {id: 'guardada'|'descartada'}
+
+function alGetEstados() {
+  try { return JSON.parse(localStorage.getItem(AL_KEY) || '{}'); } catch { return {}; }
+}
+function alSetEstado(id, estado) {
+  const e = alGetEstados();
+  e[id] = estado;
+  localStorage.setItem(AL_KEY, JSON.stringify(e));
+  renderAlertas();
+}
 
 function cargarAlertas() {
   const list = document.getElementById('alertasList');
@@ -4296,12 +4312,9 @@ function cargarAlertas() {
   if (cnt) cnt.textContent = '';
   fetch(SHEETS_URL + '?action=getAlertas')
     .then(r => r.json())
-    .then(d => {
-      alertasData = d.alertas || [];
-      renderAlertas();
-    })
+    .then(d => { alertasData = d.alertas || []; renderAlertas(); })
     .catch(() => {
-      list.innerHTML = '<div style="color:#e53e3e;font-size:13px;padding:20px 0">Error al cargar. Verificá que el Apps Script tenga el handler getAlertas.</div>';
+      list.innerHTML = '<div style="color:#e53e3e;font-size:13px;padding:20px 0">Error al cargar alertas.</div>';
     });
 }
 
@@ -4309,80 +4322,70 @@ function renderAlertas() {
   const list = document.getElementById('alertasList');
   const cnt  = document.getElementById('alContador');
   if (!list) return;
-  const filtroTipo = document.getElementById('alFiltroTipo')?.value || '';
-  const filtroZona = document.getElementById('alFiltroZona')?.value || '';
+  const filtroTipo   = document.getElementById('alFiltroTipo')?.value || '';
+  const filtroZona   = document.getElementById('alFiltroZona')?.value || '';
+  const filtroEstado = document.getElementById('alFiltroEstado')?.value || 'pendiente';
+  const estados = alGetEstados();
+
+  const TIPO_COLOR = { 'Casa':'#3b82f6','Terreno/Lote':'#10b981','Departamento':'#8b5cf6','Local/Oficina':'#f59e0b' };
 
   let data = alertasData.filter(a => {
     if (filtroTipo && a.tipologia !== filtroTipo) return false;
     if (filtroZona && a.zona !== filtroZona) return false;
+    const est = estados[a.id] || 'pendiente';
+    if (filtroEstado && est !== filtroEstado) return false;
     return true;
   });
 
-  // Ordenar: más recientes primero
   data.sort((a,b) => (b.fecha||'').localeCompare(a.fecha||''));
-
   if (cnt) cnt.textContent = data.length + ' propiedad' + (data.length !== 1 ? 'es' : '');
 
   if (!data.length) {
-    list.innerHTML = '<div style="color:var(--gray);font-size:13px;padding:20px 0">No hay alertas con estos filtros.</div>';
+    list.innerHTML = '<div style="color:var(--gray);font-size:13px;padding:30px 0">No hay alertas con estos filtros.</div>';
     return;
   }
 
-  // Agrupar por tipología
-  const grupos = {};
-  data.forEach(a => {
-    const k = a.tipologia || 'Otros';
-    if (!grupos[k]) grupos[k] = [];
-    grupos[k].push(a);
-  });
-
-  const TIPO_COLOR = {
-    'Casa':          '#3b82f6',
-    'Terreno/Lote':  '#10b981',
-    'Departamento':  '#8b5cf6',
-    'Local/Oficina': '#f59e0b',
-    'Dueño directo': '#ef4444',
-  };
-
-  let html = '';
-  for (const [tipo, items] of Object.entries(grupos)) {
-    const color = TIPO_COLOR[tipo] || '#6b7280';
-    html += `<div style="margin-bottom:28px">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-        <span style="background:${color};color:#fff;font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;letter-spacing:.5px">${tipo.toUpperCase()}</span>
-        <span style="font-size:12px;color:var(--gray)">${items.length} propiedad${items.length!==1?'es':''}</span>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px">`;
-    items.forEach(a => {
+  list.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px">${
+    data.map(a => {
       const precio = a.precio ? `${a.moneda||'USD'} ${Number(a.precio).toLocaleString('es-AR')}` : 'Consultar';
       const m2Parts = [];
       if (a.m2_cubiertos) m2Parts.push(`${a.m2_cubiertos}m² cub.`);
       if (a.m2_terreno)   m2Parts.push(`${a.m2_terreno}m² tot.`);
-      const m2str = m2Parts.join(' · ') || '—';
-      const pm2 = a.precio_m2 ? `<span style="font-size:11px;color:var(--gray)">${a.moneda||'USD'} ${Number(a.precio_m2).toLocaleString('es-AR')}/m²</span>` : '';
-      const dueno = a.quien_publica === 'Dueño directo'
-        ? `<span style="background:#fef2f2;color:#ef4444;font-size:10px;padding:2px 7px;border-radius:10px;font-weight:600">Dueño directo</span>`
-        : `<span style="font-size:11px;color:var(--gray)">${a.quien_publica||''}</span>`;
-      html += `<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:6px">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
-          <div style="font-size:13px;font-weight:600;line-height:1.3;flex:1">${esc(a.direccion||a.titulo||'Sin dirección')}</div>
-          <span style="font-size:10px;color:var(--gray);white-space:nowrap">${(a.fecha||'').slice(0,10)}</span>
-        </div>
-        <div style="font-size:14px;font-weight:700;color:var(--accent)">${precio}</div>
-        <div style="font-size:12px;color:var(--gray)">${m2str}</div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
-          ${dueno}
-          ${pm2}
-        </div>
-        <div style="display:flex;gap:8px;margin-top:4px">
-          <span style="background:var(--bg);border:1px solid var(--border);font-size:11px;padding:2px 8px;border-radius:6px;color:var(--gray)">${esc(a.zona||'')}</span>
-          ${a.url ? `<a href="${esc(a.url)}" target="_blank" style="font-size:11px;color:var(--accent);text-decoration:none;padding:2px 8px;border:1px solid var(--accent);border-radius:6px">Ver en ZP →</a>` : ''}
+      const m2str = m2Parts.join(' · ') || '';
+      const pm2str = a.precio_m2 ? `${a.moneda||'USD'} ${Number(a.precio_m2).toLocaleString('es-AR')}/m²` : '';
+      const color = TIPO_COLOR[a.tipologia] || '#6b7280';
+      const est = estados[a.id] || 'pendiente';
+      const cardBorder = est === 'guardada' ? '#22c55e' : est === 'descartada' ? '#e5e7eb' : 'var(--border)';
+      const cardOpacity = est === 'descartada' ? '0.45' : '1';
+      const foto = a.foto ? `<div style="height:160px;overflow:hidden;border-radius:8px 8px 0 0;background:#f3f4f6;flex-shrink:0">
+        <img src="${esc(a.foto)}" style="width:100%;height:100%;object-fit:cover" loading="lazy" onerror="this.parentElement.style.display='none'">
+      </div>` : '';
+      return `<div style="background:var(--card);border:1.5px solid ${cardBorder};border-radius:10px;display:flex;flex-direction:column;opacity:${cardOpacity};transition:opacity .2s">
+        ${foto}
+        <div style="padding:12px;display:flex;flex-direction:column;gap:6px;flex:1">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px">
+            <span style="background:${color};color:#fff;font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px">${esc(a.tipologia||'')}</span>
+            <span style="font-size:10px;color:var(--gray)">${(a.fecha||'').slice(0,10)}</span>
+          </div>
+          <div style="font-size:13px;font-weight:600;line-height:1.3">${esc(a.direccion||a.titulo||'Sin dirección')}</div>
+          <div style="font-size:15px;font-weight:700;color:var(--accent)">${precio}</div>
+          ${m2str ? `<div style="font-size:12px;color:var(--gray)">${m2str}${pm2str ? ' · ' + pm2str : ''}</div>` : ''}
+          <div style="font-size:11px;color:var(--gray)">${esc(a.quien_publica||'')} · ${esc(a.zona||'')}</div>
+          <div style="display:flex;gap:6px;margin-top:auto;padding-top:8px">
+            <button onclick="alSetEstado('${a.id}','${est==='guardada'?'pendiente':'guardada'}')"
+              style="flex:1;padding:6px;border-radius:6px;border:1.5px solid ${est==='guardada'?'#22c55e':'var(--border)'};background:${est==='guardada'?'#f0fdf4':'var(--bg)'};color:${est==='guardada'?'#16a34a':'var(--gray)'};font-size:13px;cursor:pointer">
+              ✓ Guardar
+            </button>
+            <button onclick="alSetEstado('${a.id}','${est==='descartada'?'pendiente':'descartada'}')"
+              style="flex:1;padding:6px;border-radius:6px;border:1.5px solid ${est==='descartada'?'#e5e7eb':'var(--border)'};background:${est==='descartada'?'#f9fafb':'var(--bg)'};color:${est==='descartada'?'#9ca3af':'var(--gray)'};font-size:13px;cursor:pointer">
+              ✗ Descartar
+            </button>
+            ${a.url ? `<a href="${esc(a.url)}" target="_blank" style="padding:6px 10px;border-radius:6px;border:1.5px solid var(--border);background:var(--bg);color:var(--accent);font-size:13px;text-decoration:none">↗</a>` : ''}
+          </div>
         </div>
       </div>`;
-    });
-    html += `</div></div>`;
-  }
-  list.innerHTML = html;
+    }).join('')
+  }</div>`;
 }
 
 function renderCierres() {
