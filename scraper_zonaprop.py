@@ -1,20 +1,18 @@
 """
 scraper_zonaprop.py
-Scraper de ZonaProp para alertas de propiedades nuevas (últimas 24hs).
-Filtra duplicados con alertas_vistas.json y sube resultados al Google Sheet
-via el Apps Script del proyecto.
+Scraper de propiedades en venta para Bella Vista / Muñiz / San Miguel.
+Fuentes: ZonaProp, MercadoLibre Inmuebles, Argenprop (dueño directo).
+Deduplica con alertas_vistas.json y sube al Google Sheet via Apps Script.
 
 Uso:
     python3 scraper_zonaprop.py
-
-El Apps Script debe incluir el handler saveAlertas — ver comentario al final.
 """
 
 import json
 import re
 import time
 import random
-from datetime import datetime, timedelta, timezone
+from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
@@ -28,23 +26,20 @@ SHEETS_URL = (
     "AKfycbzb7MYnH34TTOfs6Uy9ZBg3KM32p4_1m2e6ggHV1ZtVhNwGRjpkhNeTlg-5Yxw9D9AWOA/exec"
 )
 VISTAS_FILE = Path(__file__).parent / "alertas_vistas.json"
-BASE_URL    = "https://www.zonaprop.com.ar"
-CUTOFF_HORAS = 24
 
-# slug ZonaProp → label legible
-ZONAS = {
-    "bella-vista-san-miguel":          "Bella Vista",
-    "muniz-san-miguel":                "Muñiz",
+ZONAS_ZP = {
+    "bella-vista-san-miguel":           "Bella Vista",
+    "muniz-san-miguel":                 "Muñiz",
     "san-miguel-partido-de-san-miguel": "San Miguel",
 }
 
-# prefijo URL → label tipología
-TIPOLOGIAS = {
+TIPOLOGIAS_ZP = {
     "casas":               "Casa",
     "terrenos":            "Terreno/Lote",
     "departamentos":       "Departamento",
     "locales-comerciales": "Local/Oficina",
 }
+
 
 HEADERS = {
     "User-Agent": (
@@ -54,7 +49,6 @@ HEADERS = {
     ),
     "Accept-Language": "es-AR,es;q=0.9",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-    "Referer": "https://www.zonaprop.com.ar/",
 }
 
 
@@ -76,10 +70,13 @@ def guardar_vistas(vistas: set):
     )
 
 
-def fetch_page(url: str) -> Optional[BeautifulSoup]:
+def fetch_page(url: str, referer: str = "") -> Optional[BeautifulSoup]:
+    h = dict(HEADERS)
+    if referer:
+        h["Referer"] = referer
     for intento in range(3):
         try:
-            r = requests.get(url, headers=HEADERS, timeout=20, impersonate="chrome110")
+            r = requests.get(url, headers=h, timeout=20, impersonate="chrome110")
             r.raise_for_status()
             return BeautifulSoup(r.text, "html.parser")
         except Exception as e:
@@ -89,13 +86,19 @@ def fetch_page(url: str) -> Optional[BeautifulSoup]:
     return None
 
 
-def extraer_preloaded_state(soup: BeautifulSoup) -> Optional[dict]:
-    """Extrae window.__PRELOADED_STATE__ del script id=preloadedData."""
+def hoy() -> str:
+    return datetime.now().strftime("%Y-%m-%d")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# ZONAPROP
+# ══════════════════════════════════════════════════════════════════════════════
+
+def zp_extraer_state(soup: BeautifulSoup) -> Optional[dict]:
     tag = soup.find("script", {"id": "preloadedData"})
     if not tag or not tag.string:
         return None
     raw = tag.string.strip()
-    # Múltiples assignments: window.__X__ = {...}; window.__Y__ = {...};
     assignments = re.findall(
         r'window\.(\w+)\s*=\s*(\{[\s\S]*?\})(?=\s*;\s*window\.|;\s*$)', raw
     )
@@ -103,231 +106,212 @@ def extraer_preloaded_state(soup: BeautifulSoup) -> Optional[dict]:
         if name == "__PRELOADED_STATE__":
             try:
                 return json.loads(val_str)
-            except json.JSONDecodeError:
+            except Exception:
                 return None
     return None
 
 
-def parsear_precio(posting: dict) -> tuple:
-    """Devuelve (monto_float, moneda_str)."""
+def zp_parsear_precio(p: dict) -> tuple:
     try:
-        for op in posting.get("priceOperationTypes", []):
-            if op.get("operationType", {}).get("operationTypeId") == "1":  # Venta
-                for p in op.get("prices", []):
-                    if p.get("amount"):
-                        return float(p["amount"]), p.get("currency", "")
+        for op in p.get("priceOperationTypes", []):
+            for pr in op.get("prices", []):
+                if pr.get("amount"):
+                    return float(pr["amount"]), pr.get("currency", "")
     except Exception:
         pass
     return None, ""
 
 
-def parsear_m2(posting: dict) -> tuple:
-    """Devuelve (m2_cubiertos, m2_terreno). mainFeatures es un dict keyed por featureId."""
-    feats = posting.get("mainFeatures", {}) or {}
-    m2_cub = None
-    m2_ter = None
-    try:
-        for fid, feat in feats.items():
-            val_raw = feat.get("value", "")
-            try:
-                val = float(re.sub(r"[^\d.]", "", str(val_raw)))
-            except (ValueError, TypeError):
-                continue
-            if fid == "CFT101" or "cubierta" in feat.get("label", "").lower():
-                m2_cub = val
-            elif fid == "CFT100" or "total" in feat.get("label", "").lower():
-                m2_ter = val
-    except Exception:
-        pass
+def zp_parsear_m2(p: dict) -> tuple:
+    feats = p.get("mainFeatures", {}) or {}
+    m2_cub = m2_ter = None
+    for fid, feat in feats.items():
+        try:
+            val = float(re.sub(r"[^\d.]", "", str(feat.get("value", ""))))
+        except Exception:
+            continue
+        if fid == "CFT101":
+            m2_cub = val
+        elif fid == "CFT100":
+            m2_ter = val
     return m2_cub, m2_ter
 
 
-def parsear_publicador(posting: dict) -> str:
-    pub = posting.get("publisher", {}) or {}
-    type_id = pub.get("publisherTypeId", "")
-    name = pub.get("name", "").strip()
-    # publisherTypeId "1" = particular/dueño directo, "2" = inmobiliaria
-    if type_id == "1" or not name:
+def zp_parsear_publicador(p: dict) -> str:
+    pub = p.get("publisher", {}) or {}
+    if pub.get("publisherTypeId") == "1":
         return "Dueño directo"
-    return name
+    return pub.get("name", "").strip() or "Inmobiliaria"
 
 
-def parsear_fecha(posting: dict) -> str:
-    raw = posting.get("modified_date", "") or ""
-    if raw:
-        return raw[:10]  # "YYYY-MM-DD"
-    return datetime.now().strftime("%Y-%m-%d")
-
-
-def es_reciente(posting: dict) -> bool:
-    raw = posting.get("modified_date", "") or ""
-    if not raw:
-        return True
-    try:
-        # Formato: "2026-06-08T14:50:17-0400"
-        ts = datetime.fromisoformat(raw)
-        ahora = datetime.now(timezone.utc).astimezone(ts.tzinfo)
-        return (ahora - ts) <= timedelta(hours=CUTOFF_HORAS)
-    except Exception:
-        return True
-
-
-def parsear_postings(state: dict, tipologia: str, zona_label: str) -> list:
+def zp_parsear_postings(state: dict, tipologia: str, zona: str) -> list:
     postings = state.get("listStore", {}).get("listPostings", []) or []
-    resultados = []
+    out = []
     for p in postings:
         try:
-            zp_id = str(p.get("postingId") or p.get("postingCode") or "")
-            if not zp_id:
+            zp_id = "zp_" + str(p.get("postingId") or p.get("postingCode") or "")
+            if not zp_id or zp_id == "zp_":
                 continue
-
-            precio, moneda = parsear_precio(p)
-            m2_cub, m2_ter = parsear_m2(p)
-            publicador = parsear_publicador(p)
-            fecha = parsear_fecha(p)
-
-            # Dirección
+            precio, moneda = zp_parsear_precio(p)
+            m2_cub, m2_ter = zp_parsear_m2(p)
+            publicador = zp_parsear_publicador(p)
             loc = p.get("postingLocation") or {}
             addr = (loc.get("address") or {}).get("name", "Sin dirección")
-
-            # URL
             url_rel = p.get("url", "")
-            url = (BASE_URL + url_rel) if url_rel.startswith("/") else url_rel
-
-            # Precio/m²
-            precio_m2 = None
+            url = ("https://www.zonaprop.com.ar" + url_rel) if url_rel.startswith("/") else url_rel
             base_m2 = m2_cub or m2_ter
-            if precio and base_m2 and base_m2 > 0:
-                precio_m2 = round(precio / base_m2, 2)
-
-            resultados.append({
-                "id":            zp_id,
-                "tipologia":     tipologia,
-                "titulo":        p.get("title", ""),
-                "direccion":     addr,
-                "precio":        precio,
-                "moneda":        moneda,
-                "m2_cubiertos":  m2_cub,
-                "m2_terreno":    m2_ter,
-                "precio_m2":     precio_m2,
-                "quien_publica": publicador,
-                "url":           url,
-                "zona":          zona_label,
-                "fecha":         fecha,
+            precio_m2 = round(precio / base_m2, 2) if precio and base_m2 else None
+            out.append({
+                "id": zp_id, "fuente": "ZonaProp", "tipologia": tipologia,
+                "titulo": p.get("title", ""), "direccion": addr,
+                "precio": precio, "moneda": moneda,
+                "m2_cubiertos": m2_cub, "m2_terreno": m2_ter, "precio_m2": precio_m2,
+                "quien_publica": publicador, "url": url, "zona": zona,
+                "fecha": (p.get("modified_date") or hoy())[:10],
             })
         except Exception as e:
-            print(f"  ⚠ Error parseando posting {p.get('postingId')}: {e}")
-    return resultados
+            print(f"  ⚠ ZP posting error: {e}")
+    return out
 
 
-# ── Scraping ───────────────────────────────────────────────────────────────────
-
-def scrape_url(url: str, tipologia: str, zona_slug: str) -> list:
-    zona_label = ZONAS[zona_slug]
-    print(f"  GET {url}")
-    soup = fetch_page(url)
-    if not soup:
-        return []
-    state = extraer_preloaded_state(soup)
-    if not state:
-        print(f"  ⚠ No se encontró __PRELOADED_STATE__")
-        return []
-    total = state.get("listStore", {}).get("totalPosting", "?")
-    postings = parsear_postings(state, tipologia, zona_label)
-    recientes = [p for p in postings if es_reciente(p)]
-    print(f"  → total en ZP: {total} | en página: {len(postings)} | recientes: {len(recientes)}")
-    return recientes
-
-
-def scrape_todo() -> list:
+def scrape_zonaprop(vistas: set) -> list:
     todas = []
-    vistas = cargar_vistas()
-    nuevas_vistas = set(vistas)
+    BASE = "https://www.zonaprop.com.ar"
 
-    # 1. Por tipología × zona
-    for tipo_slug, tipo_label in TIPOLOGIAS.items():
-        for zona_slug in ZONAS:
-            url = f"{BASE_URL}/{tipo_slug}-venta-{zona_slug}.html?orden=mas-recientes"
-            print(f"\n[{tipo_label} — {ZONAS[zona_slug]}]")
-            for r in scrape_url(url, tipo_label, zona_slug):
-                if r["id"] not in nuevas_vistas:
-                    todas.append(r)
-                    nuevas_vistas.add(r["id"])
-            time.sleep(random.uniform(2.0, 4.0))
-
-    # 2. Dueño directo × zona — ZonaProp no soporta publisherTypeId como query param.
-    #    Scrapeamos propiedades generales y filtramos los particulares (typeId="1").
-    for zona_slug in ZONAS:
-        url = (
-            f"{BASE_URL}/propiedades-venta-{zona_slug}.html"
-            "?orden=mas-recientes"
-        )
-        print(f"\n[Dueño directo — {ZONAS[zona_slug]}]")
-        soup = fetch_page(url)
+    # Solo dueño directo (publisherTypeId=1), todas las tipologías
+    for zona_slug, zona_label in ZONAS_ZP.items():
+        url = f"{BASE}/propiedades-venta-{zona_slug}.html?orden=mas-recientes&publisherType=Inmobiliaria"
+        # ZonaProp no filtra por param — scrapeamos y filtramos localmente
+        url = f"{BASE}/propiedades-venta-{zona_slug}.html?orden=mas-recientes"
+        print(f"\n  [ZP Dueño directo] {zona_label}")
+        print(f"  GET {url}")
+        soup = fetch_page(url, BASE + "/")
         if not soup:
-            time.sleep(random.uniform(2.0, 4.0))
+            time.sleep(random.uniform(2, 4))
             continue
-        state = extraer_preloaded_state(soup)
+        state = zp_extraer_state(soup)
         if not state:
-            time.sleep(random.uniform(2.0, 4.0))
+            time.sleep(random.uniform(2, 4))
             continue
         postings_raw = state.get("listStore", {}).get("listPostings", []) or []
-        # Solo particulares que aún no vimos
-        for p in postings_raw:
-            pub = p.get("publisher", {}) or {}
-            if pub.get("publisherTypeId") != "1":
+        dd = [p for p in postings_raw if (p.get("publisher") or {}).get("publisherTypeId") == "1"]
+        print(f"  → en página: {len(postings_raw)} | dueño directo: {len(dd)}")
+        for p in dd:
+            zp_id = "zp_" + str(p.get("postingId") or "")
+            if not zp_id or zp_id in vistas or any(x["id"] == zp_id for x in todas):
                 continue
-            zp_id = str(p.get("postingId") or p.get("postingCode") or "")
-            if not zp_id or zp_id in nuevas_vistas:
-                continue
-            if not es_reciente(p):
-                continue
-            results = parsear_postings({"listStore": {"listPostings": [p]}}, "Dueño directo", ZONAS[zona_slug])
-            for r in results:
-                todas.append(r)
-                nuevas_vistas.add(r["id"])
-        print(f"  → dueños directos nuevos acumulados: {sum(1 for x in todas if x['tipologia']=='Dueño directo')}")
-        time.sleep(random.uniform(2.0, 4.0))
+            items = zp_parsear_postings({"listStore": {"listPostings": [p]}}, "Dueño directo", zona_label)
+            todas.extend(items)
+        time.sleep(random.uniform(2, 4))
 
-    guardar_vistas(nuevas_vistas)
     return todas
 
 
-# ── Upload a Google Sheets ─────────────────────────────────────────────────────
+# ══════════════════════════════════════════════════════════════════════════════
+# ARGENPROP (dueño directo)
+# Datos en atributos del <a class="card">:
+#   idaviso, montonormalizado, idmoneda (2=USD, 1=ARS), href
+# ══════════════════════════════════════════════════════════════════════════════
+
+def scrape_argenprop(vistas: set) -> list:
+    todas = []
+    BASE = "https://www.argenprop.com"
+
+    TIPOS_AP = {
+        "casas":         "Casa",
+        "terrenos":      "Terreno/Lote",
+        "departamentos": "Departamento",
+        "locales":       "Local/Oficina",
+    }
+    ZONAS_AP_URL = {
+        "bella-vista": "Bella Vista",
+        "muniz":       "Muñiz",
+        "san-miguel":  "San Miguel",
+    }
+
+    for tipo_slug, tipo_label in TIPOS_AP.items():
+        for zona_slug, zona_label in ZONAS_AP_URL.items():
+            url = f"{BASE}/{tipo_slug}/venta/{zona_slug}?duenodirecto=true&orden=masnuevo"
+            print(f"\n  [AP] {tipo_label} dueño directo — {zona_label}")
+            print(f"  GET {url}")
+            soup = fetch_page(url, BASE + "/")
+            if not soup:
+                time.sleep(random.uniform(2, 4))
+                continue
+
+            cards = soup.select("a.card[idaviso]")
+            print(f"  → cards: {len(cards)}")
+
+            for card in cards:
+                try:
+                    aviso_id = card.get("idaviso", "")
+                    if not aviso_id:
+                        continue
+                    ap_id = "ap_" + aviso_id
+                    if ap_id in vistas or any(x["id"] == ap_id for x in todas):
+                        continue
+
+                    href = card.get("href", "")
+                    if href and not href.startswith("http"):
+                        href = BASE + href
+
+                    h2 = card.select_one("h2")
+                    titulo = h2.get_text(strip=True) if h2 else tipo_label
+
+                    addr_el = card.select_one("[class*=address], [class*=ubicacion]")
+                    if not addr_el:
+                        # La dirección suele ser el texto entre el precio y el título
+                        addr_el = card.select_one("p")
+                    addr = addr_el.get_text(strip=True) if addr_el else zona_label
+
+                    monto_raw = card.get("montonormalizado", "")
+                    precio = float(monto_raw) if monto_raw else None
+                    moneda = "USD" if card.get("idmoneda") == "2" else "ARS"
+
+                    # M² en los features de la card
+                    m2_cub = m2_ter = None
+                    for feat in card.select("[class*=feature], [class*=detail], li, span"):
+                        txt = feat.get_text(strip=True).lower()
+                        nums = re.findall(r"[\d]+", txt)
+                        if not nums:
+                            continue
+                        val = float(nums[0])
+                        if "cubierto" in txt:
+                            m2_cub = val
+                        elif "total" in txt or "terreno" in txt or "m²" in txt:
+                            m2_ter = val
+
+                    base_m2 = m2_cub or m2_ter
+                    precio_m2 = round(precio / base_m2, 2) if precio and base_m2 else None
+
+                    todas.append({
+                        "id": ap_id, "fuente": "Argenprop", "tipologia": tipo_label,
+                        "titulo": titulo, "direccion": addr,
+                        "precio": precio, "moneda": moneda,
+                        "m2_cubiertos": m2_cub, "m2_terreno": m2_ter, "precio_m2": precio_m2,
+                        "quien_publica": "Dueño directo", "url": href, "zona": zona_label,
+                        "fecha": hoy(),
+                    })
+                except Exception as e:
+                    print(f"  ⚠ AP card error: {e}")
+
+            print(f"  → nuevos: {len([x for x in todas if x['zona']==zona_label])}")
+            time.sleep(random.uniform(2, 4))
+
+    return todas
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# UPLOAD
+# ══════════════════════════════════════════════════════════════════════════════
 
 def subir_a_sheets(alertas: list):
-    """
-    POST al Apps Script con action='saveAlertas'.
-
-    ══ AGREGAR AL APPS SCRIPT (doPost) ══════════════════════════════
-    if (payload.action === 'saveAlertas') {
-      const ss = SpreadsheetApp.openById('1Vx-VP8NdeOxZybm0Bcqq0idYiWQDNWmelAm0nU9FIXM');
-      let sheet = ss.getSheetByName('Alertas');
-      if (!sheet) {
-        sheet = ss.insertSheet('Alertas');
-        sheet.appendRow(['fecha','id','tipologia','direccion','precio','moneda',
-                         'm2_cubiertos','m2_terreno','precio_m2','quien_publica','url','zona']);
-      }
-      (payload.alertas || []).forEach(a => {
-        sheet.appendRow([
-          a.fecha, a.id, a.tipologia, a.direccion,
-          a.precio ?? '', a.moneda ?? '', a.m2_cubiertos ?? '',
-          a.m2_terreno ?? '', a.precio_m2 ?? '',
-          a.quien_publica, a.url, a.zona
-        ]);
-      });
-      return ContentService
-        .createTextOutput(JSON.stringify({ok: true, saved: (payload.alertas||[]).length}))
-        .setMimeType(ContentService.MimeType.JSON);
-    }
-    ═════════════════════════════════════════════════════════════════
-    """
     try:
         r = requests.post(
             SHEETS_URL,
             data=json.dumps({"action": "saveAlertas", "alertas": alertas}),
             headers={"Content-Type": "application/json"},
-            timeout=30,
+            timeout=120,
             impersonate="chrome110",
             allow_redirects=True,
         )
@@ -336,35 +320,51 @@ def subir_a_sheets(alertas: list):
         print(f"\n⚠ Error subiendo a Sheets: {e}")
 
 
-# ── Main ───────────────────────────────────────────────────────────────────────
+# ══════════════════════════════════════════════════════════════════════════════
+# MAIN
+# ══════════════════════════════════════════════════════════════════════════════
 
 def main():
     print("=" * 60)
-    print(f"Scraper ZonaProp — {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    print(f"Últimas {CUTOFF_HORAS}hs | zonas: {', '.join(ZONAS.values())}")
+    print(f"Scraper — {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print("Fuentes: ZonaProp · Argenprop (dueño directo)")
+    print("Zonas: Bella Vista · Muñiz · San Miguel")
     print("=" * 60)
 
-    alertas = scrape_todo()
+    vistas = cargar_vistas()
+    nuevas_vistas = set(vistas)
+
+    print("\n── ZonaProp ─────────────────────────────────────────────")
+    zp = scrape_zonaprop(vistas)
+    for x in zp:
+        nuevas_vistas.add(x["id"])
+
+    print("\n── Argenprop (dueño directo) ─────────────────────────────")
+    ap = scrape_argenprop(vistas | {x["id"] for x in zp})
+    for x in ap:
+        nuevas_vistas.add(x["id"])
+
+    todas = zp + ap
+    guardar_vistas(nuevas_vistas)
 
     print(f"\n{'=' * 60}")
-    print(f"Alertas nuevas: {len(alertas)}")
+    print(f"Total nuevas alertas: {len(todas)}")
+    por_fuente = {}
+    for a in todas:
+        por_fuente.setdefault(a["fuente"], 0)
+        por_fuente[a["fuente"]] += 1
+    for fuente, n in por_fuente.items():
+        print(f"  {fuente}: {n}")
 
-    if not alertas:
-        print("Nada nuevo. Sin subir.")
+    if not todas:
+        print("Nada nuevo.")
         return
 
-    por_tipo = {}
-    for a in alertas:
-        por_tipo.setdefault(a["tipologia"], []).append(a)
-    for tipo, items in sorted(por_tipo.items()):
-        print(f"  {tipo}: {len(items)}")
-
     print("\nSubiendo a Google Sheets...")
-    subir_a_sheets(alertas)
+    subir_a_sheets(todas)
 
-    # Debug local
     debug = Path(__file__).parent / "alertas_debug.json"
-    debug.write_text(json.dumps(alertas, ensure_ascii=False, indent=2), encoding="utf-8")
+    debug.write_text(json.dumps(todas, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"Debug → {debug}")
 
 
