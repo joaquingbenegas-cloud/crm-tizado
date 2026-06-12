@@ -3,64 +3,67 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Generar Propuesta AORA — Tizado BV</title>
+<title>Generar propuesta AORA</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Inter',sans-serif;background:#f4f4f2;color:#0a0a0a;min-height:100vh;padding:20px}
-.wrap{max-width:560px;margin:0 auto}
-.top{display:flex;align-items:center;gap:12px;margin-bottom:28px}
-.back{font-size:13px;color:#8a8a8a;text-decoration:none;display:flex;align-items:center;gap:4px}
-h1{font-size:22px;font-weight:700}
-h1 span{color:#C8102E}
-.card{background:#fff;border-radius:12px;padding:20px;margin-bottom:16px;border:1px solid #e8e8e5}
-.card h2{font-size:13px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#8a8a8a;margin-bottom:14px}
-label{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:#444}
-input,select{width:100%;padding:11px 14px;border:1.5px solid #e8e8e5;border-radius:8px;font-size:14px;font-family:'Inter',sans-serif;background:#fff;color:#0a0a0a;outline:none;transition:border-color .15s}
-input:focus,select:focus{border-color:#0a0a0a}
-.field{margin-bottom:14px}
+body{font-family:'Inter',sans-serif;background:#f4f4f2;color:#0a0a0a;padding:20px;min-height:100vh}
+.wrap{max-width:520px;margin:0 auto}
+.back{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:#8a8a8a;text-decoration:none;margin-bottom:20px}
+h1{font-size:22px;font-weight:700;margin-bottom:4px}
+h1 em{color:#C8102E;font-style:normal}
+.sub{font-size:13px;color:#8a8a8a;margin-bottom:24px}
+.card{background:#fff;border-radius:12px;padding:20px;border:1px solid #e8e8e5;margin-bottom:14px}
+.card-title{font-size:10px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:#8a8a8a;margin-bottom:14px}
+label{font-size:13px;font-weight:600;display:block;margin-bottom:6px}
+input{width:100%;padding:11px 14px;border:1.5px solid #e8e8e5;border-radius:8px;font-size:14px;font-family:'Inter',sans-serif;outline:none;transition:border-color .15s}
+input:focus{border-color:#0a0a0a}
 
-/* Filtros unidades */
-.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
-.chip{padding:6px 14px;border:1.5px solid #e8e8e5;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;background:#fff;color:#444;transition:all .15s;user-select:none}
+/* chips filtros */
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{padding:7px 14px;border:1.5px solid #e8e8e5;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;background:#fff;color:#666;transition:all .15s;user-select:none;-webkit-tap-highlight-color:transparent}
 .chip.on{background:#0a0a0a;color:#fff;border-color:#0a0a0a}
 .chip.on-green{background:#1a6b3a;color:#fff;border-color:#1a6b3a}
 
-/* Lista unidades */
+/* lista unidades */
 .u-list{display:flex;flex-direction:column;gap:6px;margin-top:12px}
-.u-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid #e8e8e5;border-radius:8px;cursor:pointer;transition:border-color .15s;background:#fff}
-.u-item.sel{border-color:#0a0a0a;background:#fafafa}
-.u-item.sel .u-check{background:#0a0a0a;border-color:#0a0a0a}
-.u-check{width:18px;height:18px;border-radius:4px;border:1.5px solid #e8e8e5;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s}
-.u-check svg{display:none}
-.u-item.sel .u-check svg{display:block}
-.u-info{flex:1;min-width:0}
-.u-nom{font-size:13px;font-weight:600}
-.u-sub{font-size:11px;color:#8a8a8a;margin-top:1px}
-.u-precio{font-size:13px;font-weight:700;white-space:nowrap}
-.u-az{font-size:9px;font-weight:700;background:#e8f5ee;color:#1a6b3a;padding:2px 6px;border-radius:8px;margin-left:4px}
-
-.sel-count{font-size:12px;color:#8a8a8a;margin-top:8px}
-.sel-all{font-size:12px;font-weight:600;color:#0a0a0a;cursor:pointer;text-decoration:underline;margin-left:8px}
-
-/* Botón generar */
-.btn-gen{
-  width:100%;padding:16px;background:#0a0a0a;color:#fff;
-  border:none;border-radius:10px;font-size:15px;font-weight:700;
-  cursor:pointer;margin-top:8px;font-family:'Inter',sans-serif;
-  transition:opacity .15s;
+.u-row{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 14px;border:1.5px solid #e8e8e5;border-radius:8px;
+  cursor:pointer;background:#fff;transition:border-color .15s;
+  -webkit-tap-highlight-color:transparent;
 }
-.btn-gen:hover{opacity:.88}
-.btn-gen:disabled{opacity:.4;cursor:not-allowed}
+.u-row.sel{border-color:#0a0a0a}
+.u-check{width:20px;height:20px;border-radius:4px;border:1.5px solid #e8e8e5;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.u-row.sel .u-check{background:#0a0a0a;border-color:#0a0a0a}
+.checkmark{display:none}
+.u-row.sel .checkmark{display:block}
+.u-info{flex:1;min-width:0}
+.u-nom{font-size:13px;font-weight:600;margin-bottom:2px}
+.u-det{font-size:11px;color:#8a8a8a}
+.u-precio{font-size:13px;font-weight:700;white-space:nowrap;text-align:right}
+.az-tag{font-size:9px;font-weight:700;background:#e8f5ee;color:#1a6b3a;padding:2px 6px;border-radius:6px;margin-left:5px;vertical-align:middle}
 
-/* Resultado */
-.result{display:none;margin-top:20px}
+.footer-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.sel-info{font-size:12px;color:#8a8a8a}
+.sel-all{font-size:12px;font-weight:600;cursor:pointer;color:#0a0a0a;text-decoration:underline;background:none;border:none;font-family:'Inter',sans-serif;padding:0}
+
+/* botón generar */
+.btn-gen{
+  width:100%;padding:15px;background:#0a0a0a;color:#fff;border:none;
+  border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;
+  font-family:'Inter',sans-serif;margin-top:8px;transition:opacity .15s;
+}
+.btn-gen:disabled{opacity:.35;cursor:not-allowed}
+.btn-gen:not(:disabled):hover{opacity:.88}
+
+/* resultado */
+.result{display:none;background:#0a0a0a;border-radius:12px;padding:20px;margin-top:16px;color:#fff}
 .result.show{display:block}
-.result-card{background:#0a0a0a;border-radius:12px;padding:20px;color:#fff}
-.result-card h3{font-size:13px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.5);margin-bottom:10px}
-.result-url{font-size:13px;color:rgba(255,255,255,0.7);word-break:break-all;margin-bottom:16px;background:rgba(255,255,255,0.08);padding:10px 12px;border-radius:6px}
-.btns-row{display:flex;gap:8px}
-.btn-copy,.btn-wa{flex:1;padding:12px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;border:none;font-family:'Inter',sans-serif;transition:opacity .15s}
+.result-label{font-size:10px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:rgba(255,255,255,0.45);margin-bottom:10px}
+.result-url{font-size:12px;color:rgba(255,255,255,0.65);word-break:break-all;background:rgba(255,255,255,0.07);padding:10px 12px;border-radius:6px;margin-bottom:14px}
+.result-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.btn-copy,.btn-wa{padding:13px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;border:none;font-family:'Inter',sans-serif;transition:opacity .15s}
 .btn-copy{background:#fff;color:#0a0a0a}
 .btn-wa{background:#25D366;color:#fff}
 .btn-copy:hover,.btn-wa:hover{opacity:.88}
@@ -68,227 +71,193 @@ input:focus,select:focus{border-color:#0a0a0a}
 </head>
 <body>
 <div class="wrap">
-  <div class="top">
-    <a href="../../index.html" class="back">← CRM</a>
-  </div>
-  <h1>Propuesta <span>AORA</span></h1>
-  <p style="font-size:13px;color:#8a8a8a;margin:6px 0 24px">Configurá la propuesta y generá el link para tu cliente.</p>
+  <a href="../../index.html" class="back">← Volver al CRM</a>
+  <h1>Propuesta <em>AORA</em></h1>
+  <div class="sub">Elegí las unidades y generá el link para tu cliente.</div>
 
-  <!-- CLIENTE -->
+  <!-- NOMBRE -->
   <div class="card">
-    <h2>Cliente</h2>
-    <div class="field">
-      <label>Nombre</label>
-      <input type="text" id="clienteNombre" placeholder="Ej: Jaqueline">
-    </div>
-    <div class="field">
-      <label>Objetivo <span style="color:#8a8a8a;font-weight:400">(opcional)</span></label>
-      <select id="clienteObjetivo">
-        <option value="">— sin especificar —</option>
-        <option value="vivir">Para vivir</option>
-        <option value="invertir">Para invertir</option>
-        <option value="renta">Para renta</option>
-      </select>
-    </div>
+    <div class="card-title">Cliente</div>
+    <label>Nombre</label>
+    <input id="nombre" type="text" placeholder="Ej: Jaqueline" autocomplete="off">
   </div>
 
-  <!-- FILTROS RÁPIDOS -->
+  <!-- FILTROS -->
   <div class="card">
-    <h2>Filtrar unidades</h2>
-    <label style="margin-bottom:8px">Ambientes</label>
-    <div class="chips" id="chipsAmb">
-      <span class="chip on" data-val="todos">Todos</span>
-      <span class="chip" data-val="2">2 amb</span>
-      <span class="chip" data-val="3">3 amb</span>
-    </div>
-    <label style="margin-bottom:8px;margin-top:12px">Tipología</label>
-    <div class="chips" id="chipsTipo">
-      <span class="chip on" data-val="todos">Todas</span>
-      <span class="chip" data-val="T1">PB+4</span>
-      <span class="chip" data-val="T2">PB+2 · T2</span>
-      <span class="chip" data-val="T3">PB+2 · T3</span>
-    </div>
-    <label style="margin-bottom:8px;margin-top:12px">Piso</label>
-    <div class="chips" id="chipsPiso">
-      <span class="chip on" data-val="todos">Todos</span>
-      <span class="chip on-green" data-val="azotea">▲ Solo azoteas</span>
+    <div class="card-title">Filtrar</div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div>
+        <div style="font-size:11px;font-weight:600;color:#8a8a8a;margin-bottom:6px">AMBIENTES</div>
+        <div class="chips" id="fAmb">
+          <span class="chip on" data-v="todos">Todos</span>
+          <span class="chip" data-v="2">2 amb</span>
+          <span class="chip" data-v="3">3 amb</span>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:600;color:#8a8a8a;margin-bottom:6px">TIPOLOGÍA</div>
+        <div class="chips" id="fTipo">
+          <span class="chip on" data-v="todos">Todas</span>
+          <span class="chip" data-v="T1">PB+4</span>
+          <span class="chip" data-v="T2">PB+2 · T2</span>
+          <span class="chip" data-v="T3">PB+2 · T3</span>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:600;color:#8a8a8a;margin-bottom:6px">PISO</div>
+        <div class="chips" id="fPiso">
+          <span class="chip on" data-v="todos">Todos</span>
+          <span class="chip on-green" data-v="azotea">▲ Azoteas</span>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- SELECCIÓN MANUAL -->
+  <!-- UNIDADES -->
   <div class="card">
-    <h2>Unidades a mostrar</h2>
-    <div style="display:flex;align-items:center;justify-content:space-between">
-      <div class="sel-count" id="selCount">0 seleccionadas</div>
-      <span class="sel-all" onclick="selAll()">Seleccionar todas</span>
+    <div class="footer-bar">
+      <div class="card-title" style="margin:0">Unidades</div>
+      <button class="sel-all" onclick="toggleAll()">Seleccionar todas</button>
     </div>
     <div class="u-list" id="uList"></div>
+    <div class="sel-info" id="selInfo" style="margin-top:10px">0 seleccionadas</div>
   </div>
 
-  <button class="btn-gen" id="btnGen" onclick="generar()">Generar propuesta →</button>
+  <button class="btn-gen" id="btnGen" onclick="generar()" disabled>Generar propuesta →</button>
 
-  <!-- RESULTADO -->
   <div class="result" id="result">
-    <div class="result-card">
-      <h3>Propuesta generada</h3>
-      <div class="result-url" id="resultUrl"></div>
-      <div class="btns-row">
-        <button class="btn-copy" onclick="copiarLink()">Copiar link</button>
-        <button class="btn-wa" onclick="enviarWA()">Enviar por WhatsApp</button>
-      </div>
+    <div class="result-label">Link generado</div>
+    <div class="result-url" id="resultUrl"></div>
+    <div class="result-btns">
+      <button class="btn-copy" onclick="copiar()">Copiar link</button>
+      <button class="btn-wa" onclick="enviarWA()">WhatsApp</button>
     </div>
   </div>
 </div>
 
 <script>
-const U=[
-  [1,'Edificio 1','T1','1° Piso','A',2,60.7,140601],
-  [2,'Edificio 1','T1','1° Piso','B',2,60.9,141018],
-  [4,'Edificio 1','T1','1° Piso','D',3,90.1,205807],
-  [77,'Edificio 1','T1','Azotea','D',2,67.96,167440],
-  [16,'Edificio 2','T1','1° Piso','A',2,60.7,140601],
-  [29,'Edificio 2','T1','Azotea','B',3,87.5,217786],
-  [78,'Edificio 2','T1','Azotea','D',2,67.96,167440],
-  [31,'Edificio 3','T1','1° Piso','A',2,60.7,140601],
-  [32,'Edificio 3','T1','1° Piso','B',2,60.9,141018],
-  [35,'Edificio 3','T1','2° Piso','A',2,60.7,143185],
-  [80,'Edificio 4','T1','1° Piso','A',2,60.7,140601],
-  [81,'Edificio 4','T1','1° Piso','B',2,60.9,141018],
-  [85,'Edificio 4','T1','2° Piso','B',2,60.9,143611],
-  [89,'Edificio 4','T1','3° Piso','B',2,61.2,149459],
-  [92,'Edificio 4','T1','Azotea','A',2,67.8,166989],
-  [95,'Edificio 4','T1','Azotea','D',2,67.96,167440],
-  [46,'Edif.1 T2','T2','Planta Baja','A',2,75.9,175752],
-  [47,'Edif.1 T2','T2','1° Piso','A',2,60.3,142333],
-  [51,'Edif.1 T2','T2','1° Piso','D',3,79.3,188314],
-  [53,'Edif.1 T2','T2','Azotea','B',3,95.4,230018],
-  [55,'Edif.1 T2','T2','Azotea','C',2,67.2,161452],
-  [57,'Edif.2 T3','T3','Planta Baja','A',2,71.5,166316],
-  [58,'Edif.2 T3','T3','1° Piso','A',2,60.7,143185],
-  [61,'Edif.2 T3','T3','1° Piso','D',3,90.1,205807],
-  [63,'Edif.2 T3','T3','Azotea','B',2,66.9,160794],
-  [66,'Edif.3 T2','T2','Planta Baja','A',2,75.9,175752],
+const U = [
+  [1,'Edificio 1','T1','1° Piso','A',2,60.7,140601,'plano_t1_2amb_a_rot'],
+  [2,'Edificio 1','T1','1° Piso','B',2,60.9,141018,'plano_t1_2amb_b_rot'],
+  [4,'Edificio 1','T1','1° Piso','D',3,90.1,205807,'plano_t1_3amb_d_rot'],
+  [77,'Edificio 1','T1','Azotea','D',2,67.96,167440,'plano_t1_az_2amb_rot'],
+  [16,'Edificio 2','T1','1° Piso','A',2,60.7,140601,'plano_t1_2amb_a_rot'],
+  [29,'Edificio 2','T1','Azotea','B',3,87.5,217786,'plano_t1_az_3amb_b_rot'],
+  [78,'Edificio 2','T1','Azotea','D',2,67.96,167440,'plano_t1_az_2amb_rot'],
+  [31,'Edificio 3','T1','1° Piso','A',2,60.7,140601,'plano_t1_2amb_a_rot'],
+  [32,'Edificio 3','T1','1° Piso','B',2,60.9,141018,'plano_t1_2amb_b_rot'],
+  [35,'Edificio 3','T1','2° Piso','A',2,60.7,143185,'plano_t1_2amb_a_rot'],
+  [80,'Edificio 4','T1','1° Piso','A',2,60.7,140601,'plano_t1_2amb_a_rot'],
+  [81,'Edificio 4','T1','1° Piso','B',2,60.9,141018,'plano_t1_2amb_b_rot'],
+  [85,'Edificio 4','T1','2° Piso','B',2,60.9,143611,'plano_t1_2amb_b_rot'],
+  [89,'Edificio 4','T1','3° Piso','B',2,61.2,149459,'plano_t1_2amb_b_rot'],
+  [92,'Edificio 4','T1','Azotea','A',2,67.8,166989,'plano_t1_az_2amb_rot'],
+  [95,'Edificio 4','T1','Azotea','D',2,67.96,167440,'plano_t1_az_2amb_rot'],
+  [46,'Edif.1 T2','T2','Planta Baja','A',2,75.9,175752,'plano_t2_pb_rot'],
+  [47,'Edif.1 T2','T2','1° Piso','A',2,60.3,142333,'plano_t2_tipo_rot'],
+  [51,'Edif.1 T2','T2','1° Piso','D',3,79.3,188314,'plano_t2_tipo_rot'],
+  [53,'Edif.1 T2','T2','Azotea','B',3,95.4,230018,'plano_t2_tipo_rot'],
+  [55,'Edif.1 T2','T2','Azotea','C',2,67.2,161452,'plano_t2_tipo_rot'],
+  [57,'Edif.2 T3','T3','Planta Baja','A',2,71.5,166316,'plano_t2_pb_rot'],
+  [58,'Edif.2 T3','T3','1° Piso','A',2,60.7,143185,'plano_t2_tipo_rot'],
+  [61,'Edif.2 T3','T3','1° Piso','D',3,90.1,205807,'plano_t2_tipo_rot'],
+  [63,'Edif.2 T3','T3','Azotea','B',2,66.9,160794,'plano_t2_tipo_rot'],
+  [66,'Edif.3 T2','T2','Planta Baja','A',2,75.9,175752,'plano_t2_pb_rot'],
 ];
-// [uf, edif, tipo, piso, dpto, amb, tv, pt]
 
-const fU = n => 'USD '+n.toLocaleString('es-AR');
-let _selIds = new Set();
-let _filtAmb='todos', _filtTipo='todos', _filtPiso='todos';
+const fU = n => 'USD ' + n.toLocaleString('es-AR');
+let sel = new Set();
+let fAmb='todos', fTipo='todos', fPiso='todos';
 
-function getFiltered(){
-  return U.filter(u=>{
-    if(_filtAmb!=='todos'&&u[5]!==parseInt(_filtAmb)) return false;
-    if(_filtTipo!=='todos'&&u[2]!==_filtTipo) return false;
-    if(_filtPiso==='azotea'&&u[3]!=='Azotea') return false;
+function filtered(){
+  return U.filter(u => {
+    if(fAmb!=='todos' && u[5]!==parseInt(fAmb)) return false;
+    if(fTipo!=='todos' && u[2]!==fTipo) return false;
+    if(fPiso==='azotea' && u[3]!=='Azotea') return false;
     return true;
   });
 }
 
-function renderList(){
-  const arr = getFiltered();
-  const list = document.getElementById('uList');
-  list.innerHTML = arr.map(u=>{
+function render(){
+  const arr = filtered();
+  document.getElementById('uList').innerHTML = arr.map(u => {
     const [uf,edif,tipo,piso,dpto,amb,tv,pt] = u;
     const isAz = piso==='Azotea';
-    const sel = _selIds.has(uf);
-    return `<div class="u-item${sel?' sel':''}" onclick="toggleU(${uf})">
-      <div class="u-check"><svg width="10" height="10" viewBox="0 0 12 12" fill="white"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/></svg></div>
+    const on = sel.has(uf);
+    return `<div class="u-row${on?' sel':''}" onclick="toggle(${uf})">
+      <div class="u-check">
+        <svg class="checkmark" width="11" height="9" viewBox="0 0 11 9" fill="none">
+          <path d="M1 4l3 3 6-6" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
       <div class="u-info">
-        <div class="u-nom">UF ${uf} · ${piso} · Dpto ${dpto}${isAz?'<span class="u-az">▲ AZOTEA</span>':''}</div>
-        <div class="u-sub">${amb} amb · ${tipo} · ${edif} · ${tv} m²</div>
+        <div class="u-nom">UF ${uf} · ${piso} · Dpto ${dpto}${isAz?'<span class="az-tag">▲ AZOTEA</span>':''}</div>
+        <div class="u-det">${amb} amb · ${tipo} · ${edif} · ${tv} m²</div>
       </div>
       <div class="u-precio">${fU(pt)}</div>
     </div>`;
   }).join('');
-  updateCount();
+  const n = sel.size;
+  document.getElementById('selInfo').textContent = n + ' unidad'+(n===1?'':'es')+' seleccionada'+(n===1?'':'s');
+  document.getElementById('btnGen').disabled = n === 0;
 }
 
-function toggleU(uf){
-  if(_selIds.has(uf)) _selIds.delete(uf);
-  else _selIds.add(uf);
-  renderList();
+function toggle(uf){
+  sel.has(uf) ? sel.delete(uf) : sel.add(uf);
+  render();
 }
 
-function selAll(){
-  const arr = getFiltered();
-  const allSel = arr.every(u=>_selIds.has(u[0]));
-  if(allSel){ arr.forEach(u=>_selIds.delete(u[0])); }
-  else { arr.forEach(u=>_selIds.add(u[0])); }
-  renderList();
-}
-
-function updateCount(){
-  const n = _selIds.size;
-  document.getElementById('selCount').textContent = n+' unidad'+(n===1?'':'es')+' seleccionada'+(n===1?'':'s');
-  document.getElementById('btnGen').disabled = n===0;
+function toggleAll(){
+  const arr = filtered();
+  const allOn = arr.every(u => sel.has(u[0]));
+  arr.forEach(u => allOn ? sel.delete(u[0]) : sel.add(u[0]));
+  render();
 }
 
 // Chips
-document.getElementById('chipsAmb').addEventListener('click',e=>{
-  const chip = e.target.closest('.chip'); if(!chip) return;
-  document.querySelectorAll('#chipsAmb .chip').forEach(c=>c.classList.remove('on'));
-  chip.classList.add('on'); _filtAmb=chip.dataset.val; renderList();
-});
-document.getElementById('chipsTipo').addEventListener('click',e=>{
-  const chip = e.target.closest('.chip'); if(!chip) return;
-  document.querySelectorAll('#chipsTipo .chip').forEach(c=>c.classList.remove('on'));
-  chip.classList.add('on'); _filtTipo=chip.dataset.val; renderList();
-});
-document.getElementById('chipsPiso').addEventListener('click',e=>{
-  const chip = e.target.closest('.chip'); if(!chip) return;
-  const val = chip.dataset.val;
-  if(_filtPiso===val){ 
-    // toggle: si ya estaba activo, volver a todos
-    document.querySelectorAll('#chipsPiso .chip').forEach(c=>c.classList.remove('on','on-green'));
-    document.querySelector('#chipsPiso .chip[data-val="todos"]').classList.add('on');
-    _filtPiso='todos';
-  } else {
-    document.querySelectorAll('#chipsPiso .chip').forEach(c=>c.classList.remove('on','on-green'));
-    chip.classList.add(val==='azotea'?'on-green':'on');
-    _filtPiso=val;
-  }
-  renderList();
+['fAmb','fTipo','fPiso'].forEach(id => {
+  document.getElementById(id).addEventListener('click', e => {
+    const chip = e.target.closest('.chip');
+    if(!chip) return;
+    const grp = document.getElementById(id);
+    grp.querySelectorAll('.chip').forEach(c => c.classList.remove('on','on-green'));
+    chip.classList.add(chip.dataset.v==='azotea' ? 'on-green' : 'on');
+    if(id==='fAmb') fAmb = chip.dataset.v;
+    if(id==='fTipo') fTipo = chip.dataset.v;
+    if(id==='fPiso') fPiso = chip.dataset.v;
+    render();
+  });
 });
 
-// Generar
-let _generatedUrl = '';
+let _url = '';
 
 function generar(){
-  const nombre = document.getElementById('clienteNombre').value.trim() || 'cliente';
-  const objetivo = document.getElementById('clienteObjetivo').value;
-  const ufs = Array.from(_selIds).sort((a,b)=>a-b).join(',');
-  
-  // Params en el hash para que funcione sin servidor
-  const params = new URLSearchParams();
-  params.set('nombre', nombre);
-  if(objetivo) params.set('objetivo', objetivo);
-  params.set('ufs', ufs);
-  
-  const base = window.location.origin + window.location.pathname.replace('generar.html','index.html');
-  _generatedUrl = base + '#' + params.toString();
-  
-  document.getElementById('resultUrl').textContent = _generatedUrl;
+  const nombre = document.getElementById('nombre').value.trim() || 'cliente';
+  const ufs = Array.from(sel).sort((a,b)=>a-b).join(',');
+  const base = 'https://joaquingbenegas-cloud.github.io/crm-tizado/propuestas/aora/index.html';
+  _url = base + '?nombre=' + encodeURIComponent(nombre) + '&ufs=' + ufs;
+  document.getElementById('resultUrl').textContent = _url;
   document.getElementById('result').classList.add('show');
-  document.getElementById('result').scrollIntoView({behavior:'smooth'});
+  document.getElementById('result').scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
-function copiarLink(){
-  navigator.clipboard.writeText(_generatedUrl).then(()=>{
+function copiar(){
+  navigator.clipboard.writeText(_url).then(() => {
     const btn = document.querySelector('.btn-copy');
+    const orig = btn.textContent;
     btn.textContent = '✓ Copiado';
-    setTimeout(()=>btn.textContent='Copiar link', 2000);
+    setTimeout(() => btn.textContent = orig, 2000);
   });
 }
 
 function enviarWA(){
-  const nombre = document.getElementById('clienteNombre').value.trim() || 'cliente';
-  const msg = encodeURIComponent('Hola '+nombre+'! Te comparto la propuesta de AORA Bella Vista con las unidades que hablamos: '+_generatedUrl);
-  window.open('https://wa.me/?text='+msg,'_blank');
+  const nombre = document.getElementById('nombre').value.trim() || '';
+  const saludo = nombre ? 'Hola ' + nombre + '! ' : '';
+  const msg = encodeURIComponent(saludo + 'Te comparto las unidades de AORA Bella Vista que hablamos: ' + _url);
+  window.open('https://wa.me/?text=' + msg, '_blank');
 }
 
-// Init
-renderList();
-updateCount();
+render();
 </script>
 </body>
 </html>
